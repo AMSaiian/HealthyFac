@@ -30,27 +30,24 @@ public static class KeycloakRealmFixtureExtensions
             var members = await fixture.GetAdminJsonAsync<List<OrganizationMember>>(
                 $"{RealmAdminPath}/organizations/{organizationId}/members");
 
-            return members.Select(member => member.Id).ToList();
+            return [.. members.Select(member => member.Id)];
         }
 
         public async Task<IReadOnlyList<string>> ListUserProfileAttributeNamesAsync()
         {
             var profile = await fixture.GetAdminJsonAsync<JsonObject>($"{RealmAdminPath}/users/profile");
 
-            return profile[propertyName: "attributes"]!.AsArray()
-                .Select(attribute => attribute![propertyName: "name"]!.GetValue<string>())
-                .ToList();
+            return [.. profile["attributes"]!.AsArray().Select(attribute => attribute!["name"]!.GetValue<string>())];
         }
 
         public async Task<IReadOnlyList<string>> ListEditRolesOfUserAttributeAsync(string attributeName)
         {
             var profile = await fixture.GetAdminJsonAsync<JsonObject>($"{RealmAdminPath}/users/profile");
-            var attribute = profile[propertyName: "attributes"]!.AsArray()
-                .Single(candidate => candidate![propertyName: "name"]!.GetValue<string>() == attributeName)!;
 
-            return attribute[propertyName: "permissions"]![propertyName: "edit"]!.AsArray()
-                .Select(role => role!.GetValue<string>())
-                .ToList();
+            var attribute = profile["attributes"]!.AsArray()
+                .Single(candidate => candidate!["name"]!.GetValue<string>() == attributeName)!;
+
+            return [.. attribute["permissions"]!["edit"]!.AsArray().Select(role => role!.GetValue<string>())];
         }
 
         public async Task<JsonObject> GetSupervisorAccessTokenClaimsAsync()
@@ -64,18 +61,20 @@ public static class KeycloakRealmFixtureExtensions
         {
             var clientId = await fixture.Server.CreatePasswordGrantClientAsync();
             using var client = new HttpClient { BaseAddress = new Uri(fixture.Server.BaseAddress) };
+
             using var response = await client.PostAsync(
                 TokenPath,
                 new FormUrlEncodedContent(
                     new Dictionary<string, string>
                     {
-                        [key: "grant_type"] = "password",
-                        [key: "client_id"] = clientId,
-                        [key: "client_secret"] = KeycloakTestServer.PasswordGrantClientSecret,
-                        [key: "username"] = RealmTestData.SupervisorEmail,
-                        [key: "password"] = RealmTestData.SupervisorPassword,
-                        [key: "scope"] = OpenIdScope,
+                        ["grant_type"] = "password",
+                        ["client_id"] = clientId,
+                        ["client_secret"] = KeycloakTestServer.PasswordGrantClientSecret,
+                        ["username"] = RealmTestData.SupervisorEmail,
+                        ["password"] = RealmTestData.SupervisorPassword,
+                        ["scope"] = OpenIdScope,
                     }));
+
             await response.EnsureSuccessAsync(TestContext.Current.CancellationToken);
 
             var body = await response.Content.ReadFromJsonAsync<JsonObject>();
@@ -86,20 +85,22 @@ public static class KeycloakRealmFixtureExtensions
         public async Task<JsonObject> GetAuthServiceAccessTokenClaimsAsync()
         {
             using var client = new HttpClient { BaseAddress = new Uri(fixture.Server.BaseAddress) };
+
             using var response = await client.PostAsync(
                 TokenPath,
                 new FormUrlEncodedContent(
                     new Dictionary<string, string>
                     {
-                        [key: "grant_type"] = "client_credentials",
-                        [key: "client_id"] = RealmTestData.AuthClientId,
-                        [key: "client_secret"] = RealmTestData.AuthClientSecret,
+                        ["grant_type"] = "client_credentials",
+                        ["client_id"] = RealmTestData.AuthClientId,
+                        ["client_secret"] = RealmTestData.AuthClientSecret,
                     }));
+
             await response.EnsureSuccessAsync(TestContext.Current.CancellationToken);
 
             var body = await response.Content.ReadFromJsonAsync<JsonObject>();
 
-            return DecodePayload(body![propertyName: "access_token"]!.GetValue<string>());
+            return DecodePayload(body!["access_token"]!.GetValue<string>());
         }
 
         private async Task<T> GetAdminJsonAsync<T>(string path)
@@ -117,22 +118,24 @@ public static class KeycloakRealmFixtureExtensions
     internal static async Task<JsonObject> RequestSupervisorTokenClaimsAsync(KeycloakTestServer server, string clientId)
     {
         using var client = new HttpClient { BaseAddress = new Uri(server.BaseAddress) };
+
         using var response = await client.PostAsync(
             TokenPath,
             new FormUrlEncodedContent(
                 new Dictionary<string, string>
                 {
-                    [key: "grant_type"] = "password",
-                    [key: "client_id"] = clientId,
-                    [key: "client_secret"] = KeycloakTestServer.PasswordGrantClientSecret,
-                    [key: "username"] = RealmTestData.SupervisorEmail,
-                    [key: "password"] = RealmTestData.SupervisorPassword,
+                    ["grant_type"] = "password",
+                    ["client_id"] = clientId,
+                    ["client_secret"] = KeycloakTestServer.PasswordGrantClientSecret,
+                    ["username"] = RealmTestData.SupervisorEmail,
+                    ["password"] = RealmTestData.SupervisorPassword,
                 }));
+
         await response.EnsureSuccessAsync(TestContext.Current.CancellationToken);
 
         var body = await response.Content.ReadFromJsonAsync<JsonObject>();
 
-        return DecodePayload(body![propertyName: "access_token"]!.GetValue<string>());
+        return DecodePayload(body!["access_token"]!.GetValue<string>());
     }
 
     internal static JsonObject DecodePayload(string token)
@@ -140,6 +143,7 @@ public static class KeycloakRealmFixtureExtensions
         var payload = token.Split(separator: '.')[1]
             .Replace(oldChar: '-', newChar: '+')
             .Replace(oldChar: '_', newChar: '/');
+
         var padded = payload.PadRight(payload.Length + (4 - payload.Length % 4) % 4, paddingChar: '=');
 
         return JsonNode.Parse(Encoding.UTF8.GetString(Convert.FromBase64String(padded)))!.AsObject();

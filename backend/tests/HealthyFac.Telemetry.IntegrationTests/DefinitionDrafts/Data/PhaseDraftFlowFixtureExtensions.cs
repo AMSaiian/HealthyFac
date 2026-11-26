@@ -27,6 +27,7 @@ public static class PhaseDraftFlowFixtureExtensions
         public async Task<Guid> ApplyPhaseDraftAsync(ApplyOperatingPhaseDraftRequest request)
         {
             using var scope = fixture.CreateUserScope(request.CompanyId);
+
             var handler = scope.ServiceProvider
                 .GetRequiredService<
                     IRequestHandler<ApplyOperatingPhaseDraftRequest, ApplyOperatingPhaseDraftResponse>>();
@@ -63,6 +64,7 @@ public static class PhaseDraftFlowFixtureExtensions
         public async Task<FlowIds> StorePendingPhaseProposalAsync(MachineTenant tenant, Guid machineId)
         {
             var ids = FlowIds.Create() with { MachineId = machineId };
+
             var machine = ProposalBuilder.Machine(machineId) with
             {
                 DraftId = ids.EntryId,
@@ -73,6 +75,7 @@ public static class PhaseDraftFlowFixtureExtensions
 
             await fixture.StoreProposedDefinitionDraftsAsync(
                 tenant.CompanyId, ProposalBuilder.Message(tenant.CompanyId, machine));
+
             await fixture.ResolveDraftsAsync(
                 new DraftsResolved
                 {

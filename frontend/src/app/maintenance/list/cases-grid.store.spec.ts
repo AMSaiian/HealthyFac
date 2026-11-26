@@ -17,7 +17,7 @@ import { CasesGridStore } from './cases-grid.store';
 
 const EMPTY_PAGE = { items: [], totalCount: 0 };
 
-describe('CasesGridStore', () => {
+describe('CasesGridStore', { tags: ['Cases'] }, () => {
   const realtime = createFakeRealtimeConnection();
   const search = vi.fn();
 

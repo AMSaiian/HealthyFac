@@ -51,6 +51,7 @@ internal static class MethodCallInspection
     private static IEnumerable<MethodBase> ReadCallees(MethodBase caller)
     {
         var il = caller.GetMethodBody()?.GetILAsByteArray();
+
         if (il is null)
         {
             yield break;
@@ -59,15 +60,19 @@ internal static class MethodCallInspection
         var typeArguments = caller.DeclaringType is { IsGenericType: true } declaring
             ? declaring.GetGenericArguments()
             : null;
+
         var methodArguments = caller.IsGenericMethod ? caller.GetGenericArguments() : null;
         var position = 0;
+
         while (position < il.Length)
         {
             var opCode = OpCodes.Value.Read(il, ref position);
+
             if (opCode.OperandType == OperandType.InlineMethod)
             {
                 var token = BitConverter.ToInt32(il, position);
                 var callee = TryResolve(caller.Module, token, typeArguments, methodArguments);
+
                 if (callee is not null)
                 {
                     yield return callee;
@@ -117,10 +122,12 @@ internal static class MethodCallInspection
         public static OpCodeTable Build()
         {
             var table = new OpCodeTable();
+
             var opCodes = typeof(OpCodes)
                 .GetFields(BindingFlags.Public | BindingFlags.Static)
                 .Where(field => field.FieldType == typeof(OpCode))
                 .Select(field => (OpCode)field.GetValue(obj: null)!);
+
             foreach (var opCode in opCodes)
             {
                 var isTwoByte = opCode.Size == ShortSize;

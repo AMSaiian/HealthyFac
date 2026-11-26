@@ -6,6 +6,7 @@ using HealthyFac.Gateway.IntegrationTests.Hosting;
 using HealthyFac.Gateway.IntegrationTests.Proxy.Data;
 using HealthyFac.Gateway.Web.Proxy;
 using HealthyFac.Testing.Authentication;
+using HealthyFac.Testing.Features;
 using HealthyFac.Testing.Logging;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,6 +15,7 @@ using Microsoft.Extensions.Logging;
 namespace HealthyFac.Gateway.IntegrationTests.Proxy;
 
 [Collection(GatewayProxyCollection.Name)]
+[Feature(TestFeatures.Gateway)]
 public sealed class ProxyFailureTests(GatewayEnvironment environment)
 {
     private readonly GatewayEnvironment _environment = environment;
@@ -39,9 +41,11 @@ public sealed class ProxyFailureTests(GatewayEnvironment environment)
     {
         await using var core = new EchoServer(responseDelay: ProxyFailureTestData.SlowResponseDelay);
         await core.StartAsync();
+
         await using var gateway = _environment.CreateGateway(
             core,
             settings: ProxyFailureTestData.OneSecondActivityTimeout);
+
         using var client = gateway.CreateAuthenticatedClient();
         var startedAt = Stopwatch.GetTimestamp();
 
@@ -62,14 +66,18 @@ public sealed class ProxyFailureTests(GatewayEnvironment environment)
         await using var core = new EchoServer();
         core.IsReady = false;
         await core.StartAsync();
+
         await using var gateway = _environment.CreateGateway(
             core,
             settings: ProxyFailureTestData.OneSecondHealthCheckInterval);
+
         using var client = gateway.CreateAuthenticatedClient();
+
         await client.WaitForStatusAsync(
             ProxyFailureTestData.MachinesRoute,
             HttpStatusCode.ServiceUnavailable,
             ProxyFailureTestData.UnhealthyWaitLimit);
+
         var requestCountBeforeAct = core.RequestCount;
 
         using var response = await client.GetAsync(
@@ -86,9 +94,11 @@ public sealed class ProxyFailureTests(GatewayEnvironment environment)
     public async Task CoreRoute_WhenDestinationFails_LogsWarningWithoutAuthorizationHeader()
     {
         var logs = new CapturingLoggerProvider();
+
         await using var gateway = _environment.CreateGateway(
             ProxyFailureTestData.ClosedPortAddress,
             configureServices: services => services.AddSingleton<ILoggerFactory>(new LoggerFactory([logs])));
+
         using var client = gateway.CreateClient();
         var secretToken = gateway.Tokens.CreateToken(new TestTokenClaims());
         using var request = new HttpRequestMessage(HttpMethod.Get, ProxyFailureTestData.MachinesRoute);
@@ -97,6 +107,7 @@ public sealed class ProxyFailureTests(GatewayEnvironment environment)
         using var response = await client.SendAsync(request, TestContext.Current.CancellationToken);
 
         var warnings = logs.Entries.Where(entry => entry.Level == LogLevel.Warning).ToList();
+
         var leakedEntries = logs.Entries
             .Where(entry => entry.Message.Contains(secretToken)
                 || entry.Properties.Values.Any(value =>
@@ -108,6 +119,7 @@ public sealed class ProxyFailureTests(GatewayEnvironment environment)
             .Contain(entry =>
                 entry.Properties.ContainsKey(ProxyFailureTestData.RouteIdKey)
                 && entry.Properties[ProxyFailureTestData.RouteIdKey]!.ToString() == ProxyFailureTestData.CoreRouteId);
+
         leakedEntries.Should().BeEmpty();
     }
 }

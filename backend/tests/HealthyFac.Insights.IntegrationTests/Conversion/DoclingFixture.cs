@@ -35,10 +35,13 @@ public sealed class DoclingFixture : IAsyncLifetime, IResetBeforeEachTest
                     [$"{DoclingOptions.SectionName}:ApiKey"] = _docling.ApiKey,
                 })
             .Build();
+
         var services = new ServiceCollection();
         services.AddSingleton(TimeProvider.System);
+
         services.AddSingleton<IProviderCalls>(
             new ProviderResilience(Options.Create(new IngestProcessingOptions()), TimeProvider.System));
+
         services.AddDoclingConverter(configuration);
         _services = services.BuildServiceProvider();
     }

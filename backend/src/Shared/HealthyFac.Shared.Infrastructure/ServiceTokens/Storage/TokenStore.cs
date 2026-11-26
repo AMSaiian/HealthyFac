@@ -84,6 +84,7 @@ public sealed class TokenStore(
     )
     {
         var token = await TryReadUsableAsync(key, cancellationToken);
+
         if (token is not null)
         {
             return token;
@@ -110,6 +111,7 @@ public sealed class TokenStore(
         if (outcome == LockOutcome.Held)
         {
             var token = await WaitForOtherInstanceAsync(key, cancellationToken);
+
             if (token is not null)
             {
                 return token;
@@ -130,6 +132,7 @@ public sealed class TokenStore(
         try
         {
             var token = await TryReadUsableAsync(key, cancellationToken);
+
             if (token is not null)
             {
                 return token;
@@ -178,6 +181,7 @@ public sealed class TokenStore(
             try
             {
                 var token = await ReadUsableAsync(key, cancellationToken);
+
                 if (token is not null)
                 {
                     return token;
@@ -212,12 +216,14 @@ public sealed class TokenStore(
     private async Task TryStoreAsync(string key, CachedToken token, CancellationToken cancellationToken)
     {
         var now = _timeProvider.GetUtcNow();
+
         if (token.RefreshAt <= now)
         {
             return;
         }
 
         var json = new StoredToken { Token = token.Value, RefreshAt = token.RefreshAt }.ToJson();
+
         try
         {
             await _storage.SetAsync(key, json, token.ExpiresAt - now, cancellationToken);
@@ -264,12 +270,14 @@ public sealed class TokenStore(
     private async Task<string?> ReadUsableAsync(string key, CancellationToken cancellationToken)
     {
         var json = await _storage.GetAsync(key, cancellationToken);
+
         if (json is null)
         {
             return null;
         }
 
         var stored = StoredToken.FromJson(json);
+
         if (stored is null)
         {
             _logger.LogWarning(message: "Token entry {Key} is not a valid entry. The call treats it as missing.", key);

@@ -1,11 +1,13 @@
 using HealthyFac.Core.UnitTests.Employees.InviteTokens.Data;
 using HealthyFac.Shared.Application.Logging;
 using HealthyFac.Shared.Web.Logging;
+using HealthyFac.Testing.Features;
 using Serilog;
 using Serilog.Events;
 
 namespace HealthyFac.Core.UnitTests.Employees.InviteTokens;
 
+[Feature(TestFeatures.Companies)]
 public sealed class InviteTokenLoggingTests
 {
     [Theory]
@@ -16,6 +18,7 @@ public sealed class InviteTokenLoggingTests
     public void Destructure_WithInviteRequest_MasksToken(object request)
     {
         var sink = new CapturingLogEventSink();
+
         var logger = new LoggerConfiguration()
             .MinimumLevel.Debug()
             .Destructure.With<SensitiveDataDestructuringPolicy>()
@@ -25,7 +28,8 @@ public sealed class InviteTokenLoggingTests
         logger.Debug(messageTemplate: "Use case received request {@Request}", request);
 
         var logged = sink.Events.Should().ContainSingle().Subject;
-        var structure = logged.Properties[key: "Request"].Should().BeOfType<StructureValue>().Subject;
+        var structure = logged.Properties["Request"].Should().BeOfType<StructureValue>().Subject;
+
         var token = structure.Properties.Single(property =>
             property.Name == InviteTokenLoggingTestData.TokenPropertyName);
 

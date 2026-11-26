@@ -1,24 +1,32 @@
+using HealthyFac.Insights.Domain.Ingest;
 using HealthyFac.Insights.Infrastructure.Ingest.Persistence;
 using HealthyFac.Insights.IntegrationTests.Database.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.EntityFrameworkCore;
 
 namespace HealthyFac.Insights.IntegrationTests.Database;
 
 [Collection(InsightsCollection.Name)]
+[Feature(TestFeatures.Persistence)]
 public sealed class IngestAttemptConstraintTests(InsightsFixture fixture)
 {
     private readonly InsightsFixture _fixture = fixture;
 
-    [Fact]
-    public async Task Save_SecondActiveAttemptOfFile_FailsOnActiveFileIndex()
+    [Theory]
+    [MemberData(nameof(IngestAttemptTestData.DuplicateAttempts), MemberType = typeof(IngestAttemptTestData))]
+    public async Task Save_SecondAttemptOfFile_FailsOnItsFileIndex(
+        string caseName,
+        Func<IngestAttempt> createAttempt,
+        string expectedIndexName
+    )
     {
-        await _fixture.SaveAsync(IngestAttemptTestData.CreateQueued());
+        await _fixture.SaveAsync(createAttempt());
 
-        var act = () => _fixture.SaveAsync(IngestAttemptTestData.CreateQueued());
+        var act = () => _fixture.SaveAsync(createAttempt());
 
         await act.Should()
-            .ThrowAsync<DbUpdateException>()
-            .Where(exception => exception.InnerException!.Message.Contains(IngestIndexNames.ActiveFile));
+            .ThrowAsync<DbUpdateException>(caseName)
+            .Where(exception => exception.InnerException!.Message.Contains(expectedIndexName));
     }
 
     [Fact]
@@ -29,18 +37,6 @@ public sealed class IngestAttemptConstraintTests(InsightsFixture fixture)
         var act = () => _fixture.SaveAsync(IngestAttemptTestData.CreateQueued());
 
         await act.Should().NotThrowAsync();
-    }
-
-    [Fact]
-    public async Task Save_SecondCompletedAttemptOfFile_FailsOnCompletedFileIndex()
-    {
-        await _fixture.SaveAsync(IngestAttemptTestData.CreateCompleted());
-
-        var act = () => _fixture.SaveAsync(IngestAttemptTestData.CreateCompleted());
-
-        await act.Should()
-            .ThrowAsync<DbUpdateException>()
-            .Where(exception => exception.InnerException!.Message.Contains(IngestIndexNames.CompletedFile));
     }
 
     [Fact]

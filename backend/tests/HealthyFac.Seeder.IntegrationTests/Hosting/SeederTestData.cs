@@ -21,17 +21,17 @@ public static class SeederTestData
 
     public static readonly IReadOnlyDictionary<string, string> RealmEnvironment = new Dictionary<string, string>
     {
-        [key: "HEALTHYFAC_SPA_URL"] = KeycloakSpaUrl,
-        [key: "HEALTHYFAC_TEST_COMPANY_ID"] = "0190f3a0-0000-7000-8000-000000000001",
-        [key: "HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID"] = "0190f3a0-0000-7000-8000-000000000002",
-        [key: "HEALTHYFAC_TEST_SUPERVISOR_EMPLOYEE_ID"] = "0190f3a0-0000-7000-8000-000000000003",
-        [key: "HEALTHYFAC_TEST_SUPERVISOR_EMAIL"] = SupervisorEmail,
-        [key: "HEALTHYFAC_TEST_SUPERVISOR_PASSWORD"] = SupervisorPassword,
-        [key: "KEYCLOAK_AUTH_CLIENT_SECRET"] = AuthClientSecret,
-        [key: "KEYCLOAK_CORE_CLIENT_SECRET"] = "test-core-client-secret",
-        [key: "KEYCLOAK_TELEMETRY_CLIENT_SECRET"] = "test-telemetry-client-secret",
-        [key: "KEYCLOAK_DOCUMENT_CLIENT_SECRET"] = "test-document-client-secret",
-        [key: "KEYCLOAK_INSIGHTS_CLIENT_SECRET"] = "test-insights-client-secret",
+        ["HEALTHYFAC_SPA_URL"] = KeycloakSpaUrl,
+        ["HEALTHYFAC_TEST_COMPANY_ID"] = "0190f3a0-0000-7000-8000-000000000001",
+        ["HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID"] = "0190f3a0-0000-7000-8000-000000000002",
+        ["HEALTHYFAC_TEST_SUPERVISOR_EMPLOYEE_ID"] = "0190f3a0-0000-7000-8000-000000000003",
+        ["HEALTHYFAC_TEST_SUPERVISOR_EMAIL"] = SupervisorEmail,
+        ["HEALTHYFAC_TEST_SUPERVISOR_PASSWORD"] = SupervisorPassword,
+        ["KEYCLOAK_AUTH_CLIENT_SECRET"] = AuthClientSecret,
+        ["KEYCLOAK_CORE_CLIENT_SECRET"] = "test-core-client-secret",
+        ["KEYCLOAK_TELEMETRY_CLIENT_SECRET"] = "test-telemetry-client-secret",
+        ["KEYCLOAK_DOCUMENT_CLIENT_SECRET"] = "test-document-client-secret",
+        ["KEYCLOAK_INSIGHTS_CLIENT_SECRET"] = "test-insights-client-secret",
     };
 
     public static readonly DateTimeOffset FirstMoment = new(

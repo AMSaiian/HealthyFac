@@ -5,9 +5,12 @@ using HealthyFac.Shared.Application.IdEncryption;
 using HealthyFac.Shared.Infrastructure.IdEncryption;
 using HealthyFac.Shared.Infrastructure.IdEncryption.Json;
 using HealthyFac.Shared.UnitTests.IdEncryption.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.UnitTests.IdEncryption;
 
+[Feature(TestFeatures.Platform)]
+[Feature(TestFeatures.Conventions)]
 public sealed class IdEncryptionCollectionConventionTests
 {
     private readonly IIdEncryptor _encryptor =
@@ -42,12 +45,15 @@ public sealed class IdEncryptionCollectionConventionTests
         var parsed = JsonNode.Parse(JsonSerializer.Serialize(model, _jsonOptions));
 
         parsed.Should().NotBeNull();
+
         DecryptElements(parsed[IdEncryptionCollectionConventionTestData.TagIdsPropertyName])
             .Should()
             .Equal(model.TagIds);
+
         DecryptElements(parsed[IdEncryptionCollectionConventionTestData.MachineIdsPropertyName])
             .Should()
             .Equal(model.MachineIds);
+
         DecryptElements(parsed[IdEncryptionCollectionConventionTestData.StepIdsPropertyName])
             .Should()
             .Equal(model.StepIds);
@@ -63,10 +69,12 @@ public sealed class IdEncryptionCollectionConventionTests
         var parsed = JsonNode.Parse(JsonSerializer.Serialize(model, _jsonOptions));
 
         parsed.Should().NotBeNull();
+
         parsed[IdEncryptionCollectionConventionTestData.IgnoredIdsPropertyName]!.AsArray()
             .Select(element => element!.GetValue<Guid>())
             .Should()
             .Equal(model.IgnoredIds);
+
         parsed[IdEncryptionCollectionConventionTestData.CorrelationTokensPropertyName]!.AsArray()
             .Select(element => element!.GetValue<Guid>())
             .Should()
@@ -83,6 +91,7 @@ public sealed class IdEncryptionCollectionConventionTests
         var parsed = JsonNode.Parse(JsonSerializer.Serialize(model, _jsonOptions));
 
         parsed.Should().NotBeNull();
+
         parsed.AsObject()
             .Should()
             .ContainKey(IdEncryptionCollectionConventionTestData.OptionalIdsPropertyName)
@@ -125,8 +134,10 @@ public sealed class IdEncryptionCollectionConventionTests
     }
 
     private List<Guid> DecryptElements(JsonNode? array)
-        => array!.AsArray()
-            .Select(element => element!.GetValue<string>())
-            .Select(_encryptor.Decrypt)
-            .ToList();
+        =>
+        [
+            .. array!.AsArray()
+                .Select(element => element!.GetValue<string>())
+                .Select(_encryptor.Decrypt),
+        ];
 }

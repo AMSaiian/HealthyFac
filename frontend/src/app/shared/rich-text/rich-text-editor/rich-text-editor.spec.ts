@@ -23,7 +23,7 @@ function file(name: string, size: number, type = ''): File {
   return new File([new Uint8Array(size)], name, { type });
 }
 
-describe('RichTextEditor', () => {
+describe('RichTextEditor', { tags: ['Platform'] }, () => {
   async function setup(): Promise<{
     editor: RichTextEditor;
     internals: Internals;

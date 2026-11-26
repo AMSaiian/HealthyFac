@@ -54,6 +54,7 @@ public sealed class AgentDraftExtractor(
     )
     {
         var streak = new FailureStreak(_agentOptions.MaxConsecutiveErrors);
+
         var context = new ToolContext
         {
             CompanyId = input.CompanyId,
@@ -64,6 +65,7 @@ public sealed class AgentDraftExtractor(
             CurrentCallId = _toolCallIds.Current,
             EndLoop = _toolCallIds.EndLoop,
         };
+
         session.Log.Run.UseModel(_options.ChatModel, ExtractionPrompt.Version, ExtractionPrompt.HashTemplate());
         var agent = CreateAgent(ExtractionPrompt.BuildSystemPrompt(input), _registry.For(AgentRole.Extractor, context));
         var agentSession = await agent.CreateSessionAsync(cancellationToken);

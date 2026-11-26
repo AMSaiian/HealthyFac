@@ -11,6 +11,7 @@ using var handler = new HttpClientHandler
 {
     AllowAutoRedirect = false,
 };
+
 using var client = new HttpClient(handler)
 {
     Timeout = TimeSpan.FromSeconds(ProbeConstants.TimeoutSeconds),
@@ -39,7 +40,7 @@ catch (Exception exception) when (exception is HttpRequestException or TaskCance
     return ProbeConstants.ExitCodes.Unhealthy;
 }
 
-bool IsSchemaValid(string uriString, out Uri? uri)
+static bool IsSchemaValid(string uriString, out Uri? uri)
 {
     uri = null;
 

@@ -7,10 +7,12 @@ using HealthyFac.Document.IntegrationTests.MachineRegistrations.Data;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.Filters;
 using HealthyFac.Shared.Application.Grids;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Document.IntegrationTests.Files;
 
 [Collection(DocumentDatabaseCollection.Name)]
+[Feature(TestFeatures.Files)]
 public sealed class SearchFilesTests(DocumentDatabaseFixture fixture)
 {
     private readonly DocumentDatabaseFixture _fixture = fixture;
@@ -19,6 +21,7 @@ public sealed class SearchFilesTests(DocumentDatabaseFixture fixture)
     public async Task SearchCompanyFiles_Always_ReturnsActiveCompanyAttachmentsTiedOrNot()
     {
         var machineId = await _fixture.RegisterMachineAsync(SearchFilesTestData.CompanyId);
+
         var ids = await _fixture.SeedFilesAsync(
             SearchFilesTestData.CompanyId,
             [
@@ -37,13 +40,14 @@ public sealed class SearchFilesTests(DocumentDatabaseFixture fixture)
                     CompanyId: SearchFilesTestData.OtherCompanyId),
                 new FileSeed(FileName: "deleted", Extension: "pdf", SizeBytes: 10, SearchFilesTestData.FirstUploadedAt),
             ]);
-        await _fixture.DeleteFileRefAsync(SearchFilesTestData.CompanyId, ids[index: 4]);
+
+        await _fixture.DeleteFileRefAsync(SearchFilesTestData.CompanyId, ids[4]);
 
         var response = await _fixture.SearchCompanyFilesAsync(
             SearchFilesTestData.CompanyId,
             SearchFilesTestData.CreateCompanySearch(SearchFilesTestData.CompanyId));
 
-        response.Items.Select(item => item.Id).Should().BeEquivalentTo([ids[index: 0], ids[index: 1]]);
+        response.Items.Select(item => item.Id).Should().BeEquivalentTo([ids[0], ids[1]]);
         response.TotalCount.Should().Be(expected: 2);
     }
 
@@ -52,6 +56,7 @@ public sealed class SearchFilesTests(DocumentDatabaseFixture fixture)
     {
         var machineId = await _fixture.RegisterMachineAsync(SearchFilesTestData.CompanyId);
         var otherMachineId = await _fixture.RegisterMachineAsync(SearchFilesTestData.CompanyId);
+
         var ids = await _fixture.SeedFilesAsync(
             SearchFilesTestData.CompanyId,
             [
@@ -67,7 +72,7 @@ public sealed class SearchFilesTests(DocumentDatabaseFixture fixture)
             SearchFilesTestData.CompanyId,
             SearchFilesTestData.CreateMachineSearch(SearchFilesTestData.CompanyId, machineId));
 
-        response.Items.Select(item => item.Id).Should().Equal(ids[index: 0]);
+        response.Items.Select(item => item.Id).Should().Equal(ids[0]);
     }
 
     [Fact]
@@ -92,7 +97,7 @@ public sealed class SearchFilesTests(DocumentDatabaseFixture fixture)
             SearchFilesTestData.CompanyId,
             SearchFilesTestData.CreateCompanySearch(SearchFilesTestData.CompanyId, filter));
 
-        response.Items.Select(item => item.Id).Should().BeEquivalentTo([ids[index: 0], ids[index: 1]]);
+        response.Items.Select(item => item.Id).Should().BeEquivalentTo([ids[0], ids[1]]);
     }
 
     [Fact]
@@ -105,13 +110,14 @@ public sealed class SearchFilesTests(DocumentDatabaseFixture fixture)
             SearchFilesTestData.CompanyId,
             SearchFilesTestData.CreateCompanySearch(SearchFilesTestData.CompanyId, filter));
 
-        response.Items.Select(item => item.Id).Should().BeEquivalentTo([ids[index: 1], ids[index: 3]]);
+        response.Items.Select(item => item.Id).Should().BeEquivalentTo([ids[1], ids[3]]);
     }
 
     [Fact]
     public async Task SearchCompanyFiles_WithUploadRange_IncludesFromAndExcludesTo()
     {
         var ids = await _fixture.SeedFilesAsync(SearchFilesTestData.CompanyId, SearchFilesTestData.CreateSeeds());
+
         var filter = new FileGridFilter
         {
             UploadedAt = new DateRangeFilter
@@ -125,7 +131,7 @@ public sealed class SearchFilesTests(DocumentDatabaseFixture fixture)
             SearchFilesTestData.CompanyId,
             SearchFilesTestData.CreateCompanySearch(SearchFilesTestData.CompanyId, filter));
 
-        response.Items.Select(item => item.Id).Should().BeEquivalentTo([ids[index: 1], ids[index: 2]]);
+        response.Items.Select(item => item.Id).Should().BeEquivalentTo([ids[1], ids[2]]);
     }
 
     [Theory]
@@ -157,7 +163,7 @@ public sealed class SearchFilesTests(DocumentDatabaseFixture fixture)
 
         response.Items.Select(item => item.Id)
             .Should()
-            .Equal(ids[index: 3], ids[index: 2], ids[index: 1], ids[index: 0]);
+            .Equal(ids[3], ids[2], ids[1], ids[0]);
     }
 
     [Fact]
@@ -172,7 +178,7 @@ public sealed class SearchFilesTests(DocumentDatabaseFixture fixture)
                 offset: SearchFilesTestData.SecondPageOffset,
                 limit: SearchFilesTestData.PageSize));
 
-        response.Items.Select(item => item.Id).Should().Equal(ids[index: 1], ids[index: 0]);
+        response.Items.Select(item => item.Id).Should().Equal(ids[1], ids[0]);
         response.TotalCount.Should().Be(expected: 4);
     }
 
@@ -189,7 +195,7 @@ public sealed class SearchFilesTests(DocumentDatabaseFixture fixture)
 
         var item = response.Items.Single();
 
-        item.Id.Should().Be(ids[index: 0]);
+        item.Id.Should().Be(ids[0]);
         item.FileName.Should().Be(expected: "row");
         item.Extension.Should().Be(expected: "pdf");
         item.ContentType.Should().Be(expected: "application/pdf");

@@ -28,6 +28,7 @@ public static class FileContentDisposition
         }
 
         var fullName = $"{fileName}.{type.Extension}";
+
         var header = new ContentDispositionHeaderValue(Attachment)
         {
             FileName = ToAsciiName(fullName),
@@ -46,8 +47,10 @@ public static class FileContentDisposition
                 for (var index = 0; index < source.Length; index++)
                 {
                     var character = source[index];
+
                     var isSafe = character is > ' ' and < '\u007f' and not '"' and not '\\' and not '%'
-                        || character == ' ';
+                        or ' ';
+
                     span[index] = isSafe ? character : Replacement;
                 }
             });

@@ -34,18 +34,25 @@ public static class RealtimeExtensions
         {
             services.AddSharedRedis(configuration);
             services.AddSingleton<IUserIdProvider, SubjectUserIdProvider>();
+
             services.AddSignalR()
                 .AddJsonProtocol()
                 .AddStackExchangeRedis();
+
             services.AddOptions<JsonHubProtocolOptions>()
                 .Configure<IServiceProvider>(ConfigureJsonProtocol);
+
             services.AddOptions<SignalRRedisOptions>()
                 .Configure<IServiceProvider>(ConfigureBackplane);
+
             services.AddMetrics();
             services.AddSingleton<RealtimeMetrics>();
+
             services.AddSingleton<IBackgroundItemDropObserver<RealtimePush>>(provider =>
                 provider.GetRequiredService<RealtimeMetrics>());
+
             services.AddScoped<IBackgroundItemHandler<RealtimePush>, RealtimePushHandler>();
+
             services.AddResiliencePipeline(
                 RealtimeConstants.Push.PipelineKey,
                 (builder, context) => ConfigurePushPipeline(
@@ -59,6 +66,7 @@ public static class RealtimeExtensions
     internal static void ConfigurePushPipeline(ResiliencePipelineBuilder builder, TimeProvider timeProvider)
     {
         builder.TimeProvider = timeProvider;
+
         builder.AddRetry(
             new RetryStrategyOptions
             {
@@ -75,6 +83,7 @@ public static class RealtimeExtensions
         SharedJsonOptionsConfigurator.Apply(options.PayloadSerializerOptions);
 
         var encryptor = provider.GetService<IIdEncryptor>();
+
         if (encryptor is not null)
         {
             IdEncryptionJsonOptionsConfigurator.Apply(options.PayloadSerializerOptions, encryptor);

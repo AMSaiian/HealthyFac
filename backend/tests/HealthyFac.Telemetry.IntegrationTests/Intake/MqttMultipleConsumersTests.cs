@@ -1,8 +1,10 @@
 using HealthyFac.Telemetry.IntegrationTests.Intake.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.IntegrationTests.Intake;
 
 [Collection(TelemetryMqttCollection.Name)]
+[Feature(TestFeatures.Intake)]
 public sealed class MqttMultipleConsumersTests(MqttIntakeFixture fixture)
     : IAsyncLifetime
 {
@@ -31,8 +33,10 @@ public sealed class MqttMultipleConsumersTests(MqttIntakeFixture fixture)
         var machine = await _fixture.Database.ArrangeIntakeMachineAsync();
         var topic = ReceiveMachineMessageTestData.TopicFor(machine.GatewayId);
         var firstPayload = ReceiveMachineMessageTestData.Bytes(ReceiveMachineMessageTestData.CreateMessage());
+
         var secondPayload = ReceiveMachineMessageTestData.Bytes(
             ReceiveMachineMessageTestData.CreateMessage(ReceiveMachineMessageTestData.SampledAt.AddSeconds(value: 1)));
+
         _fixture.OverlapProbe.Arm();
 
         await _fixture.PublishAllAsync(topic, [firstPayload, secondPayload]);

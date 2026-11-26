@@ -1,8 +1,10 @@
 using HealthyFac.Spa.IntegrationTests.Hosting.Data;
 using HealthyFac.Spa.Web.Hosting;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Spa.IntegrationTests.Hosting;
 
+[Feature(TestFeatures.Platform)]
 public sealed class SpaOptionsValidatorTests
 {
     private const string ContentRoot = "wwwroot";

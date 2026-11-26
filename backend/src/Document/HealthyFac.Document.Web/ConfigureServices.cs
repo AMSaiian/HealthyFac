@@ -81,13 +81,17 @@ public static class ConfigureServices
         private IServiceCollection AddApiUploads(IConfiguration configuration)
         {
             services.AddValidatedOptions<UploadLimits, UploadLimitsValidator>(UploadLimits.SectionName, configuration);
+
             services.Configure<FormOptions>(options =>
             {
                 options.MultipartBodyLengthLimit = FileValidationConstants.Size.AttachmentMaxBytes
                     + FileValidationConstants.Size.MultipartOverheadBytes;
+
                 options.MemoryBufferThreshold = UploadLimits.MemoryBufferThresholdBytes;
             });
+
             services.AddRateLimiter(options => options.RejectionStatusCode = UploadLimits.RejectionStatusCode);
+
             services.AddOptions<RateLimiterOptions>()
                 .Configure<IOptions<UploadLimits>>((options, limits) =>
                     options.AddConcurrencyLimiter(
@@ -109,6 +113,7 @@ public static class ConfigureServices
                 options.LowercaseUrls = true;
                 options.LowercaseQueryStrings = true;
             });
+
             services.AddApiUploads(configuration);
             services.AddSharedJsonOptions();
             services.AddIdEncryption(configuration);
@@ -123,6 +128,7 @@ public static class ConfigureServices
             services.AddSharedLogging(configuration);
             services.AddSharedTracing(configuration);
             services.AddSharedMetrics(configuration);
+
             services.AddSharedHealthChecks(configuration)
                 .AddDbContextCheck<DocumentDbContext>(
                     DatabaseConstants.HealthCheckName,

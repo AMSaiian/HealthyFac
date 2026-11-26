@@ -1,3 +1,5 @@
+using System.Net;
+
 namespace HealthyFac.Telemetry.ApiTests.MetricDefinitions.Data;
 
 public static class MetricDefinitionApiTestData
@@ -27,4 +29,10 @@ public static class MetricDefinitionApiTestData
         "{\"expectedRevision\":0,\"created\":[{\"key\":\"Bad Key\",\"name\":\"Name\",\"valueKind\":\"boolean\"}]}";
 
     public const string InvalidDeletedIdBody = "{\"expectedRevision\":0,\"deleted\":[\"not-an-encrypted-id\"]}";
+
+    public static TheoryData<string, string, HttpStatusCode> RejectedApplyBodies => new()
+    {
+        { "stale revision", StaleBody, HttpStatusCode.Conflict },
+        { "invalid deleted ID", InvalidDeletedIdBody, HttpStatusCode.NotFound },
+    };
 }

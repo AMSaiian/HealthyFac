@@ -22,8 +22,7 @@ public sealed class DoclingHealthCheck(IHttpClientFactory httpClientFactory) : I
     private const string UnhealthyStatusFormat = "Docling answered with the status {0}.";
     private const string UnreachableMessage = "Docling did not answer.";
 
-    private readonly Lazy<HttpClient> _client = new(
-        () => httpClientFactory.CreateClient(DoclingConstants.ClientName));
+    private readonly Lazy<HttpClient> _client = new(() => httpClientFactory.CreateClient(DoclingConstants.ClientName));
 
     public async Task<HealthCheckResult> CheckHealthAsync(
         HealthCheckContext context,

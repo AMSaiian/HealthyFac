@@ -103,6 +103,7 @@ public class CreateEmployeeInviteRequestHandler(
     {
         var isEmailEmployed = await _dbContext.Employees.AnyAsync(
             employee => employee.Email == request.Email, cancellationToken);
+
         if (isEmailEmployed)
         {
             throw new ConflictException(EmployeeInviteErrors.Rejections.EmailAlreadyEmployed);
@@ -113,6 +114,7 @@ public class CreateEmployeeInviteRequestHandler(
                 && invite.Email == request.Email
                 && invite.AcceptedAt == null,
             cancellationToken);
+
         if (hasOpenInvite)
         {
             throw new ConflictException(EmployeeInviteErrors.Rejections.OpenInviteExists);
@@ -130,8 +132,10 @@ public class CreateEmployeeInviteRequestHandler(
             roleId,
             _tokenService.CreateSalt(),
             _tokenService.GetExpiresAt(_timeProvider.GetUtcNow().UtcDateTime));
+
         invite.UpdateProfile(request.FirstName, request.LastName);
         _dbContext.EmployeeInvites.Add(invite);
+
         _outbox.Add(
             new EmployeeInvited
             {

@@ -52,14 +52,14 @@ public sealed class MqttIntakeFixture : IAsyncLifetime, IResetBeforeEachTest
         _database = new TelemetryDatabaseFixture(
             settings =>
             {
-                settings[key: "MqttIntake:IsEnabled"] = bool.TrueString;
-                settings[key: "MqttIntake:Host"] = _broker.Host;
-                settings[key: "MqttIntake:Port"] = _broker.Port.ToString();
-                settings[key: "MqttIntake:Username"] = MosquittoTestBroker.TelemetryUser;
-                settings[key: "MqttIntake:Password"] = _broker.TelemetryPassword;
-                settings[key: "MqttIntake:ClientId"] = "intake-" + Guid.NewGuid().ToString(format: "N");
-                settings[key: "MqttIntake:SharedGroup"] = Guid.NewGuid().ToString(format: "N");
-                settings[key: "MqttIntake:ReconnectDelaySeconds"] = "1";
+                settings["MqttIntake:IsEnabled"] = bool.TrueString;
+                settings["MqttIntake:Host"] = _broker.Host;
+                settings["MqttIntake:Port"] = _broker.Port.ToString();
+                settings["MqttIntake:Username"] = MosquittoTestBroker.TelemetryUser;
+                settings["MqttIntake:Password"] = _broker.TelemetryPassword;
+                settings["MqttIntake:ClientId"] = "intake-" + Guid.NewGuid().ToString(format: "N");
+                settings["MqttIntake:SharedGroup"] = Guid.NewGuid().ToString(format: "N");
+                settings["MqttIntake:ReconnectDelaySeconds"] = "1";
             },
             services =>
                 services.ConfigureDbContext<HealthyFac.Telemetry.Infrastructure.Database.TelemetryDbContext>(options =>
@@ -89,6 +89,7 @@ public sealed class MqttIntakeFixture : IAsyncLifetime, IResetBeforeEachTest
     public async Task PublishAsync(string topic, byte[] payload)
     {
         using var sender = _clientFactory.CreateMqttClient();
+
         await sender.ConnectAsync(
             new MqttClientOptionsBuilder()
                 .WithTcpServer(_broker.Host, _broker.Port)
@@ -102,6 +103,7 @@ public sealed class MqttIntakeFixture : IAsyncLifetime, IResetBeforeEachTest
                 .WithPayload(payload)
                 .WithQualityOfServiceLevel(MqttQualityOfServiceLevel.AtLeastOnce)
                 .Build());
+
         await sender.DisconnectAsync();
     }
 
@@ -115,6 +117,7 @@ public sealed class MqttIntakeFixture : IAsyncLifetime, IResetBeforeEachTest
         var state = new MqttIntakeState();
         var defaults = new MqttIntakeOptions();
         var meterServices = new ServiceCollection().AddMetrics().BuildServiceProvider();
+
         var service = new MqttIntakeService(
             Options.Create(
                 new MqttIntakeOptions
@@ -162,12 +165,14 @@ public sealed class MqttIntakeFixture : IAsyncLifetime, IResetBeforeEachTest
     {
         using var client = _clientFactory.CreateMqttClient();
         await ReconnectAsync(clientId, client);
+
         await client.SubscribeAsync(
             new MqttClientSubscribeOptionsBuilder()
                 .WithTopicFilter(
                     string.Format(MqttIntakeConstants.SharedSubscriptionFormat, sharedGroup),
                     MqttQualityOfServiceLevel.AtLeastOnce)
                 .Build());
+
         await client.DisconnectAsync();
     }
 

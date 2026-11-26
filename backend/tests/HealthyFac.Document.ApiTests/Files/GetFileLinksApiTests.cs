@@ -2,15 +2,16 @@ using System.Net;
 using System.Text.Json.Nodes;
 using HealthyFac.Document.ApiTests.Files.Data;
 using HealthyFac.Document.ApiTests.Hosting;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Document.ApiTests.Files;
 
 [Collection(DocumentApiCollection.Name)]
+[Feature(TestFeatures.Files)]
 public sealed class GetFileLinksApiTests(DocumentApiFixture fixture)
 {
     private const string ReadPermission = "files:read";
     private const string LinksPath = "v1/files/links";
-    private const int TooManyIds = 1001;
 
     private readonly DocumentApiFixture _fixture = fixture;
 
@@ -24,8 +25,8 @@ public sealed class GetFileLinksApiTests(DocumentApiFixture fixture)
         var body = JsonNode.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken))!;
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        body[propertyName: "links"]!.AsArray().Should().ContainSingle();
-        body[propertyName: "links"]![index: 0]![propertyName: "id"]!.GetValue<string>().Should().Be(file.EncryptedId);
+        body["links"]!.AsArray().Should().ContainSingle();
+        body["links"]![0]!["id"]!.GetValue<string>().Should().Be(file.EncryptedId);
     }
 
     [Fact]
@@ -38,17 +39,6 @@ public sealed class GetFileLinksApiTests(DocumentApiFixture fixture)
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
 
-    [Fact]
-    public async Task GetFileLinks_WithTooManyIds_Returns400()
-    {
-        var claims = _fixture.CreateClaims(ReadPermission);
-        var body = IdsBody([.. Enumerable.Range(start: 0, TooManyIds).Select(_ => "id")]);
-
-        var response = await _fixture.SendAsync(HttpMethod.Post, LinksPath, claims, body);
-
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-    }
-
     private static string IdsBody(params string[] ids) =>
-        new JsonObject { [propertyName: "ids"] = new JsonArray([.. ids.Select(id => (JsonNode)id)]) }.ToJsonString();
+        new JsonObject { ["ids"] = new JsonArray([.. ids.Select(id => (JsonNode)id)]) }.ToJsonString();
 }

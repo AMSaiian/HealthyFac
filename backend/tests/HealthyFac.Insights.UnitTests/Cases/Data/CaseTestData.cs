@@ -36,6 +36,7 @@ public static class CaseTestData
     )
     {
         var effectiveState = state ?? SignalState.Open;
+
         var signal = new MachineSignal(
             Guid.CreateVersion7(),
             MachineId,

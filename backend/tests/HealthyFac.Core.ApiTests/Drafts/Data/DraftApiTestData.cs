@@ -39,23 +39,23 @@ public static class DraftApiTestData
     public static string MachineUpdateBody(string name, string serialNumber) =>
         new JsonObject
         {
-            [propertyName: "name"] = name,
-            [propertyName: "serialNumber"] = serialNumber,
-            [propertyName: "expectedGoLiveOn"] = MachineApiTestData.FutureGoLiveOn,
-            [propertyName: "state"] = MachineApiTestData.OperationalState,
+            ["name"] = name,
+            ["serialNumber"] = serialNumber,
+            ["expectedGoLiveOn"] = MachineApiTestData.FutureGoLiveOn,
+            ["state"] = MachineApiTestData.OperationalState,
         }.ToJsonString();
 
     public static string ApplyBody(string name, string serialNumber, uint? rowVersion = null)
     {
         var body = new JsonObject
         {
-            [propertyName: "name"] = name,
-            [propertyName: "serialNumber"] = serialNumber,
+            ["name"] = name,
+            ["serialNumber"] = serialNumber,
         };
 
         if (rowVersion is { } version)
         {
-            body[propertyName: "rowVersion"] = version;
+            body["rowVersion"] = version;
         }
 
         return body.ToJsonString();

@@ -4,10 +4,12 @@ using HealthyFac.Telemetry.Domain.MachineRegistrations;
 using HealthyFac.Telemetry.IntegrationTests.Database.Data;
 using HealthyFac.Telemetry.IntegrationTests.Intake;
 using HealthyFac.Telemetry.IntegrationTests.MachineRegistrations.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.IntegrationTests.MachineRegistrations;
 
 [Collection(TelemetryIntakeCollection.Name)]
+[Feature(TestFeatures.Machines)]
 public sealed class MachineStateFlowTests(TelemetryDatabaseFixture fixture)
 {
     private readonly TelemetryDatabaseFixture _fixture = fixture;
@@ -33,6 +35,7 @@ public sealed class MachineStateFlowTests(TelemetryDatabaseFixture fixture)
     public async Task ChangeMachineState_WithOlderStart_ChangesNothing()
     {
         var machineId = await ArrangeRegistrationAsync();
+
         await _fixture.ChangeMachineStateAsync(
             MachineRegistrationTestData.CreateStateMessage(
                 machineId,
@@ -76,6 +79,7 @@ public sealed class MachineStateFlowTests(TelemetryDatabaseFixture fixture)
             ExpectedGoLiveOn = MachineRegistrationTestData.GoLiveDay,
             GoLiveStartsAt = MachineRegistrationTestData.GoLiveStart,
         };
+
         await _fixture.RegisterMachineAsync(message);
 
         await _fixture.RegisterMachineAsync(
@@ -113,6 +117,7 @@ public sealed class MachineStateFlowTests(TelemetryDatabaseFixture fixture)
     public async Task ChangeMachineGoLiveDate_WithOlderChange_ChangesNothing()
     {
         var machineId = await ArrangeRegistrationAsync();
+
         await _fixture.ChangeMachineGoLiveDateAsync(
             MachineRegistrationTestData.CreateGoLiveMessage(
                 machineId,
@@ -140,7 +145,9 @@ public sealed class MachineStateFlowTests(TelemetryDatabaseFixture fixture)
             ExpectedGoLiveOn = MachineRegistrationTestData.GoLiveDay,
             GoLiveStartsAt = MachineRegistrationTestData.GoLiveStart,
         };
+
         await _fixture.RegisterMachineAsync(message);
+
         await _fixture.ChangeMachineGoLiveDateAsync(
             MachineRegistrationTestData.CreateGoLiveMessage(
                 message.MachineId,

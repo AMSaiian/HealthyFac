@@ -28,7 +28,7 @@ function createStore(storage: Storage | null): InstanceType<typeof CounterStore>
   return TestBed.inject(CounterStore);
 }
 
-describe('withStorageSync', () => {
+describe('withStorageSync', { tags: ['Platform'] }, () => {
   it('onInit_WhenStorageIsNull_KeepsInitialState', () => {
     const store = createStore(null);
 

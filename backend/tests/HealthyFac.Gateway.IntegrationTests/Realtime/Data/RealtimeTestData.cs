@@ -35,6 +35,12 @@ public static class RealtimeTestData
             Data = new TestNotificationData { MachineId = MachineId },
         };
 
+    public static TheoryData<string, string?> AcceptedOrigins => new()
+    {
+        { "listed origin", GatewayFactory.DefaultCorsOrigin },
+        { "no origin", null },
+    };
+
     public static WebSocketClient CreateWebSocketClient(GatewayFactory gateway)
     {
         var client = gateway.Server.CreateWebSocketClient();

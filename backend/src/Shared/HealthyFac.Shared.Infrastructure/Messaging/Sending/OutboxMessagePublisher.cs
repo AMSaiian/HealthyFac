@@ -61,6 +61,7 @@ internal sealed class OutboxMessagePublisher(
             {
                 var now = _timeProvider.GetUtcNow().UtcDateTime;
                 var message = await _dbContext.ClaimNextOutboxMessageAsync(now, token);
+
                 if (message is null)
                 {
                     return ClaimResult.None;
@@ -86,6 +87,7 @@ internal sealed class OutboxMessagePublisher(
     private async Task<bool> TryPublishAsync(OutboxMessage message, DateTime now, CancellationToken cancellationToken)
     {
         var startedAt = _timeProvider.GetTimestamp();
+
         using var activity = MessagingActivitySource.Instance.StartMessagingActivity(
             ObservabilityConstants.Messaging.Operations.Send,
             ActivityKind.Producer,
@@ -99,6 +101,7 @@ internal sealed class OutboxMessagePublisher(
                 message.Type,
                 new IntegrationEnvelope { Type = message.Type, Payload = message.Payload },
                 CreateHeaders(message, activity));
+
             message.MarkPublished(now);
             activity.MarkSuccess();
             _metrics.RecordPublished(message.Type);
@@ -109,11 +112,13 @@ internal sealed class OutboxMessagePublisher(
         catch (Exception exception) when (!cancellationToken.IsCancellationRequested)
         {
             activity.MarkException(exception);
+
             _logger.LogWarning(
                 exception,
                 message: "Publishing outbox message {MessageId} of type {MessageType} failed.",
                 message.Id,
                 message.Type);
+
             message.ScheduleRetry(now, exception.Message);
             _metrics.RecordRetried(ObservabilityConstants.Messaging.Processors.Outbox, message.Type);
             RecordPublish(message, ObservabilityConstants.Outcomes.Failure, startedAt);
@@ -143,6 +148,7 @@ internal sealed class OutboxMessagePublisher(
         }
 
         var traceParent = sendActivity?.Id ?? message.TraceParent;
+
         if (traceParent is not null)
         {
             headers[MessageHeaders.TraceParent] = traceParent;

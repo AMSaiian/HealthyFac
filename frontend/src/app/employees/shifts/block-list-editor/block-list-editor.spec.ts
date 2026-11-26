@@ -13,7 +13,7 @@ interface EditorMethods {
   change(index: number, part: 'start' | 'end', time: Temporal.PlainTime | null): void;
 }
 
-describe('BlockListEditor', () => {
+describe('BlockListEditor', { tags: ['Shifts'] }, () => {
   const MORNING: ShiftBlock = { start: '08:00', end: '12:00' };
 
   const TODAY = Temporal.PlainDate.from('2027-04-12');

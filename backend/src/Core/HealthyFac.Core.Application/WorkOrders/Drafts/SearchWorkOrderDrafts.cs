@@ -84,6 +84,7 @@ public sealed class SearchWorkOrderDraftsRequestValidator
         : base(WorkOrderDraftSortColumn.All)
     {
         RuleFor(request => request.CompanyId).NotEmpty().WithMessage(WorkOrderDraftErrors.Validation.CompanyIdRequired);
+
         RuleFor(request => request.Filter!)
             .SetValidator(new WorkOrderDraftGridFilterValidator())
             .When(request => request.Filter is not null);

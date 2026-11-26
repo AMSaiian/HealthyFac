@@ -24,6 +24,7 @@ public static class GetFileLinksFixtureExtensions
         )
         {
             using var scope = fixture.CreateUserScope(companyId);
+
             var handler = scope.ServiceProvider
                 .GetRequiredService<IRequestHandler<GetFileLinksRequest, GetFileLinksResponse>>();
 
@@ -47,6 +48,7 @@ public static class GetFileLinksFixtureExtensions
         public Uri RebaseOnStorage(FileLink link)
         {
             var query = new Uri(link.Url).Query;
+
             var path =
                 $"{fixture.BlobService.Uri.AbsoluteUri.TrimEnd(trimChar: '/')}/"
                 + $"{DatabaseTestData.ContainerName}/{link.Id}";

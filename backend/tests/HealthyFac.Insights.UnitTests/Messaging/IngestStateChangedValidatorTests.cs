@@ -1,7 +1,10 @@
 using HealthyFac.Insights.Messaging.Ingest;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Insights.UnitTests.Messaging;
 
+[Feature(TestFeatures.Messaging)]
+[Feature(TestFeatures.Ingest)]
 public sealed class IngestStateChangedValidatorTests
 {
     private readonly IngestStateChangedValidator _validator = new();

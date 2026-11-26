@@ -1,10 +1,12 @@
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Infrastructure.Messaging.Transport;
 using HealthyFac.Shared.UnitTests.Messaging.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Shared.UnitTests.Messaging;
 
+[Feature(TestFeatures.Messaging)]
 public sealed class TransportExtensionsTests
 {
     [Fact]
@@ -22,6 +24,7 @@ public sealed class TransportExtensionsTests
     {
         var services = new ServiceCollection();
         services.AddScoped<IRequestHandler<RegistryFirstMessage, Unit>, RegistryMessageHandler<RegistryFirstMessage>>();
+
         services
             .AddScoped<IRequestHandler<RegistrySecondMessage, Unit>, RegistryMessageHandler<RegistrySecondMessage>>();
 

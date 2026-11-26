@@ -113,8 +113,9 @@ public sealed class DraftSearchComposer(DownstreamClient downstreamClient, Machi
         }
 
         var bodies = ((ComposedOutcome.Success)outcome).Bodies;
-        var coreBody = isCoreCalled ? bodies[index: 0] : null;
+        var coreBody = isCoreCalled ? bodies[0] : null;
         var telemetryBody = isTelemetryCalled ? bodies[isCoreCalled ? 1 : 0] : null;
+
         var page = DraftPageMerger.Merge(
             isCoreFinished ? [] : ReadRows(coreBody),
             isTelemetryFinished ? [] : ReadRows(telemetryBody),

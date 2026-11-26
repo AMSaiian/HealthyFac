@@ -1,7 +1,7 @@
 using HealthyFac.MachineSimulator.IntegrationTests.Simulation.Data;
 using HealthyFac.MachineSimulator.Machines;
-using HealthyFac.MachineSimulator.Scenarios;
 using HealthyFac.MachineSimulator.Simulation;
+using HealthyFac.Testing.Features;
 using HealthyFac.Testing.Logging;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -10,6 +10,7 @@ using Npgsql;
 namespace HealthyFac.MachineSimulator.IntegrationTests.Simulation;
 
 [Collection(SimulatorCollection.Name)]
+[Feature(TestFeatures.Simulation)]
 public sealed class SimulatorInstanceLockTests(SimulatorFixture fixture)
 {
     private readonly SimulatorFixture _fixture = fixture;
@@ -45,6 +46,7 @@ public sealed class SimulatorInstanceLockTests(SimulatorFixture fixture)
         await using var instanceLock = CreateLock(
             _fixture.SimulatorTelemetryConnectionString,
             new CapturingLogger<SimulatorInstanceLock>());
+
         await instanceLock.StartAsync(CancellationToken.None);
 
         var whileHeld = await TryTakeLockAsync();
@@ -71,10 +73,12 @@ public sealed class SimulatorInstanceLockTests(SimulatorFixture fixture)
         await using var connection = new NpgsqlConnection(
             new NpgsqlConnectionStringBuilder(_fixture.SimulatorTelemetryConnectionString) { Pooling = false }
                 .ConnectionString);
+
         await connection.OpenAsync();
         await using var command = new NpgsqlCommand(cmdText: "SELECT pg_try_advisory_lock(@key)", connection);
         command.Parameters.AddWithValue(parameterName: "key", SimulatorInstanceLock.LockKey);
         var isTaken = (bool)(await command.ExecuteScalarAsync())!;
+
         if (isTaken)
         {
             await using var unlock = new NpgsqlCommand(cmdText: "SELECT pg_advisory_unlock(@key)", connection);

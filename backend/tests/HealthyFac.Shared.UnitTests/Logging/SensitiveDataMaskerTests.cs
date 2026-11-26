@@ -1,8 +1,10 @@
 using HealthyFac.Shared.Application.Logging;
 using HealthyFac.Shared.UnitTests.Logging.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.UnitTests.Logging;
 
+[Feature(TestFeatures.Platform)]
 public sealed class SensitiveDataMaskerTests
 {
     [Theory]

@@ -29,13 +29,12 @@ import {
 const ZONE = 'Europe/Kyiv';
 const HOUR_MS = 3_600_000;
 
-describe('skeletonRowCount', () => {
-  it('skeletonRowCount_WithRowsShownBefore_KeepsTheirCount', () => {
-    expect(skeletonRowCount(3)).toBe(3);
-  });
-
-  it('skeletonRowCount_WithNoRowsShownBefore_UsesTheDefaultCount', () => {
-    expect(skeletonRowCount(0)).toBe(5);
+describe('skeletonRowCount', { tags: ['Platform'] }, () => {
+  it.each([
+    ['WithRowsShownBefore_KeepsTheirCount', 3, 3],
+    ['WithNoRowsShownBefore_UsesTheDefaultCount', 0, 5],
+  ])('skeletonRowCount_%s', (_name, shown, expected) => {
+    expect(skeletonRowCount(shown)).toBe(expected);
   });
 });
 
@@ -50,7 +49,7 @@ function bar(id: string, start: string, end: string): ScheduleBar {
 const NORMAL_DATE = Temporal.PlainDate.from('2027-06-01');
 const NORMAL = axisOf(NORMAL_DATE, ZONE);
 
-describe('hourLabelsOf', () => {
+describe('hourLabelsOf', { tags: ['Platform'] }, () => {
   it('hourLabelsOf_OnANormalDay_Gives24HoursFrom0000To2300', () => {
     const labels = hourLabelsOf(NORMAL, ZONE);
 
@@ -80,7 +79,7 @@ describe('hourLabelsOf', () => {
   });
 });
 
-describe('placeBars', () => {
+describe('placeBars', { tags: ['Platform'] }, () => {
   it('placeBars_WithOneBar_SitsAtThePercentOfItsInstants', () => {
     const { placed } = placeBars([bar('a', '2027-06-01T06:00', '2027-06-01T12:00')], NORMAL);
 
@@ -122,7 +121,7 @@ describe('placeBars', () => {
   });
 });
 
-describe('gapsOf', () => {
+describe('gapsOf', { tags: ['Platform'] }, () => {
   it('gapsOf_WithoutBlocks_ShadesTheWholeDay', () => {
     const gaps = gapsOf([], NORMAL);
 
@@ -151,7 +150,7 @@ describe('gapsOf', () => {
   });
 });
 
-describe('segmentOf and nowPercentOf', () => {
+describe('segmentOf and nowPercentOf', { tags: ['Platform'] }, () => {
   it('segmentOf_WithEmptyRange_GivesNull', () => {
     const segment = segmentOf(at('2027-06-01T08:00'), at('2027-06-01T08:00'), NORMAL);
 
@@ -171,7 +170,7 @@ describe('segmentOf and nowPercentOf', () => {
   });
 });
 
-describe('describeBar', () => {
+describe('describeBar', { tags: ['Platform'] }, () => {
   it('describeBar_WithBar_GivesLocalTimesAndTheOffset', () => {
     const text = describeBar(bar('a', '2027-06-01T09:00', '2027-06-01T10:30'), ZONE);
 
@@ -179,7 +178,7 @@ describe('describeBar', () => {
   });
 });
 
-describe('tooltipOf', () => {
+describe('tooltipOf', { tags: ['Platform'] }, () => {
   it('tooltipOf_WithBar_GivesTheTitleThenStatusRangeAndOffsetOnTwoLines', () => {
     const text = tooltipOf(bar('a', '2027-06-01T09:00', '2027-06-01T10:30'), 'Staged', ZONE);
 
@@ -187,7 +186,7 @@ describe('tooltipOf', () => {
   });
 });
 
-describe('bars across days', () => {
+describe('bars across days', { tags: ['Platform'] }, () => {
   const running = (start: string, plannedEnd: string, end: string): ScheduleBar => ({
     ...bar('r', start, end),
     isRunning: true,
@@ -195,22 +194,13 @@ describe('bars across days', () => {
   });
 
   describe('withLiveEnds', () => {
-    it('withLiveEnds_ForARunningBarPastItsEnd_EndsItAtNow', () => {
-      const [live] = withLiveEnds(
-        [running('2027-06-01T09:00', '2027-06-01T10:00', '2027-06-01T10:00')],
-        at('2027-06-01T12:00'),
-      );
+    it.each([
+      ['ARunningBarPastItsEnd_EndsItAtNow', '2027-06-01T10:00', '2027-06-01T12:00', '2027-06-01T12:00'],
+      ['ARunningBarBeforeItsEnd_KeepsTheEnd', '2027-06-01T11:00', '2027-06-01T10:00', '2027-06-01T11:00'],
+    ])('withLiveEnds_For%s', (_name, end, now, expected) => {
+      const [live] = withLiveEnds([running('2027-06-01T09:00', end, end)], at(now));
 
-      expect(live.end.equals(at('2027-06-01T12:00'))).toBe(true);
-    });
-
-    it('withLiveEnds_ForARunningBarBeforeItsEnd_KeepsTheEnd', () => {
-      const [live] = withLiveEnds(
-        [running('2027-06-01T09:00', '2027-06-01T11:00', '2027-06-01T11:00')],
-        at('2027-06-01T10:00'),
-      );
-
-      expect(live.end.equals(at('2027-06-01T11:00'))).toBe(true);
+      expect(live.end.equals(at(expected))).toBe(true);
     });
 
     it('withLiveEnds_ForABarThatIsNotRunning_KeepsTheEnd', () => {
@@ -301,29 +291,23 @@ describe('bars across days', () => {
   });
 
   describe('describeBar with dates', () => {
-    it('describeBar_ForABarThatStartsOnAnotherDate_ShowsBothDates', () => {
-      const text = describeBar(
-        bar('a', '2027-05-31T22:00', '2027-06-01T02:00'),
-        ZONE,
-        Temporal.PlainDate.from('2027-06-01'),
-      );
+    it.each([
+      [
+        'ABarThatStartsOnAnotherDate_ShowsBothDates',
+        '2027-05-31T22:00',
+        '2027-06-01T02:00',
+        '2027-05-31 22:00 - 2027-06-01 02:00 (+03:00)',
+      ],
+      ['ABarInsideTheDate_ShowsOnlyTheTimes', '2027-06-01T09:00', '2027-06-01T10:00', '09:00 - 10:00 (+03:00)'],
+    ])('describeBar_For%s', (_name, start, end, expected) => {
+      const text = describeBar(bar('a', start, end), ZONE, Temporal.PlainDate.from('2027-06-01'));
 
-      expect(text).toBe('2027-05-31 22:00 - 2027-06-01 02:00 (+03:00)');
-    });
-
-    it('describeBar_ForABarInsideTheDate_ShowsOnlyTheTimes', () => {
-      const text = describeBar(
-        bar('a', '2027-06-01T09:00', '2027-06-01T10:00'),
-        ZONE,
-        Temporal.PlainDate.from('2027-06-01'),
-      );
-
-      expect(text).toBe('09:00 - 10:00 (+03:00)');
+      expect(text).toBe(expected);
     });
   });
 });
 
-describe('preview snapping', () => {
+describe('preview snapping', { tags: ['Platform'] }, () => {
   const AREA = { left: 100, width: 2400 };
   const ROOT_FONT_PX = 16;
 
@@ -393,7 +377,7 @@ describe('preview snapping', () => {
   });
 });
 
-describe('grabOffsetOf', () => {
+describe('grabOffsetOf', { tags: ['Platform'] }, () => {
   it.each([
     ['InsideTheElement', 130, 30],
     ['LeftOfTheElement', 90, 0],
@@ -403,7 +387,7 @@ describe('grabOffsetOf', () => {
   });
 });
 
-describe('isPlaceholderShown', () => {
+describe('isPlaceholderShown', { tags: ['Platform'] }, () => {
   const source = Temporal.PlainDate.from('2027-06-01');
 
   it.each([

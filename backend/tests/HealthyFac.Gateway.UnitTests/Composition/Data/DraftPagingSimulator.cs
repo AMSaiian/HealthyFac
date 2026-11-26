@@ -39,12 +39,14 @@ public sealed class DraftPagingSimulator(IReadOnlyList<(string SortValueJson, st
             var coreRows = position?.IsCoreFinished == true
                 ? []
                 : core.Read(position?.Core, sortColumn, isDescending, limit);
+
             var telemetryRows = position?.IsTelemetryFinished == true
                 ? []
                 : telemetry.Read(position?.Telemetry, sortColumn, isDescending, limit);
+
             var page = DraftPageMerger.Merge(coreRows, telemetryRows, sortColumn, isDescending, limit, position);
 
-            ids.AddRange(page.Items.Select(item => item[propertyName: "id"]!.GetValue<string>()));
+            ids.AddRange(page.Items.Select(item => item["id"]!.GetValue<string>()));
             position = page.NextPosition;
             pageCount++;
         }
@@ -65,6 +67,7 @@ public sealed class DraftPagingSimulator(IReadOnlyList<(string SortValueJson, st
     {
         var comparer = DraftSortComparers.For(sortColumn);
         var sign = isDescending ? -1 : 1;
+
         var parsed = _rows
             .Select(row => (Value: JsonDocument.Parse(row.SortValueJson).RootElement.Clone(), row.Id))
             .OrderBy(row => row.Value, new SignedComparer(comparer, sign))
@@ -80,11 +83,11 @@ public sealed class DraftPagingSimulator(IReadOnlyList<(string SortValueJson, st
                 .Take(limit)
                 .Select(row => new JsonObject
                 {
-                    [propertyName: "id"] = row.Id,
-                    [propertyName: "position"] = new JsonObject
+                    ["id"] = row.Id,
+                    ["position"] = new JsonObject
                     {
-                        [propertyName: "sortValue"] = JsonNode.Parse(row.Value.GetRawText()),
-                        [propertyName: "id"] = row.Id,
+                        ["sortValue"] = JsonNode.Parse(row.Value.GetRawText()),
+                        ["id"] = row.Id,
                     },
                 }),
         ];

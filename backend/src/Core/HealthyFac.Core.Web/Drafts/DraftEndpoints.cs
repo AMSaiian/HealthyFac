@@ -31,8 +31,10 @@ public static class DraftEndpoints
         public IEndpointRouteBuilder MapDraftEndpoints()
         {
             var machineDrafts = app.MapGroup(DraftRoutes.MachineDraftBaseRoute);
+
             machineDrafts.MapGet(DraftRoutes.ById, GetMachineDraftAsync)
                 .RequireAuthorization(CorePermissions.Drafts.Read);
+
             machineDrafts.MapPost(DraftRoutes.Apply, ApplyMachineDraftAsync)
                 .RequireAuthorization(CorePermissions.Drafts.Write)
                 .RequireAuthorization(CorePermissions.Machines.Write);
@@ -40,20 +42,25 @@ public static class DraftEndpoints
             app.MapGroup(DraftRoutes.MachineDraftsOfMachineRoute)
                 .MapPost(DraftRoutes.Search, SearchMachineDraftsAsync)
                 .RequireAuthorization(CorePermissions.Drafts.Read);
+
             app.MapGroup(DraftRoutes.MachineDraftsOfMachineRoute)
                 .MapPost(DraftRoutes.DismissAll, DismissMachineDraftsAsync)
                 .RequireAuthorization(CorePermissions.Drafts.Write);
+
             app.MapGroup(DraftRoutes.AttemptDraftsRoute)
                 .MapPost(DraftRoutes.Search, SearchAttemptDraftsAsync)
                 .RequireAuthorization(CorePermissions.Drafts.Read);
+
             app.MapGroup(DraftRoutes.AttemptDraftsRoute)
                 .MapPost(DraftRoutes.DismissAll, DismissAttemptDraftsAsync)
                 .RequireAuthorization(CorePermissions.Drafts.Write);
+
             app.MapGroup(DraftRoutes.AttemptDraftsRoute)
                 .MapGet(DraftRoutes.Root, GetAttemptDraftsAsync)
                 .RequireAuthorization(CorePermissions.Drafts.Read);
 
             var drafts = app.MapGroup(DraftRoutes.DraftBaseRoute);
+
             drafts.MapPost(DraftRoutes.Dismiss, DismissAsync)
                 .RequireAuthorization(CorePermissions.Drafts.Write);
 

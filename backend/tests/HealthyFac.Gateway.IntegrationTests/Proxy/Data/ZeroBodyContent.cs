@@ -24,6 +24,7 @@ public sealed class ZeroBodyContent(long length) : HttpContent
     {
         var chunk = new byte[ChunkBytes];
         var remaining = _length;
+
         while (remaining > 0)
         {
             var size = (int)Math.Min(ChunkBytes, remaining);
@@ -32,9 +33,9 @@ public sealed class ZeroBodyContent(long length) : HttpContent
         }
     }
 
-    protected override bool TryComputeLength(out long computedLength)
+    protected override bool TryComputeLength(out long length)
     {
-        computedLength = _length;
+        length = _length;
 
         return true;
     }

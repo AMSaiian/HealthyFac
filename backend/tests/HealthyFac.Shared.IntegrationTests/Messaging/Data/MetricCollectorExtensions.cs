@@ -13,9 +13,10 @@ public static class MetricCollectorExtensions
         /// not count.
         /// </summary>
         public IReadOnlyList<CollectedMeasurement<T>> ForMessageType(string messageType) =>
-            collector.GetMeasurementSnapshot()
-                .Where(measurement => Equals(measurement.Tags.GetValueOrDefault(Tags.MessageType), messageType))
-                .ToList();
+        [
+            .. collector.GetMeasurementSnapshot()
+                .Where(measurement => Equals(measurement.Tags.GetValueOrDefault(Tags.MessageType), messageType)),
+        ];
 
         /// <summary>
         /// Reads the current values of an observable instrument for one processor.
@@ -24,10 +25,12 @@ public static class MetricCollectorExtensions
         {
             collector.RecordObservableInstruments();
 
-            return collector.GetMeasurementSnapshot(clear: true)
-                .Where(measurement => Equals(measurement.Tags.GetValueOrDefault(Tags.Processor), processor))
-                .Select(measurement => measurement.Value)
-                .ToList();
+            return
+            [
+                .. collector.GetMeasurementSnapshot(clear: true)
+                    .Where(measurement => Equals(measurement.Tags.GetValueOrDefault(Tags.Processor), processor))
+                    .Select(measurement => measurement.Value),
+            ];
         }
     }
 }

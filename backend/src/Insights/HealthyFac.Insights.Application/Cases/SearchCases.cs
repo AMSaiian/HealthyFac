@@ -117,6 +117,7 @@ public sealed class SearchCasesRequestValidator
         : base(CaseSortColumn.All)
     {
         RuleFor(request => request.CompanyId).NotEmpty().WithMessage(CaseErrors.CompanyIdRequired);
+
         RuleFor(request => request.Filter!)
             .SetValidator(new CaseGridFilterValidator())
             .When(request => request.Filter is not null);
@@ -188,6 +189,7 @@ public sealed class SearchCasesRequestHandler(IInsightsDbContext dbContext)
     )
     {
         var runs = _dbContext.AgentRuns.AsNoTracking();
+
         var response = await _dbContext.MaintenanceCases
             .AsNoTracking()
             .Where(maintenanceCase => maintenanceCase.CompanyId == request.CompanyId)

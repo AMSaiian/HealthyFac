@@ -2,9 +2,11 @@ using System.Net;
 using System.Web;
 using HealthyFac.Shared.Infrastructure.ServiceTokens;
 using HealthyFac.Shared.UnitTests.ServiceTokens.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.UnitTests.ServiceTokens;
 
+[Feature(TestFeatures.Identity)]
 public sealed class TokenExchangeHandlerTests
 {
     private const string BearerPrefix = "Bearer ";
@@ -37,6 +39,7 @@ public sealed class TokenExchangeHandlerTests
         using var second = await harness.CallAsync();
 
         harness.TokenEndpoint.RequestCount.Should().Be(expected: 1);
+
         harness.Resource.Authorizations.Should()
             .Equal(
                 $"{BearerPrefix}{ServiceTokenTestData.FirstToken}",
@@ -53,6 +56,7 @@ public sealed class TokenExchangeHandlerTests
         using var second = await harness.CallAsync();
 
         harness.TokenEndpoint.RequestCount.Should().Be(expected: 2);
+
         harness.Resource.Authorizations.Should()
             .Equal(
                 $"{BearerPrefix}{ServiceTokenTestData.FirstToken}",
@@ -71,6 +75,7 @@ public sealed class TokenExchangeHandlerTests
         using var firstUserAgain = await harness.CallAsync();
 
         harness.TokenEndpoint.RequestCount.Should().Be(expected: 2);
+
         harness.Resource.Authorizations.Should()
             .Equal(
                 $"{BearerPrefix}{ServiceTokenTestData.FirstToken}",
@@ -106,6 +111,7 @@ public sealed class TokenExchangeHandlerTests
 
         var exception = await act.Should().ThrowAsync<HttpRequestException>();
         exception.Which.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
         exception.Which.Message.Should()
             .Contain(ServiceTokenTestData.InvalidSubjectDescription)
             .And.NotContain(ServiceTokenTestData.FirstSubjectToken)

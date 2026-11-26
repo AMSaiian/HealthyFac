@@ -63,24 +63,29 @@ public sealed class GetCaseRequestHandler(IInsightsDbContext dbContext)
                     candidate => candidate.Id == request.Id && candidate.CompanyId == request.CompanyId,
                     cancellationToken)
             ?? throw new NotFoundException(CaseErrors.CaseNotFound);
+
         var runs = _dbContext.AgentRuns.AsNoTracking().Where(run => run.CaseId == request.Id);
         var lastRun = await runs.OrderByDescending(run => run.Id).FirstOrDefaultAsync(cancellationToken);
         var decisionRuns = runs.Where(run => run.Role == AgentRole.Triage || run.Role == AgentRole.Planner);
+
         var decisionRun = await decisionRuns
             .Where(run => run.State == AgentRunState.Completed || run.State == AgentRunState.Failed)
             .OrderByDescending(run => run.Id)
             .FirstOrDefaultAsync(cancellationToken);
+
         var reason = await decisionRuns
             .Where(run => run.VerdictReason != null)
             .OrderByDescending(run => run.Id)
             .Select(run => run.VerdictReason)
             .FirstOrDefaultAsync(cancellationToken);
+
         var latestAction = await _dbContext.AgentActions
             .AsNoTracking()
             .Where(action => action.State == AgentActionState.Committed
                 && runs.Any(run => run.Id == action.RunId))
             .OrderByDescending(action => action.Id)
             .FirstOrDefaultAsync(cancellationToken);
+
         var isAiUnavailable = lastRun is not null && IsAiUnavailable(lastRun);
 
         return new CaseDetailResponse

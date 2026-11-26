@@ -4,9 +4,12 @@ using HealthyFac.Insights.Infrastructure.Telemetry;
 using HealthyFac.Insights.UnitTests.Files.Data;
 using HealthyFac.Insights.UnitTests.Signals.Data;
 using HealthyFac.Shared.Application.DownstreamScopes;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Insights.UnitTests.Signals;
 
+[Feature(TestFeatures.Cases)]
+[Feature(TestFeatures.Evaluation)]
 public sealed class GrpcTelemetrySignalsTests
 {
     private readonly DownstreamScopeHolder _holder = new();

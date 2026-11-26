@@ -50,6 +50,7 @@ public sealed class CoreApiFixture : IAsyncLifetime, IResetBeforeEachTest
         await SeedCompanyAsync();
 
         using var scope = ScopeFactory.CreateScope();
+
         _resetter = await DatabaseResetter.CreateAsync(
             _database.ConnectionString,
             scope.ServiceProvider.GetRequiredService<CoreDbContext>(),
@@ -87,6 +88,7 @@ public sealed class CoreApiFixture : IAsyncLifetime, IResetBeforeEachTest
 
         var company = new Company
             { Name = CoreApiTestData.CompanyName, TimeZoneId = CoreApiTestData.CompanyTimeZoneId };
+
         dbContext.Companies.Add(company);
         await dbContext.SaveChangesAsync();
 

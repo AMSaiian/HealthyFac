@@ -4,11 +4,13 @@ using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.Grids;
 using HealthyFac.Shared.Application.Grids.Keyset;
 using HealthyFac.Shared.IntegrationTests.Grids.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.EntityFrameworkCore;
 
 namespace HealthyFac.Shared.IntegrationTests.Grids;
 
 [Collection(GridDatabaseCollection.Name)]
+[Feature(TestFeatures.Persistence)]
 public sealed class KeysetQueryTests(GridDatabaseFixture fixture)
 {
     private readonly GridDatabaseFixture _fixture = fixture;
@@ -26,6 +28,7 @@ public sealed class KeysetQueryTests(GridDatabaseFixture fixture)
 
         var actualIds = new List<Guid>();
         KeysetPosition? after = null;
+
         do
         {
             var page = await Items(dbContext)
@@ -35,6 +38,7 @@ public sealed class KeysetQueryTests(GridDatabaseFixture fixture)
                     KeysetTestData.PageLimit,
                     after,
                     TestContext.Current.CancellationToken);
+
             actualIds.AddRange(page.Items.Select(item => item.Id));
             after = page.NextPosition;
         }
@@ -49,6 +53,7 @@ public sealed class KeysetQueryTests(GridDatabaseFixture fixture)
         var sort = KeysetTestData.SortOf(columnName: "rank", isDescending: false);
         await using var dbContext = _fixture.CreateDbContext();
         var snapshot = await ReadAllAsync(dbContext);
+
         var pageOne = await Items(dbContext)
             .ToKeysetResponseAsync(
                 sort,
@@ -56,22 +61,28 @@ public sealed class KeysetQueryTests(GridDatabaseFixture fixture)
                 KeysetTestData.PageLimit,
                 after: null,
                 TestContext.Current.CancellationToken);
+
         var lastRow = pageOne.Items[^1];
+
         var expectedFirstId = KeysetTestData
             .Order(snapshot, columnName: "rank", isDescending: false)
             .SkipWhile(item => item.Id != lastRow.Id)
             .Skip(count: 1)
             .First()
             .Id;
+
         const int movedRank = 99;
 
         var entity = await dbContext.Rows.SingleAsync(
             row => row.Id == lastRow.Id, TestContext.Current.CancellationToken);
+
         entity.Number = movedRank;
         await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
         try
         {
             await using var readContext = _fixture.CreateDbContext();
+
             var pageTwo = await Items(readContext)
                 .ToKeysetResponseAsync(
                     sort,
@@ -80,7 +91,7 @@ public sealed class KeysetQueryTests(GridDatabaseFixture fixture)
                     pageOne.NextPosition,
                     TestContext.Current.CancellationToken);
 
-            pageTwo.Items[index: 0].Id.Should().Be(expectedFirstId);
+            pageTwo.Items[0].Id.Should().Be(expectedFirstId);
         }
         finally
         {

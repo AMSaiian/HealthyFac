@@ -61,6 +61,7 @@ public sealed class LookupEmployeesRequestHandler(ICoreDbContext dbContext)
     {
         var query = _dbContext.Employees
             .Where(employee => employee.CompanyId == request.CompanyId && employee.Status == EmployeeStatus.Active);
+
         if (!string.IsNullOrEmpty(request.Search))
         {
             query = query.Where(employee => (employee.FirstName + " " + employee.LastName).Contains(request.Search));

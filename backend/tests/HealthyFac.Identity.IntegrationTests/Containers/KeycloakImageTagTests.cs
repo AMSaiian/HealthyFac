@@ -1,7 +1,10 @@
 using HealthyFac.Testing.Containers;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Identity.IntegrationTests.Containers;
 
+[Feature(TestFeatures.Identity)]
+[Feature(TestFeatures.Conventions)]
 public sealed class KeycloakImageTagTests
 {
     private const string FromPrefix = "FROM ";
@@ -10,6 +13,7 @@ public sealed class KeycloakImageTagTests
     public void FinalStage_OfKeycloakDockerfile_UsesTheTestImage()
     {
         var dockerfile = KeycloakFiles.Find("Dockerfile");
+
         var finalFromLine = File.ReadLines(dockerfile)
             .Last(line => line.StartsWith(FromPrefix, StringComparison.Ordinal));
 

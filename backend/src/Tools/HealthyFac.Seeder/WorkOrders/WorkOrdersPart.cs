@@ -66,9 +66,11 @@ public sealed class WorkOrdersPart : ISeedPart
         _roles = people.ToDictionary(p => p.Key, p => p.Role);
         _actions.Clear();
         var events = new List<SeedEvent>();
+
         foreach (var order in orders)
         {
             events.Add(CreateEvent(order));
+
             if (order.Assignment is { } assignment)
             {
                 events.Add(AssignEvent(order, assignment));
@@ -112,6 +114,7 @@ public sealed class WorkOrdersPart : ISeedPart
     {
         var key = AssignedKey(order);
         var item = SeedItem.Of(_fileName, key);
+
         _actions[key] = (context, cancellationToken) =>
             AssignAsync(order, assignment, item, context, cancellationToken);
 
@@ -141,6 +144,7 @@ public sealed class WorkOrdersPart : ISeedPart
     {
         var key = $"{order.Key}{WorkOrdersConstants.StatusSuffix}{index}.{change.Status.Value}";
         var item = SeedItem.Of(_fileName, key);
+
         if (order.Assignment is null)
         {
             throw new SeedFileException(WorkOrdersErrors.StatusNeedsAssignment(item));
@@ -227,6 +231,7 @@ public sealed class WorkOrdersPart : ISeedPart
             context.GetActor(order.CreatedBy),
             CreateRequest(order, context.GetId(PeopleConstants.CompanyKey), context.GetId(MachineKey(order))),
             cancellationToken);
+
         context.SetId(OrderKey(order), response.Id);
     }
 
@@ -240,10 +245,12 @@ public sealed class WorkOrdersPart : ISeedPart
     {
         var orderId = context.GetId(OrderKey(order));
         var assigneeId = context.GetId(EmployeeKey(assignment.Assignee));
+
         var plannedStart = _chooser is null
             ? SeedCalendar.ToDate(assignment.PlannedStart, context.Anchor, context.Zone)
                 .ToDateTime(assignment.PlannedStart.Time ?? default(TimeOnly), DateTimeKind.Unspecified)
             : await _chooser(order, assigneeId, context, cancellationToken);
+
         var rowVersion = await ReadRowVersionAsync(orderId, cancellationToken);
 
         await _hosts.Core.SendAsync(
@@ -257,6 +264,7 @@ public sealed class WorkOrdersPart : ISeedPart
                 plannedStart,
                 rowVersion),
             cancellationToken);
+
         context.SetId(AssignedKey(order), orderId);
     }
 
@@ -280,6 +288,7 @@ public sealed class WorkOrdersPart : ISeedPart
     private async Task<uint> ReadRowVersionAsync(Guid orderId, CancellationToken cancellationToken)
     {
         using var scope = _hosts.Core.CreateScope(ServiceActor.DatabaseInitialization.For(ServiceName.Core));
+
         var rowVersion = await scope.ServiceProvider.GetRequiredService<CoreDbContext>()
             .WorkOrders
             .Where(order => order.Id == orderId)

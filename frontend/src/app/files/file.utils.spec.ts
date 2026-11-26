@@ -1,6 +1,6 @@
 import { formatFileSize } from './file.utils';
 
-describe('formatFileSize', () => {
+describe('formatFileSize', { tags: ['Files'] }, () => {
   it.each([
     [0, '0 B'],
     [1023, '1023 B'],

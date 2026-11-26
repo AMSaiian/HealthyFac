@@ -90,6 +90,7 @@ public sealed class RetryProvisioningRequestHandler(ICoreDbContext dbContext, IO
             ?? throw new NotFoundException(EmployeeInviteErrors.Rejections.RoleNotFound);
 
         employee.RetryProvisioning(_timeProvider.GetUtcNow().UtcDateTime);
+
         _outbox.Add(
             new EmployeeAccepted
             {

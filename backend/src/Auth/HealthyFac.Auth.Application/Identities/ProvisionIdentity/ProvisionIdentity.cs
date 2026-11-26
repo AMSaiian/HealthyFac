@@ -50,6 +50,7 @@ public sealed class ProvisionIdentityRequestHandler(
     protected override async Task HandleInternalAsync(EmployeeAccepted request, CancellationToken cancellationToken)
     {
         var organizationId = await _identityAdmin.FindOrganizationIdAsync(request.CompanyId, cancellationToken);
+
         if (organizationId is null)
         {
             await PublishFailedAsync(
@@ -59,6 +60,7 @@ public sealed class ProvisionIdentityRequestHandler(
         }
 
         Guid userId;
+
         try
         {
             userId = await FindOrCreateUserAsync(request, cancellationToken);
@@ -85,6 +87,7 @@ public sealed class ProvisionIdentityRequestHandler(
         }
 
         var hasPassword = await _identityAdmin.HasPasswordAsync(userId, cancellationToken);
+
         if (!hasPassword)
         {
             await _identityAdmin.SendSetPasswordEmailAsync(userId, cancellationToken);
@@ -107,6 +110,7 @@ public sealed class ProvisionIdentityRequestHandler(
     private async Task<Guid> FindOrCreateUserAsync(EmployeeAccepted request, CancellationToken cancellationToken)
     {
         var existingUserId = await _identityAdmin.FindUserIdByEmployeeIdAsync(request.EmployeeId, cancellationToken);
+
         if (existingUserId is { } foundUserId)
         {
             return foundUserId;
@@ -128,6 +132,7 @@ public sealed class ProvisionIdentityRequestHandler(
         {
             var parallelUserId =
                 await _identityAdmin.FindUserIdByEmployeeIdAsync(request.EmployeeId, cancellationToken);
+
             if (parallelUserId is { } createdUserId)
             {
                 return createdUserId;

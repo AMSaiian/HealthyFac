@@ -7,7 +7,7 @@ import { type RealtimeHint, RealtimeTopic } from './realtime';
 import { RealtimeConnection } from './realtime-connection';
 import { withRealtimeReload } from './with-realtime-reload';
 
-describe('withRealtimeReload', () => {
+describe('withRealtimeReload', { tags: ['Realtime'] }, () => {
   let hints$: Subject<RealtimeHint>;
   let reconnected$: Subject<void>;
   let reload: Mock<() => void>;
@@ -85,10 +85,13 @@ describe('withRealtimeReload', () => {
     expect(reload).toHaveBeenCalledTimes(1);
   });
 
-  it('hint_WithTheScopeOfTheStore_Reloads', async () => {
-    createStore([RealtimeTopic.Cases], true);
+  it.each([
+    ['TheScopeOfTheStore', RealtimeTopic.Cases, { caseId: 'case-1' }],
+    ['TheWorkOrderIdOfTheStore', RealtimeTopic.WorkOrders, { workOrderId: 'case-1' }],
+  ])('hint_With%s_Reloads', async (_name, topic, ids) => {
+    createStore([topic], true);
 
-    hints$.next({ topic: RealtimeTopic.Cases, caseId: 'case-1' });
+    hints$.next({ topic, ...ids });
     await vi.advanceTimersByTimeAsync(1000);
 
     expect(reload).toHaveBeenCalledTimes(1);
@@ -101,15 +104,6 @@ describe('withRealtimeReload', () => {
     await vi.advanceTimersByTimeAsync(5000);
 
     expect(reload).not.toHaveBeenCalled();
-  });
-
-  it('hint_WithTheWorkOrderIdOfTheStore_Reloads', async () => {
-    createStore([RealtimeTopic.WorkOrders], true);
-
-    hints$.next({ topic: RealtimeTopic.WorkOrders, workOrderId: 'case-1' });
-    await vi.advanceTimersByTimeAsync(1000);
-
-    expect(reload).toHaveBeenCalledTimes(1);
   });
 
   it('hint_WithAnotherWorkOrderId_DoesNotReload', async () => {

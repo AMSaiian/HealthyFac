@@ -1,9 +1,11 @@
 using HealthyFac.Core.Domain.WorkOrders;
 using HealthyFac.Core.Domain.WorkOrders.Scheduling;
 using HealthyFac.Core.UnitTests.WorkOrders.Scheduling.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.UnitTests.WorkOrders.Scheduling;
 
+[Feature(TestFeatures.WorkOrders)]
 public sealed class CompletionSlideTests
 {
     private static IReadOnlyList<SlideMove> Plan(
@@ -21,34 +23,20 @@ public sealed class CompletionSlideTests
     private static SlideWorkOrder Completed() =>
         SchedulingTestData.Order(number: 1, WorkOrderStatus.InProgress, start: "08:00", minutes: 60);
 
-    [Fact]
-    public void Plan_WithOnTimeCompletion_MovesNothing()
+    [Theory]
+    [MemberData(
+        nameof(CompletionSlideTestData.CompletionsThatMoveNothing), MemberType = typeof(CompletionSlideTestData))]
+    public void Plan_WithCompletionThatDisturbsNoOrder_MovesNothing(
+        string caseName,
+        string completedAt,
+        string nextStart
+    )
     {
-        var next = SchedulingTestData.Order(number: 2, WorkOrderStatus.Staged, start: "09:00", minutes: 60);
+        var next = SchedulingTestData.Order(number: 2, WorkOrderStatus.Staged, nextStart, minutes: 60);
 
-        var moves = Plan(Completed(), completedAt: "09:00", next);
+        var moves = Plan(Completed(), completedAt, next);
 
-        moves.Should().BeEmpty();
-    }
-
-    [Fact]
-    public void Plan_WithEarlyCompletion_MovesNothing()
-    {
-        var next = SchedulingTestData.Order(number: 2, WorkOrderStatus.Staged, start: "09:00", minutes: 60);
-
-        var moves = Plan(Completed(), completedAt: "08:30", next);
-
-        moves.Should().BeEmpty();
-    }
-
-    [Fact]
-    public void Plan_WithEarlyCompletionAndStagedOrderInsideItsWindow_MovesNothing()
-    {
-        var inside = SchedulingTestData.Order(number: 2, WorkOrderStatus.Staged, start: "08:15", minutes: 60);
-
-        var moves = Plan(Completed(), completedAt: "08:30", inside);
-
-        moves.Should().BeEmpty();
+        moves.Should().BeEmpty(caseName);
     }
 
     [Fact]
@@ -152,12 +140,16 @@ public sealed class CompletionSlideTests
     {
         var completed = SchedulingTestData.Order(number: 1, WorkOrderStatus.InProgress, start: "09:00", minutes: 60);
         var monday = SchedulingTestData.Order(number: 2, WorkOrderStatus.Staged, start: "10:00", minutes: 60);
+
         var tuesday = SchedulingTestData.OrderAfter(
             number: 3, WorkOrderStatus.Blocked, days: 1, start: "09:00", minutes: 60);
+
         var clashing = SchedulingTestData.OrderAfter(
             number: 4, WorkOrderStatus.Staged, days: 2, start: "09:00", minutes: 60);
+
         var untouched = SchedulingTestData.OrderAfter(
             number: 5, WorkOrderStatus.Staged, days: 2, start: "11:00", minutes: 30);
+
         var running = SchedulingTestData.OrderAfter(
             number: 6, WorkOrderStatus.InProgress, days: 1, start: "13:00", minutes: 60);
 
@@ -180,6 +172,7 @@ public sealed class CompletionSlideTests
     public void Plan_WithCompletionOnALaterDateThatFitsNothing_SendsTheCompletionDateWorkOrderToTheBacklog()
     {
         var completed = SchedulingTestData.Order(number: 1, WorkOrderStatus.InProgress, start: "09:00", minutes: 60);
+
         var wednesday = SchedulingTestData.OrderAfter(
             number: 2, WorkOrderStatus.Staged, days: 2, start: "09:00", minutes: 60);
 
@@ -200,6 +193,7 @@ public sealed class CompletionSlideTests
     public void Plan_WithAWorkOrderAfterTheCompletionDate_LeavesItAlone()
     {
         var completed = SchedulingTestData.Order(number: 1, WorkOrderStatus.InProgress, start: "09:00", minutes: 60);
+
         var later = SchedulingTestData.OrderAfter(
             number: 2, WorkOrderStatus.Staged, days: 3, start: "09:00", minutes: 60);
 

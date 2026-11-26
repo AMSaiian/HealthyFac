@@ -30,6 +30,7 @@ public static class TelemetryHistoryFixtureExtensions
         public async Task<Dictionary<string, Guid>> LoadMachineIdsByKeyAsync()
         {
             using var scope = fixture.Hosts.Core.CreateScope(SeederTestData.InitializationActor);
+
             var machines = await scope.ServiceProvider.GetRequiredService<CoreDbContext>()
                 .Machines
                 .AsNoTracking()
@@ -50,6 +51,7 @@ public static class TelemetryHistoryFixtureExtensions
         public async Task<List<StateRow>> LoadStateRowsAsync(Guid machineId)
         {
             using var scope = fixture.Hosts.Core.CreateScope(SeederTestData.InitializationActor);
+
             var rows = await scope.ServiceProvider.GetRequiredService<CoreDbContext>()
                 .MachineStateHistories
                 .AsNoTracking()
@@ -57,12 +59,13 @@ public static class TelemetryHistoryFixtureExtensions
                 .OrderBy(row => row.StartedAt)
                 .ToListAsync();
 
-            return rows.Select(row => new StateRow { State = row.State.Value, StartedAt = row.StartedAt }).ToList();
+            return [.. rows.Select(row => new StateRow { State = row.State.Value, StartedAt = row.StartedAt })];
         }
 
         public async Task<Dictionary<Guid, int>> CountMessagesByMachineAsync()
         {
             using var scope = fixture.Hosts.Telemetry.CreateScope(SeederTestData.InitializationActor);
+
             var counts = await scope.ServiceProvider.GetRequiredService<TelemetryDbContext>()
                 .ReceivedMessages
                 .AsNoTracking()
@@ -104,11 +107,13 @@ public static class TelemetryHistoryFixtureExtensions
         {
             using var scope = fixture.Hosts.Telemetry.CreateScope(SeederTestData.InitializationActor);
             var dbContext = scope.ServiceProvider.GetRequiredService<TelemetryDbContext>();
+
             var metrics = await dbContext.MetricDefinitions
                 .AsNoTracking()
                 .GroupBy(metric => metric.MachineRegistrationId)
                 .Select(group => new { MachineId = group.Key, Count = group.Count() })
                 .ToListAsync();
+
             var statuses = await dbContext.StatusDefinitions
                 .AsNoTracking()
                 .GroupBy(status => status.MachineRegistrationId)
@@ -122,10 +127,13 @@ public static class TelemetryHistoryFixtureExtensions
         public async Task<(int WithErrors, int WithoutSchemaOrPayload)> CountBrokenMessagesAsync()
         {
             using var scope = fixture.Hosts.Telemetry.CreateScope(SeederTestData.InitializationActor);
+
             var messages = scope.ServiceProvider.GetRequiredService<TelemetryDbContext>()
                 .ReceivedMessages
                 .AsNoTracking();
+
             var withErrors = await messages.CountAsync(message => message.Errors.Count > 0);
+
             var incomplete =
                 await messages.CountAsync(message => message.SchemaRevision == null || message.Payload == null);
 
@@ -135,6 +143,7 @@ public static class TelemetryHistoryFixtureExtensions
         public async Task<(DateTime First, DateTime Last)> FindSampleRangeAsync()
         {
             using var scope = fixture.Hosts.Telemetry.CreateScope(SeederTestData.InitializationActor);
+
             var times = scope.ServiceProvider.GetRequiredService<TelemetryDbContext>()
                 .ReceivedMessages
                 .AsNoTracking()
@@ -162,6 +171,7 @@ public static class TelemetryHistoryFixtureExtensions
         {
             using var scope = fixture.Hosts.Telemetry.CreateScope(SeederTestData.InitializationActor);
             var dbContext = scope.ServiceProvider.GetRequiredService<TelemetryDbContext>();
+
             var metricId = await dbContext.MetricDefinitions
                 .AsNoTracking()
                 .Where(metric => metric.MachineRegistrationId == machineId && metric.Key == metricKey)
@@ -181,28 +191,32 @@ public static class TelemetryHistoryFixtureExtensions
         {
             using var scope = fixture.Hosts.Telemetry.CreateScope(SeederTestData.InitializationActor);
             var dbContext = scope.ServiceProvider.GetRequiredService<TelemetryDbContext>();
+
             var rows = await dbContext.SignalEpisodes
                 .AsNoTracking()
                 .OrderBy(episode => episode.OpenedAt)
                 .ToListAsync();
+
             var metricKeys = await dbContext.MetricDefinitions
                 .AsNoTracking()
                 .ToDictionaryAsync(metric => metric.Id, metric => metric.Key);
 
-            return rows
-                .Select(episode => new EpisodeRow
-                {
-                    MachineId = episode.MachineRegistrationId,
-                    Rule = episode.Rule.Value,
-                    MetricKey = episode.MetricDefinitionId is null
-                        ? null
-                        : metricKeys[episode.MetricDefinitionId.Value],
-                    Severity = episode.Severity.Value,
-                    State = episode.State.Value,
-                    OpenedAt = episode.OpenedAt,
-                    ResolvedAt = episode.ResolvedAt,
-                })
-                .ToList();
+            return
+            [
+                .. rows
+                    .Select(episode => new EpisodeRow
+                    {
+                        MachineId = episode.MachineRegistrationId,
+                        Rule = episode.Rule.Value,
+                        MetricKey = episode.MetricDefinitionId is null
+                            ? null
+                            : metricKeys[episode.MetricDefinitionId.Value],
+                        Severity = episode.Severity.Value,
+                        State = episode.State.Value,
+                        OpenedAt = episode.OpenedAt,
+                        ResolvedAt = episode.ResolvedAt,
+                    }),
+            ];
         }
 
         public async Task<IReadOnlyList<SeedCheckFailure>> CheckTelemetrySeedAsync(
@@ -212,8 +226,10 @@ public static class TelemetryHistoryFixtureExtensions
         )
         {
             var folder = new SeedFolder(Path.Combine(baseDirectory, PeopleTestData.SeedFolder));
+
             var events = SeedPlan.Load(
                 SeedParts.Create(fixture.Hosts, SeedRunFixtureExtensions.People(fixture), isTelemetry: true), folder);
+
             var check = new SeedCheck(
                 anchor,
                 TimeZoneInfo.FindSystemTimeZoneById(PeopleTestData.ZoneId),
@@ -226,7 +242,7 @@ public static class TelemetryHistoryFixtureExtensions
                     Machines = folder.Read<MachinesFile>(MachinesConstants.FileName),
                 });
 
-            return await check.RunAsync(events.Select(planned => planned.Event).ToList(), cancellationToken);
+            return await check.RunAsync([.. events.Select(planned => planned.Event)], cancellationToken);
         }
 
         public async Task<IReadOnlyList<CaseToolCallResponse>> LoadToolCallsAsync(

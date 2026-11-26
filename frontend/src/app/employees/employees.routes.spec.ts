@@ -70,7 +70,7 @@ async function openShifts(http: HttpTestingController, url: string): Promise<Rou
   return harness;
 }
 
-describe('employees routes', () => {
+describe('employees routes', { tags: ['Companies', 'Shifts'] }, () => {
   afterEach(() => {
     vi.unstubAllGlobals();
   });

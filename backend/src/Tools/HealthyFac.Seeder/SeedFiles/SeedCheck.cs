@@ -59,9 +59,11 @@ public sealed class SeedCheck
     {
         var failures = new List<SeedCheckFailure>();
         var moments = new List<(SeedEvent Event, DateTimeOffset At)>();
+
         foreach (var seedEvent in events)
         {
             var moment = ResolveMoment(seedEvent, failures);
+
             if (moment is { } at)
             {
                 moments.Add((seedEvent, at));
@@ -72,6 +74,7 @@ public sealed class SeedCheck
         CheckKeys(events, order, failures);
         CheckCompletionIsLast(order, failures);
         CheckScript(order, failures);
+
         foreach (var seedEvent in events)
         {
             await CheckRequestsAsync(seedEvent, failures, cancellationToken);
@@ -86,6 +89,7 @@ public sealed class SeedCheck
         try
         {
             var at = SeedCalendar.ToUtc(seedEvent.At, _anchor, _zone);
+
             if (at > _anchor)
             {
                 failures.Add(Failure(seedEvent, SeedFileErrors.EventsLieInThePast));
@@ -125,6 +129,7 @@ public sealed class SeedCheck
 
                 var isCreatedLater = IndexOf(order, creator) > IndexOf(order, seedEvent);
                 var isOrdered = IndexOf(order, creator) >= 0 && IndexOf(order, seedEvent) >= 0;
+
                 if (isOrdered && isCreatedLater)
                 {
                     failures.Add(Failure(seedEvent, SeedFileErrors.KeyUsedBeforeCreated(key, creator.Item)));
@@ -141,6 +146,7 @@ public sealed class SeedCheck
         }
 
         var markerIndex = order.ToList().FindIndex(seedEvent => seedEvent.Item == _completionItem);
+
         if (markerIndex < 0)
         {
             failures.Add(
@@ -169,6 +175,7 @@ public sealed class SeedCheck
 
         var markerItem = SeedItem.Of(TelemetryHistoryConstants.FileName, TelemetryHistoryConstants.MarkerKey);
         var markerIndex = order.ToList().FindIndex(seedEvent => seedEvent.Item == markerItem);
+
         if (markerIndex < 0)
         {
             failures.Add(

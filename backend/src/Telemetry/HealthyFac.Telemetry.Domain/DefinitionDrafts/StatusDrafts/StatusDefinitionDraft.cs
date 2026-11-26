@@ -90,6 +90,7 @@ public class StatusDefinitionDraft : IDefinitionDraft, IAuditable, ISoftDeletabl
             },
             entry,
             isTargetRegistrationDeleted);
+
         TargetMachineId = outcome.TargetMachineId;
         TargetMachineDraftId = outcome.TargetMachineDraftId;
         State = outcome.State;

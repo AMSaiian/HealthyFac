@@ -1,9 +1,12 @@
+using System.Globalization;
 using HealthyFac.Core.Domain.Shifts.DaySchedules;
 using HealthyFac.Core.Domain.WorkOrders.Scheduling;
 using HealthyFac.Core.UnitTests.Shifts.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.UnitTests.Shifts;
 
+[Feature(TestFeatures.Shifts)]
 public sealed class FreeSpansTests
 {
     [Theory]
@@ -64,7 +67,7 @@ public sealed class FreeSpansTests
         int expectedMinutes
     )
     {
-        var day = DateOnly.Parse(date);
+        var day = DateOnly.Parse(date, CultureInfo.InvariantCulture);
 
         var spans = FreeSpans.Of(
             FreeSpansTestData.Day(day, $"{start}-{end}"),

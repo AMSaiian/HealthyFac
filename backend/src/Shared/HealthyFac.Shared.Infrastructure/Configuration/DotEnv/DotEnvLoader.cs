@@ -16,6 +16,7 @@ public static class DotEnvLoader
     public static string? Load()
     {
         var path = FindDotEnvFile(Directory.GetCurrentDirectory());
+
         if (path is null)
         {
             return null;
@@ -35,6 +36,7 @@ public static class DotEnvLoader
         for (var depth = 0; depth < DotEnvConstants.MaxParentDirectoryDepth && directory is not null; depth++)
         {
             var candidate = Path.Combine(directory.FullName, DotEnvConstants.FileName);
+
             if (File.Exists(candidate))
             {
                 return candidate;

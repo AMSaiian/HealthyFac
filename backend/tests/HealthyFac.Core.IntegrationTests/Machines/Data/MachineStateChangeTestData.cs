@@ -12,9 +12,9 @@ public static class MachineStateChangeTestData
     public static readonly DateTimeOffset ChangedNow = new(
         year: 2026, month: 3, day: 11, hour: 9, minute: 0, second: 0, TimeSpan.Zero);
 
-    public static TheoryData<MachineState> StatesOtherThanOperational => new()
-    {
+    public static TheoryData<MachineState> StatesOtherThanOperational =>
+    [
         MachineState.InMaintenance,
         MachineState.OutOfService,
-    };
+    ];
 }

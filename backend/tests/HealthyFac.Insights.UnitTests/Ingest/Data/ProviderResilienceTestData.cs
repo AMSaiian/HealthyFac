@@ -16,7 +16,7 @@ public static class ProviderResilienceTestData
         { Http(HttpStatusCode.Forbidden) },
         { Http(HttpStatusCode.NotFound) },
         { Http(HttpStatusCode.BadRequest) },
-        { new ClientError(ProviderText, 404, "NOT_FOUND", null) },
+        { new ClientError(ProviderText, statusCode: 404, status: "NOT_FOUND", innerException: null) },
         { new RpcException(new Status(StatusCode.PermissionDenied, ProviderText)) },
         { new RpcException(new Status(StatusCode.Unauthenticated, ProviderText)) },
         { new RpcException(new Status(StatusCode.Internal, ProviderText)) },
@@ -30,7 +30,7 @@ public static class ProviderResilienceTestData
         { new HttpRequestException(ProviderText) },
         { new RpcException(new Status(StatusCode.Unavailable, ProviderText)) },
         { new RpcException(new Status(StatusCode.DeadlineExceeded, ProviderText)) },
-        { new TaskCanceledException("Timeout", new TimeoutException()) },
+        { new TaskCanceledException(message: "Timeout", new TimeoutException()) },
     };
 
     public static TheoryData<Exception> PassThroughErrors => new()

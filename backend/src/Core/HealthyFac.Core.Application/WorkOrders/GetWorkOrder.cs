@@ -74,6 +74,7 @@ public sealed class GetWorkOrderRequestHandler(
             : null;
 
         string[] deletedFilters = [SoftDeleteConstants.QueryFilterName];
+
         var row = await _dbContext.WorkOrders
                 .AsNoTracking()
                 .Where(workOrder => workOrder.Id == request.Id)

@@ -1,8 +1,10 @@
 using HealthyFac.Core.Domain.WorkOrders.Scheduling;
 using HealthyFac.Core.UnitTests.WorkOrders.Scheduling.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.UnitTests.WorkOrders.Scheduling;
 
+[Feature(TestFeatures.WorkOrders)]
 public sealed class SlotRulesTests
 {
     [Theory]
@@ -10,7 +12,7 @@ public sealed class SlotRulesTests
     public void FitsOneBlock_WithSlotInsideOneBlock_ReturnsTrue(string caseName, string start, int minutes)
     {
         var result = SlotRules.FitsOneBlock(
-            SchedulingTestData.Slot(number: 1, start: start, minutes: minutes), SchedulingTestData.Day());
+            SchedulingTestData.Slot(number: 1, start, minutes), SchedulingTestData.Day());
 
         result.Should().BeTrue(because: caseName);
     }
@@ -24,14 +26,20 @@ public sealed class SlotRulesTests
         result.Should().BeFalse();
     }
 
-    [Fact]
-    public void Overlaps_WithBackToBackSlots_ReturnsFalse()
+    [Theory]
+    [MemberData(nameof(SlotRulesTestData.SlotsThatDoNotOverlap), MemberType = typeof(SlotRulesTestData))]
+    public void Overlaps_WithSlotThatDoesNotOverlap_ReturnsFalse(
+        string caseName,
+        int otherNumber,
+        string otherStart,
+        string start
+    )
     {
-        var other = SchedulingTestData.Slot(number: 2, start: "09:00", minutes: 60);
+        var other = SchedulingTestData.Slot(otherNumber, otherStart, minutes: 60);
 
-        var result = SlotRules.Overlaps(SchedulingTestData.Slot(number: 1, start: "10:00", minutes: 60), [other]);
+        var result = SlotRules.Overlaps(SchedulingTestData.Slot(number: 1, start, minutes: 60), [other]);
 
-        result.Should().BeFalse();
+        result.Should().BeFalse(caseName);
     }
 
     [Fact]
@@ -44,37 +52,20 @@ public sealed class SlotRulesTests
         result.Should().BeTrue();
     }
 
-    [Fact]
-    public void Overlaps_WithOwnOccupancy_ReturnsFalse()
-    {
-        var own = SchedulingTestData.Slot(number: 1, start: "09:00", minutes: 60);
-
-        var result = SlotRules.Overlaps(SchedulingTestData.Slot(number: 1, start: "09:30", minutes: 60), [own]);
-
-        result.Should().BeFalse();
-    }
-
-    [Fact]
-    public void Of_WithLateCompletion_BlocksUntilCompletion()
+    [Theory]
+    [MemberData(nameof(SlotRulesTestData.Completions), MemberType = typeof(SlotRulesTestData))]
+    public void Of_WithCompletion_EndsAtTheLaterOfPlannedEndAndCompletion(
+        string caseName,
+        string completedAt,
+        string expectedEnd
+    )
     {
         var occupancy = Occupancy.Of(
             SchedulingTestData.Id(number: 1),
             SchedulingTestData.At(time: "09:00"),
             TimeSpan.FromHours(value: 1),
-            SchedulingTestData.At(time: "10:40"));
+            SchedulingTestData.At(completedAt));
 
-        occupancy.EndUtc.Should().Be(SchedulingTestData.At(time: "10:40"));
-    }
-
-    [Fact]
-    public void Of_WithEarlyCompletion_KeepsPlannedEnd()
-    {
-        var occupancy = Occupancy.Of(
-            SchedulingTestData.Id(number: 1),
-            SchedulingTestData.At(time: "09:00"),
-            TimeSpan.FromHours(value: 1),
-            SchedulingTestData.At(time: "09:20"));
-
-        occupancy.EndUtc.Should().Be(SchedulingTestData.At(time: "10:00"));
+        occupancy.EndUtc.Should().Be(SchedulingTestData.At(expectedEnd), caseName);
     }
 }

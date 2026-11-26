@@ -70,14 +70,13 @@ public static class DraftsProposedTestData
         };
 
     public static TheoryData<DraftsProposed> ValidMessages =>
-        new()
-        {
-            CreateMessage(isMachineFile: false, CreateMachines(count: 20)),
-            CreateMessage(isMachineFile: false, [CreateMachine(metrics: CreateMetrics(count: 100))]),
-            CreateMessage(isMachineFile: false, [CreateMachine(metrics: [CreateMetric(min: 5, max: 6)])]),
-            CreateMessage(isMachineFile: false, [CreateMachine(metrics: [CreateMetric(states: ["on", "off"])])]),
-            CreateMessage(isMachineFile: true, [CreateMachine(TargetMachineId)]),
-        };
+    [
+        CreateMessage(isMachineFile: false, CreateMachines(count: 20)),
+        CreateMessage(isMachineFile: false, [CreateMachine(metrics: CreateMetrics(count: 100))]),
+        CreateMessage(isMachineFile: false, [CreateMachine(metrics: [CreateMetric(min: 5, max: 6)])]),
+        CreateMessage(isMachineFile: false, [CreateMachine(metrics: [CreateMetric(states: ["on", "off"])])]),
+        CreateMessage(isMachineFile: true, [CreateMachine(TargetMachineId)]),
+    ];
 
     private static DraftsProposed CreateMessage(bool isMachineFile, IReadOnlyList<ProposedMachine> machines) =>
         new()

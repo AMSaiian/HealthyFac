@@ -49,7 +49,7 @@ public static class ActorClaimsTestData
         return new ClaimsPrincipal(new ClaimsIdentity(claims, authenticationType: "test"));
     }
 
-    public static TheoryData<string?> InvalidSubjects => new() { default(string), "not-a-guid" };
+    public static TheoryData<string?> InvalidSubjects => [default(string), "not-a-guid"];
 
     public static ClaimsPrincipal ValidPrincipal => CreatePrincipal(
         ActorTestData.UserId.ToString(),
@@ -65,11 +65,12 @@ public static class ActorClaimsTestData
         AllowedClients = [IncomingTokenTestData.ServiceClientId],
     };
 
-    public static HeaderDictionary NoHeaders => new();
+    public static HeaderDictionary NoHeaders => [];
 
     public static HeaderDictionary ActorHeaders(string? actorId, string? companyId = null)
     {
         var headers = new HeaderDictionary();
+
         if (actorId is not null)
         {
             headers[ActorHeaderNames.ActorId] = actorId;
@@ -83,24 +84,24 @@ public static class ActorClaimsTestData
         return headers;
     }
 
-    public static TheoryData<ServiceActorOptions> OptionsWithoutServiceClient => new()
-    {
+    public static TheoryData<ServiceActorOptions> OptionsWithoutServiceClient =>
+    [
         new ServiceActorOptions(),
         new ServiceActorOptions { AllowedClients = [OtherServiceClientId] },
         new ServiceActorOptions { AllowedClients = [IncomingTokenTestData.ServiceClientId.ToUpperInvariant()] },
-    };
+    ];
 
-    public static TheoryData<string> InvalidActorHeaders => new()
-    {
+    public static TheoryData<string> InvalidActorHeaders =>
+    [
         "not-a-guid",
         Guid.Empty.ToString(),
-    };
+    ];
 
-    public static TheoryData<string[]> InvalidOrganizations => new()
-    {
+    public static TheoryData<string[]> InvalidOrganizations =>
+    [
         new[] { ActorTestData.CompanyId.ToString(), ActorTestData.OtherCompanyId.ToString() },
         new[] { $"[\"{ActorTestData.CompanyId}\"]" },
         new[] { $"[\"{ActorTestData.CompanyId}\",\"{ActorTestData.OtherCompanyId}\"]" },
         Array.Empty<string>(),
-    };
+    ];
 }

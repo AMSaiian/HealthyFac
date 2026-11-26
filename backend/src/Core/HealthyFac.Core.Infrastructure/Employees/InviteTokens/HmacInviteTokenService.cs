@@ -15,10 +15,12 @@ internal sealed class HmacInviteTokenService : IInviteTokenService
     public HmacInviteTokenService(IOptions<InviteTokenOptions> options)
     {
         _options = options.Value;
+
         _secretsByKeyId = _options.Keys.ToDictionary(
             key => key.Id,
             key => Convert.FromBase64String(key.Secret),
             StringComparer.Ordinal);
+
         _defaultKeyId = _options.Keys.Single(key => key.IsDefault).Id;
     }
 

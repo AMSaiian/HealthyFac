@@ -1,5 +1,3 @@
-using HealthyFac.Document.Application.Files;
-
 namespace HealthyFac.Document.IntegrationTests.Files.Data;
 
 public static class GetFileLinksTestData
@@ -17,10 +15,4 @@ public static class GetFileLinksTestData
 
     public static readonly DateTime UploadedAt = new(
         year: 2026, month: 4, day: 1, hour: 8, minute: 0, second: 0, DateTimeKind.Utc);
-
-    public static string[] IdsAboveTheLimit =>
-        [.. Enumerable.Range(start: 0, FileValidationConstants.LinkIdsMaxCount + 1).Select(_ => "id")];
-
-    public static string[] IdsAtTheLimit =>
-        [.. Enumerable.Range(start: 0, FileValidationConstants.LinkIdsMaxCount).Select(_ => "id")];
 }

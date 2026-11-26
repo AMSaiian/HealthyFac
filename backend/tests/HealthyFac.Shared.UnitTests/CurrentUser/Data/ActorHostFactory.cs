@@ -45,6 +45,7 @@ public static class ActorHostFactory
                     }
 
                     app.UseActorContext();
+
                     app.Run(context => context.Response.WriteAsync(
                         context.RequestServices.GetRequiredService<ICurrentUserProvider>().GetUserId().ToString()));
                 }))

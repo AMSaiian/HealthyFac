@@ -23,6 +23,7 @@ internal sealed class ProxyErrorMiddleware(ILogger<ProxyErrorMiddleware> logger)
         await next(context);
 
         var forwarderError = context.GetForwarderErrorFeature();
+
         if (forwarderError is null || forwarderError.Error == ForwarderError.RequestCanceled)
         {
             return;

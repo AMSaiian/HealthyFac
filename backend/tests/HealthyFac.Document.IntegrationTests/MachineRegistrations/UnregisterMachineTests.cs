@@ -5,10 +5,12 @@ using HealthyFac.Document.IntegrationTests.Files.Data;
 using HealthyFac.Document.IntegrationTests.MachineRegistrations.Data;
 using HealthyFac.Document.Messaging.Files;
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Document.IntegrationTests.MachineRegistrations;
 
 [Collection(DocumentDatabaseCollection.Name)]
+[Feature(TestFeatures.Machines)]
 public sealed class UnregisterMachineTests(DocumentDatabaseFixture fixture)
 {
     private readonly DocumentDatabaseFixture _fixture = fixture;
@@ -31,6 +33,7 @@ public sealed class UnregisterMachineTests(DocumentDatabaseFixture fixture)
     public async Task UnregisterMachine_WithFiles_SoftDeletesThemInOneSave()
     {
         var machineId = await _fixture.RegisterMachineAsync(MachineRegistrationTestData.CompanyId);
+
         var ids = await _fixture.SeedFilesAsync(
             MachineRegistrationTestData.CompanyId,
             [
@@ -39,13 +42,14 @@ public sealed class UnregisterMachineTests(DocumentDatabaseFixture fixture)
                 new FileSeed(
                     FileName: "two", Extension: "pdf", SizeBytes: 10, UpdateFileTestData.UploadedAt, machineId),
             ]);
+
         using var race = _fixture.SaveGate.StartRace(participantCount: 1);
 
         var failure = await race.RunAsync(() => _fixture.UnregisterMachineAsync(
             MachineRegistrationTestData.CreateDeletedMessage(machineId)));
 
-        var first = await _fixture.LoadFileRowAsync(ids[index: 0]);
-        var second = await _fixture.LoadFileRowAsync(ids[index: 1]);
+        var first = await _fixture.LoadFileRowAsync(ids[0]);
+        var second = await _fixture.LoadFileRowAsync(ids[1]);
 
         failure.Should().BeNull();
         race.SaveCounts.Should().Equal(1);
@@ -57,6 +61,7 @@ public sealed class UnregisterMachineTests(DocumentDatabaseFixture fixture)
     public async Task UnregisterMachine_WithFiles_StoresOneFileDeletedMessageForEachFile()
     {
         var machineId = await _fixture.RegisterMachineAsync(MachineRegistrationTestData.CompanyId);
+
         var ids = await _fixture.SeedFilesAsync(
             MachineRegistrationTestData.CompanyId,
             [
@@ -79,6 +84,7 @@ public sealed class UnregisterMachineTests(DocumentDatabaseFixture fixture)
     {
         var act = () => _fixture.UnregisterMachineAsync(
             MachineRegistrationTestData.CreateDeletedMessage(Guid.CreateVersion7()));
+
         await act.Should().ThrowAsync<NotFoundException>();
 
         var messages = await _fixture.ReadOutboxMessagesAsync<FileDeleted>();
@@ -91,6 +97,7 @@ public sealed class UnregisterMachineTests(DocumentDatabaseFixture fixture)
     {
         var machineId = await _fixture.RegisterMachineAsync(MachineRegistrationTestData.CompanyId);
         var otherMachineId = await _fixture.RegisterMachineAsync(MachineRegistrationTestData.CompanyId);
+
         var ids = await _fixture.SeedFilesAsync(
             MachineRegistrationTestData.CompanyId,
             [
@@ -101,8 +108,8 @@ public sealed class UnregisterMachineTests(DocumentDatabaseFixture fixture)
 
         await _fixture.UnregisterMachineAsync(MachineRegistrationTestData.CreateDeletedMessage(machineId));
 
-        var other = await _fixture.LoadFileRowAsync(ids[index: 0]);
-        var company = await _fixture.LoadFileRowAsync(ids[index: 1]);
+        var other = await _fixture.LoadFileRowAsync(ids[0]);
+        var company = await _fixture.LoadFileRowAsync(ids[1]);
 
         other.DeletedAt.Should().BeNull();
         company.DeletedAt.Should().BeNull();

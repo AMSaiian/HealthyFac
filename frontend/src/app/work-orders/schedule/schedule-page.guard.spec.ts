@@ -7,7 +7,7 @@ import { firstValueFrom, isObservable, type Observable } from 'rxjs';
 import { ScheduleStore } from '@work-orders/schedule/schedule-store/schedule.store';
 import { schedulePageGuard } from './schedule-page.guard';
 
-describe('schedulePageGuard', () => {
+describe('schedulePageGuard', { tags: ['WorkOrders'] }, () => {
   const pendingCount = vi.fn();
   const confirm = vi.fn();
 

@@ -50,6 +50,7 @@ public sealed class IngestWorker(
 
         cancellationToken.ThrowIfCancellationRequested();
         var claimed = await ClaimAsync(cancellationToken);
+
         if (claimed is null)
         {
             return false;
@@ -60,7 +61,7 @@ public sealed class IngestWorker(
         return true;
     }
 
-    protected override async Task ExecuteAsync(CancellationToken cancellationToken)
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         if (!_options.IsWorkerEnabled)
         {
@@ -68,24 +69,26 @@ public sealed class IngestWorker(
         }
 
         var pollInterval = TimeSpan.FromSeconds(_options.PollSeconds);
-        while (!cancellationToken.IsCancellationRequested)
+
+        while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
-                var didRun = await RunOnceAsync(cancellationToken);
+                var didRun = await RunOnceAsync(stoppingToken);
+
                 if (!didRun)
                 {
-                    await Task.Delay(pollInterval, _timeProvider, cancellationToken);
+                    await Task.Delay(pollInterval, _timeProvider, stoppingToken);
                 }
             }
-            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
                 break;
             }
             catch (Exception exception)
             {
                 _logger.LogError(exception, message: "The ingest worker round failed. The loop goes on.");
-                await DelayAfterFailureAsync(pollInterval, cancellationToken);
+                await DelayAfterFailureAsync(pollInterval, stoppingToken);
             }
         }
     }

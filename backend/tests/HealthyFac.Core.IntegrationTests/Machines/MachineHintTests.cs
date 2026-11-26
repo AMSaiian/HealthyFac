@@ -2,10 +2,12 @@ using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Machines.Data;
 using HealthyFac.Shared.Application.Realtime;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.IntegrationTests.Machines;
 
 [Collection(CoreMachinesCollection.Name)]
+[Feature(TestFeatures.Machines)]
 public sealed class MachineHintTests(CoreDatabaseFixture fixture)
 {
     private readonly CoreDatabaseFixture _fixture = fixture;
@@ -75,11 +77,13 @@ public sealed class MachineHintTests(CoreDatabaseFixture fixture)
     private async Task<Guid> ArrangeAsync(MachineTenant tenant)
     {
         _fixture.Clock.Freeze(MachineStateChangeTestData.CreatedNow);
+
         var machineId = await _fixture.CreateMachineAsync(
             tenant.CompanyId,
             MachineTestData.MachineName,
             MachineTestData.SerialNumber,
             MachineTestData.LinkDescription);
+
         _fixture.Clock.Freeze(MachineStateChangeTestData.ChangedNow);
 
         return machineId;

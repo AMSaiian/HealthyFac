@@ -1,10 +1,13 @@
 using HealthyFac.Auth.IntegrationTests.Identities.Data;
 using HealthyFac.Auth.IntegrationTests.Keycloak.Data;
+using HealthyFac.Testing.Features;
 using StackExchange.Redis;
 
 namespace HealthyFac.Auth.IntegrationTests.Identities;
 
 [Collection(KeycloakCollection.Name)]
+[Feature(TestFeatures.Identity)]
+[Feature(TestFeatures.Companies)]
 public sealed class RevokeIdentityTests(ProvisioningFixture fixture)
 {
     private readonly ProvisioningFixture _fixture = fixture;
@@ -72,6 +75,7 @@ public sealed class RevokeIdentityTests(ProvisioningFixture fixture)
         {
             DeactivatedAt = DateTime.UtcNow.AddMinutes(-ProvisioningTestData.DelayedDeactivationMinutes),
         };
+
         var identityAdmin = new FakeIdentityAdmin();
         var beforeAct = DateTimeOffset.UtcNow;
 
@@ -80,7 +84,7 @@ public sealed class RevokeIdentityTests(ProvisioningFixture fixture)
         var entry = await _fixture.LoadRevocationAsync(message.IdentityUserId.GetValueOrDefault());
 
         entry.Should().NotBeNull();
-        entry!.RevokedAt.ToUnixTimeSeconds().Should().BeGreaterThanOrEqualTo(beforeAct.ToUnixTimeSeconds());
+        entry.RevokedAt.ToUnixTimeSeconds().Should().BeGreaterThanOrEqualTo(beforeAct.ToUnixTimeSeconds());
     }
 
     [Fact]

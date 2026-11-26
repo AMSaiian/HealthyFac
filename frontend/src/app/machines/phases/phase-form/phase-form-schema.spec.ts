@@ -40,7 +40,7 @@ const condition = (extra: object): object => ({
 
 const VALID = { ...EMPTY_FORM_VALUE, code: 'idle', name: 'Idle', conditions: [condition({ sourceId: 'c1' })] };
 
-describe('phase form schema', () => {
+describe('phase form schema', { tags: ['SignalModel'] }, () => {
   it('phaseFormSchema_WithADescriptionOverTheRichTextLimit_IsTooLong', () => {
     const description = `<p>${'a'.repeat(PHASE_DESCRIPTION_MAX_LENGTH + 1)}</p>`;
 

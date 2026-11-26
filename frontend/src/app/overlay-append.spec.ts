@@ -9,7 +9,7 @@ function overlaysWithoutAppendTo(source: string): string[] {
   return [...source.matchAll(OVERLAY_TAG)].map((match) => match[0]).filter((tag) => !APPEND_TO.test(tag));
 }
 
-describe('overlay append', () => {
+describe('overlay append', { tags: ['Conventions'] }, () => {
   const templates = import.meta.glob('./**/*.html', { query: '?raw', import: 'default', eager: true }) as Record<
     string,
     string

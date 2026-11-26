@@ -117,7 +117,7 @@ function setup(
   return { store: TestBed.inject(MachineDrawerStore), api, draftsApi, complete, notify, messages };
 }
 
-describe('MachineDrawerStore', () => {
+describe('MachineDrawerStore', { tags: ['Machines'] }, () => {
   it('load_ForCreateDraft_PrefillsTheDraftValuesAndEmptiesMissingOnes', async () => {
     const { store, draftsApi } = setup();
     store.start({ type: MachineActionType.Create, payload: { draftId: 'draft-id' } });

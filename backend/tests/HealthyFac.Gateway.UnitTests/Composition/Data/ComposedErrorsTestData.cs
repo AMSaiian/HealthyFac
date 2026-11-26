@@ -40,11 +40,11 @@ public static class ComposedErrorsTestData
 
     public static DownstreamResult.ClientError Error(int status, string title, string? errorsJson = null)
     {
-        var problem = new JsonObject { [propertyName: "title"] = title };
+        var problem = new JsonObject { ["title"] = title };
 
         if (errorsJson is not null)
         {
-            problem[propertyName: "errors"] = JsonNode.Parse(errorsJson);
+            problem["errors"] = JsonNode.Parse(errorsJson);
         }
 
         return new DownstreamResult.ClientError { Status = status, Problem = problem };

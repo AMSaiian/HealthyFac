@@ -54,6 +54,7 @@ public sealed class BlobFileStorage(
     {
         using var activity = DocumentActivitySource.Instance.StartActivity(
             ObservabilityConstants.Files.Spans.BlobUpload, ActivityKind.Internal);
+
         activity?.SetTag(ObservabilityConstants.Files.Tags.Purpose, purpose.Value);
 
         var uploadOptions = new BlobUploadOptions
@@ -71,6 +72,7 @@ public sealed class BlobFileStorage(
                 && !cancellationToken.IsCancellationRequested)
         {
             activity?.SetStatus(ActivityStatusCode.Error);
+
             _logger.LogWarning(
                 message: "The file storage rejected a write: {ExceptionType} {Status}",
                 exception.GetType().Name,

@@ -1,9 +1,11 @@
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Web.ErrorHandling;
+using HealthyFac.Testing.Features;
 using Microsoft.AspNetCore.Http;
 
 namespace HealthyFac.Shared.UnitTests.ErrorHandling;
 
+[Feature(TestFeatures.Platform)]
 public sealed class ApplicationExceptionHandlerTests
 {
     private const string Message = "The storage is down.";
@@ -32,6 +34,7 @@ public sealed class ApplicationExceptionHandlerTests
     {
         var context = new DefaultHttpContext { Response = { Body = new MemoryStream() } };
         var handler = new ApplicationExceptionHandler();
+
         var exception = new UnprocessableException(Message)
         {
             Extensions = new Dictionary<string, object?> { [ExtensionKey] = new[] { ExtensionValue } },

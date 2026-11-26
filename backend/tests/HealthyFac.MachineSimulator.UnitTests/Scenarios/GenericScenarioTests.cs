@@ -3,9 +3,11 @@ using HealthyFac.MachineSimulator.Scenarios.Machines;
 using HealthyFac.MachineSimulator.Scenarios.Modules;
 using HealthyFac.MachineSimulator.UnitTests.Scenarios.Data;
 using HealthyFac.Telemetry.Domain.MetricDefinitions;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.MachineSimulator.UnitTests.Scenarios;
 
+[Feature(TestFeatures.Simulation)]
 public sealed class GenericScenarioTests
 {
     private readonly GenericScenario _scenario = new();
@@ -37,9 +39,10 @@ public sealed class GenericScenarioTests
     {
         var context = CreateContext(Numeric(min, max));
 
-        var first = (double)_scenario.Sample(context).Values[key: "m"];
+        var first = (double)_scenario.Sample(context).Values["m"];
+
         var values = Enumerable.Range(start: 0, GenericScenarioTestData.MessageCount)
-            .Select(_ => (double)_scenario.Sample(context).Values[key: "m"])
+            .Select(_ => (double)_scenario.Sample(context).Values["m"])
             .ToList();
 
         first.Should().Be(low + (high - low) / 2, caseName);
@@ -50,12 +53,12 @@ public sealed class GenericScenarioTests
     public void Sample_WithNumericMetric_MovesByAtMostOnePercentOfTheRange()
     {
         var context = CreateContext(Numeric(min: 0, max: 100));
-        var previous = (double)_scenario.Sample(context).Values[key: "m"];
+        var previous = (double)_scenario.Sample(context).Values["m"];
 
         var steps = Enumerable.Range(start: 0, GenericScenarioTestData.MessageCount)
             .Select(_ =>
             {
-                var next = (double)_scenario.Sample(context).Values[key: "m"];
+                var next = (double)_scenario.Sample(context).Values["m"];
                 var step = Math.Abs(next - previous);
                 previous = next;
 
@@ -71,6 +74,7 @@ public sealed class GenericScenarioTests
     public void Sample_WithRandomAlwaysOneWay_StopsAtTheEdgeOfTheRange(string caseName, double random, double expected)
     {
         var context = CreateContext(Numeric(min: 10, max: 20));
+
         context = new ScenarioContext
         {
             RunTime = context.RunTime,
@@ -84,7 +88,7 @@ public sealed class GenericScenarioTests
         };
 
         var values = Enumerable.Range(start: 0, count: 200)
-            .Select(_ => (double)_scenario.Sample(context).Values[key: "m"])
+            .Select(_ => (double)_scenario.Sample(context).Values["m"])
             .ToList();
 
         values[^1].Should().Be(expected, caseName);
@@ -102,8 +106,8 @@ public sealed class GenericScenarioTests
 
         var sample = _scenario.Sample(context);
 
-        sample.Values[key: "flag"].Should().Be(expected: false);
-        sample.Values[key: "mode"].Should().Be(expected: "idle");
+        sample.Values["flag"].Should().Be(expected: false);
+        sample.Values["mode"].Should().Be(expected: "idle");
         sample.StatusCodes.Should().BeEmpty();
         sample.GrowingCounters.Should().BeEmpty();
     }

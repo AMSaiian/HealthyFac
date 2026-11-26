@@ -32,15 +32,18 @@ public class IngestStateChangedValidator : AbstractValidator<IngestStateChanged>
     {
         RuleFor(message => message.FileId).NotEmpty().WithMessage(IngestMessageErrors.Validation.IdRequired);
         RuleFor(message => message.CompanyId).NotEmpty().WithMessage(IngestMessageErrors.Validation.IdRequired);
+
         RuleFor(message => message.State)
             .SingleLineText()
             .NotEmpty()
             .WithMessage(IngestMessageErrors.Validation.StateInvalid)
             .Must(state => IngestMessageStates.All.Contains(state))
             .WithMessage(IngestMessageErrors.Validation.StateInvalid);
+
         RuleFor(message => message.FailedCount)
             .GreaterThanOrEqualTo(valueToCompare: 0)
             .WithMessage(IngestMessageErrors.Validation.FailedCountNegative);
+
         RuleFor(message => message.ChangedAt)
             .NotEmpty()
             .WithMessage(IngestMessageErrors.Validation.ChangedAtRequired);

@@ -5,10 +5,12 @@ using HealthyFac.Core.IntegrationTests.Employees.Data;
 using HealthyFac.Core.IntegrationTests.Machines.Data;
 using HealthyFac.Core.Messaging.Machines;
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.IntegrationTests.Machines;
 
 [Collection(CoreMachinesCollection.Name)]
+[Feature(TestFeatures.Machines)]
 public sealed class UpdateMachineTests(CoreDatabaseFixture fixture)
 {
     private readonly CoreDatabaseFixture _fixture = fixture;
@@ -46,8 +48,8 @@ public sealed class UpdateMachineTests(CoreDatabaseFixture fixture)
         var renamed = messages.Where(candidate => candidate.MachineId == machineId).ToList();
 
         renamed.Should().ContainSingle();
-        renamed[index: 0].Name.Should().Be(MachineTestData.OtherMachineName);
-        renamed[index: 0].CompanyId.Should().Be(tenant.CompanyId);
+        renamed[0].Name.Should().Be(MachineTestData.OtherMachineName);
+        renamed[0].CompanyId.Should().Be(tenant.CompanyId);
     }
 
     [Fact]
@@ -137,8 +139,10 @@ public sealed class UpdateMachineTests(CoreDatabaseFixture fixture)
     public async Task UpdateMachine_WhenTwoUpdatesOverlap_OneSucceedsAndOneConflicts()
     {
         var tenant = await _fixture.ArrangeMachineTenantAsync();
+
         var machineId = await _fixture.CreateMachineAsync(
             tenant.CompanyId, MachineTestData.MachineName, MachineTestData.SerialNumber);
+
         using var race = _fixture.SaveGate.StartRace(MachineTestData.RaceParticipantCount);
 
         var failures = await Task.WhenAll(
@@ -151,6 +155,7 @@ public sealed class UpdateMachineTests(CoreDatabaseFixture fixture)
 
         race.SaveCounts.Should().Equal(1, 1);
         failures.Count(failure => failure is null).Should().Be(expected: 1);
+
         failures.Single(failure => failure is not null)
             .Should()
             .BeOfType<ConflictException>()
@@ -179,8 +184,8 @@ public sealed class UpdateMachineTests(CoreDatabaseFixture fixture)
 
         machine.Name.Should().Be(MachineTestData.OtherMachineName);
         history.Should().HaveCount(expected: 2);
-        history[index: 1].State.Should().Be(MachineState.InMaintenance);
-        history[index: 1].StartedAt.Should().Be(MachineStateChangeTestData.ChangedNow.UtcDateTime);
+        history[1].State.Should().Be(MachineState.InMaintenance);
+        history[1].StartedAt.Should().Be(MachineStateChangeTestData.ChangedNow.UtcDateTime);
         renamed.Where(message => message.MachineId == machineId).Should().ContainSingle();
     }
 
@@ -208,8 +213,10 @@ public sealed class UpdateMachineTests(CoreDatabaseFixture fixture)
     public async Task UpdateMachine_WhenUpdateAndStateChangeOverlap_OneSucceedsAndOneConflicts()
     {
         var tenant = await _fixture.ArrangeMachineTenantAsync();
+
         var machineId = await _fixture.CreateMachineAsync(
             tenant.CompanyId, MachineTestData.MachineName, MachineTestData.SerialNumber);
+
         _fixture.Clock.StepFrom(DateTimeOffset.UtcNow.AddMinutes(minutes: 1), TimeSpan.FromSeconds(seconds: 1));
         using var race = _fixture.SaveGate.StartRace(MachineTestData.RaceParticipantCount);
 
@@ -224,11 +231,13 @@ public sealed class UpdateMachineTests(CoreDatabaseFixture fixture)
 
         race.SaveCounts.Should().Equal(1, 1);
         failures.Count(failure => failure is null).Should().Be(expected: 1);
+
         failures.Single(failure => failure is not null)
             .Should()
             .BeOfType<ConflictException>()
             .Which.Message.Should()
             .Be(MachineErrors.MachineChanged);
+
         history.Should().HaveCount(expected: 2);
     }
 
@@ -236,8 +245,10 @@ public sealed class UpdateMachineTests(CoreDatabaseFixture fixture)
     public async Task UpdateMachine_WhenStateChangeHasTheSameInstantAsAParallelChange_ThrowsMachineChanged()
     {
         var tenant = await _fixture.ArrangeMachineTenantAsync();
+
         var machineId = await _fixture.CreateMachineAsync(
             tenant.CompanyId, MachineTestData.MachineName, MachineTestData.SerialNumber);
+
         _fixture.Clock.Freeze(DateTimeOffset.UtcNow.AddMinutes(minutes: 1));
         using var race = _fixture.SaveGate.StartRace(MachineTestData.RaceParticipantCount);
 
@@ -252,11 +263,13 @@ public sealed class UpdateMachineTests(CoreDatabaseFixture fixture)
 
         race.SaveCounts.Should().Equal(1, 1);
         failures.Count(failure => failure is null).Should().Be(expected: 1);
+
         failures.Single(failure => failure is not null)
             .Should()
             .BeOfType<ConflictException>()
             .Which.Message.Should()
             .Be(MachineErrors.MachineChanged);
+
         history.Should().HaveCount(expected: 2);
     }
 
@@ -264,8 +277,10 @@ public sealed class UpdateMachineTests(CoreDatabaseFixture fixture)
     public async Task UpdateMachine_WhenTwoUpdatesHaveTheSameInstant_ThrowsMachineChanged()
     {
         var tenant = await _fixture.ArrangeMachineTenantAsync();
+
         var machineId = await _fixture.CreateMachineAsync(
             tenant.CompanyId, MachineTestData.MachineName, MachineTestData.SerialNumber);
+
         _fixture.Clock.Freeze(DateTimeOffset.UtcNow.AddMinutes(minutes: 1));
         using var race = _fixture.SaveGate.StartRace(MachineTestData.RaceParticipantCount);
 
@@ -281,11 +296,13 @@ public sealed class UpdateMachineTests(CoreDatabaseFixture fixture)
 
         race.SaveCounts.Should().Equal(1, 1);
         failures.Count(failure => failure is null).Should().Be(expected: 1);
+
         failures.Single(failure => failure is not null)
             .Should()
             .BeOfType<ConflictException>()
             .Which.Message.Should()
             .Be(MachineErrors.MachineChanged);
+
         history.Should().HaveCount(expected: 2);
     }
 
@@ -308,9 +325,9 @@ public sealed class UpdateMachineTests(CoreDatabaseFixture fixture)
         var changed = messages.Where(message => message.MachineId == machineId).ToList();
 
         changed.Should().ContainSingle();
-        changed[index: 0].CompanyId.Should().Be(tenant.CompanyId);
-        changed[index: 0].State.Should().Be(MachineStateValue.OutOfService);
-        changed[index: 0].StartedAt.Should().Be(MachineStateChangeTestData.ChangedNow.UtcDateTime);
+        changed[0].CompanyId.Should().Be(tenant.CompanyId);
+        changed[0].State.Should().Be(MachineStateValue.OutOfService);
+        changed[0].StartedAt.Should().Be(MachineStateChangeTestData.ChangedNow.UtcDateTime);
     }
 
     [Fact]

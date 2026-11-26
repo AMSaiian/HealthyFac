@@ -22,10 +22,12 @@ public static class StaticAssetCaching
         {
             var options = app.ApplicationServices.GetRequiredService<IOptions<SpaOptions>>().Value;
             var contentRoot = Path.GetFullPath(options.ContentRoot, AppContext.BaseDirectory);
+
             var hashedFileName = new Regex(
                 options.HashedFileNamePattern,
                 RegexOptions.CultureInvariant,
                 SpaConstants.HashedFiles.PatternMatchTimeout);
+
             var immutableCacheControl = string.Format(
                 CultureInfo.InvariantCulture,
                 SpaConstants.CacheControl.ImmutableFormat,
@@ -38,9 +40,11 @@ public static class StaticAssetCaching
                     OnPrepareResponse = context =>
                     {
                         var headers = context.Context.Response.Headers;
+
                         headers[HeaderNames.CacheControl] = hashedFileName.IsMatch(context.File.Name)
                             ? immutableCacheControl
                             : SpaConstants.CacheControl.NoCache;
+
                         if (context.File.Name == SpaConstants.SilentSsoFileName)
                         {
                             headers[HeaderNames.ContentSecurityPolicy] = ContentSecurityPolicy.SilentSso;

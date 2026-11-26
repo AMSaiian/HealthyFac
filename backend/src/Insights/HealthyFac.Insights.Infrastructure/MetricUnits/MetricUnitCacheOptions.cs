@@ -34,15 +34,19 @@ public sealed class MetricUnitCacheOptionsValidator : AbstractValidator<MetricUn
         RuleFor(options => options.TimeToLiveSeconds)
             .GreaterThan(valueToCompare: 0)
             .WithMessage(MetricUnitCacheMessages.TimeToLiveInvalid);
+
         RuleFor(options => options.JitterSeconds)
             .GreaterThanOrEqualTo(valueToCompare: 0)
             .WithMessage(MetricUnitCacheMessages.JitterInvalid);
+
         RuleFor(options => options.LockSeconds)
             .GreaterThan(valueToCompare: 0)
             .WithMessage(MetricUnitCacheMessages.LockInvalid);
+
         RuleFor(options => options.PollMilliseconds)
             .GreaterThan(valueToCompare: 0)
             .WithMessage(MetricUnitCacheMessages.PollInvalid);
+
         RuleFor(options => options)
             .Must(options => options.IsPollBelowLock)
             .WithMessage(MetricUnitCacheMessages.PollAboveLock);

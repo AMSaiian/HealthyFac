@@ -9,6 +9,7 @@ public sealed class CancellingWriter(string text, CancellationTokenSource stop) 
     public override void WriteLine(string? value)
     {
         base.WriteLine(value);
+
         if (value is not null && value.Contains(_text, StringComparison.Ordinal))
         {
             _stop.Cancel();

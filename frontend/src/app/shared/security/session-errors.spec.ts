@@ -6,7 +6,7 @@ function networkError(status: number): Error {
   return Object.assign(new Error('refresh failed'), { response: new Response(null, { status }) });
 }
 
-describe('isSessionEndedByServer', () => {
+describe('isSessionEndedByServer', { tags: ['Identity'] }, () => {
   it('isSessionEndedByServer_With400Response_ReturnsTrue', () => {
     const result = isSessionEndedByServer(networkError(HttpStatusCode.BadRequest));
 

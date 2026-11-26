@@ -2,9 +2,11 @@ using System.Diagnostics;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.Observability;
 using HealthyFac.Shared.UnitTests.Observability.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.UnitTests.Observability;
 
+[Feature(TestFeatures.Platform)]
 public sealed class ActivityTraceTests : IDisposable
 {
     private readonly ActivitySource _source = new(ActivityTraceTestData.SourceName);

@@ -27,28 +27,19 @@ function messages(value: MetricFormValue): string[] {
   return result.success ? [] : result.error.issues.map((issue) => issue.message);
 }
 
-describe('metric form schema limits', () => {
-  it('metricFormSchema_LimitsInsideTheirAlarms_HasNoIssue', () => {
-    expect(messages(VALID)).toEqual([]);
-  });
-
-  it('metricFormSchema_WarningLowEqualToAlarmLow_HasNoIssue', () => {
-    expect(messages({ ...VALID, warningLow: 5 })).toEqual([]);
-  });
-
-  it('metricFormSchema_WarningLowBelowAlarmLow_ReportsTheWarningLowError', () => {
-    expect(messages({ ...VALID, warningLow: 4 })).toEqual([WARNING_LOW_ERROR_KEY]);
-  });
-
-  it('metricFormSchema_WarningHighAboveAlarmHigh_ReportsTheWarningHighError', () => {
-    expect(messages({ ...VALID, warningHigh: 81 })).toEqual([WARNING_HIGH_ERROR_KEY]);
-  });
-
-  it('metricFormSchema_LimitWithoutItsAlarm_HasNoIssue', () => {
-    expect(messages({ ...VALID, alarmLow: null, alarmHigh: null, warningLow: 1, warningHigh: 999 })).toEqual([]);
-  });
-
-  it('metricFormSchema_BooleanMetricWithStaleLimits_IgnoresTheLimitRules', () => {
-    expect(messages({ ...VALID, valueKind: MetricValueKind.Boolean, unit: '', warningLow: 1 })).toEqual([]);
+describe('metric form schema limits', { tags: ['SignalModel'] }, () => {
+  it.each<[string, Partial<MetricFormValue>, string[]]>([
+    ['LimitsInsideTheirAlarms_HasNoIssue', {}, []],
+    ['WarningLowEqualToAlarmLow_HasNoIssue', { warningLow: 5 }, []],
+    ['WarningLowBelowAlarmLow_ReportsTheWarningLowError', { warningLow: 4 }, [WARNING_LOW_ERROR_KEY]],
+    ['WarningHighAboveAlarmHigh_ReportsTheWarningHighError', { warningHigh: 81 }, [WARNING_HIGH_ERROR_KEY]],
+    ['LimitWithoutItsAlarm_HasNoIssue', { alarmLow: null, alarmHigh: null, warningLow: 1, warningHigh: 999 }, []],
+    [
+      'BooleanMetricWithStaleLimits_IgnoresTheLimitRules',
+      { valueKind: MetricValueKind.Boolean, unit: '', warningLow: 1 },
+      [],
+    ],
+  ])('metricFormSchema_%s', (_name, overrides, expected) => {
+    expect(messages({ ...VALID, ...overrides })).toEqual(expected);
   });
 });

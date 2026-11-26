@@ -2,10 +2,12 @@ using HealthyFac.Telemetry.IntegrationTests.Database.Data;
 using HealthyFac.Telemetry.IntegrationTests.MachineRegistrations.Data;
 using HealthyFac.Telemetry.IntegrationTests.MetricDefinitions.Data;
 using HealthyFac.Telemetry.IntegrationTests.StatusDefinitions.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.IntegrationTests.StatusDefinitions;
 
 [Collection(TelemetryDefinitionsCollection.Name)]
+[Feature(TestFeatures.SignalModel)]
 public sealed class StatusDefinitionSchemaRevisionTests(TelemetryDatabaseFixture fixture)
 {
     private readonly TelemetryDatabaseFixture _fixture = fixture;
@@ -18,8 +20,10 @@ public sealed class StatusDefinitionSchemaRevisionTests(TelemetryDatabaseFixture
 
         var statusId = await _fixture.CreateStatusDefinitionAsync(
             tenant.CompanyId, machineId, StatusDefinitionTestData.Code);
+
         await _fixture.UpdateStatusDefinitionAsync(
             tenant.CompanyId, machineId, statusId, StatusDefinitionTestData.UpdatedCode);
+
         await _fixture.DeleteStatusDefinitionAsync(tenant.CompanyId, machineId, statusId);
 
         var revision = await _fixture.LoadMetricSchemaRevisionAsync(machineId);

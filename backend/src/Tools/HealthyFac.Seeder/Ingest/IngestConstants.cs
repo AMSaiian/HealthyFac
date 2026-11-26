@@ -15,8 +15,8 @@ public static class IngestConstants
 
     public static readonly IReadOnlyDictionary<string, string> ContentTypes = new Dictionary<string, string>
     {
-        [key: ".pdf"] = "application/pdf",
-        [key: ".docx"] = "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        [key: ".xlsx"] = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        [".pdf"] = "application/pdf",
+        [".docx"] = "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        [".xlsx"] = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     };
 }

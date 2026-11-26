@@ -17,7 +17,7 @@ function startStore(lastResult: WritableSignal<ActionResult | null>, reload: () 
   TestBed.runInInjectionContext(() => new Store());
 }
 
-describe('withActionResultReload', () => {
+describe('withActionResultReload', { tags: ['Platform'] }, () => {
   it.each([
     { name: 'an older sequence', result: { type: RELOAD_TYPE, sequence: 2 } },
     { name: 'another type', result: { type: OTHER_TYPE, sequence: 4 } },

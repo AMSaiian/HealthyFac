@@ -61,6 +61,7 @@ public sealed class AttemptDraftsComposer(DownstreamClient downstreamClient, Mac
             ReadObjects(results[1], MetricsProperty),
             ReadObjects(results[1], StatusesProperty),
             ReadObjects(results[1], PhasesProperty));
+
         var unnamed = groups
             .Where(group => group.LookupMachineId is not null || group.LookupDraftId is not null)
             .ToList();

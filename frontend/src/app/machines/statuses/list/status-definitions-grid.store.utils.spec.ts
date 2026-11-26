@@ -1,6 +1,6 @@
 import { toStatusEditor } from './status-definitions-grid.store.utils';
 
-describe('toStatusEditor', () => {
+describe('toStatusEditor', { tags: ['SignalModel'] }, () => {
   it.each([
     ['WithoutCompose', null, null],
     ['WithTheNewName', 'status', { statusDefinitionId: null }],

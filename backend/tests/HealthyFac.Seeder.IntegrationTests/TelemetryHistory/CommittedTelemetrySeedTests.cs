@@ -4,11 +4,15 @@ using HealthyFac.Seeder.IntegrationTests.Hosting;
 using HealthyFac.Seeder.IntegrationTests.TelemetryHistory.Data;
 using HealthyFac.Seeder.IntegrationTests.Timeline.Data;
 using HealthyFac.Seeder.IntegrationTests.WorkOrders.Data;
+using HealthyFac.Testing.Features;
 using Npgsql;
 
 namespace HealthyFac.Seeder.IntegrationTests.TelemetryHistory;
 
 [Collection(SeederCollection.Name)]
+[Feature(TestFeatures.Seeding)]
+[Feature(TestFeatures.Intake)]
+[Feature(TestFeatures.Evaluation)]
 public sealed class CommittedTelemetrySeedTests(SeederFixture fixture)
 {
     private readonly SeederFixture _fixture = fixture;
@@ -17,10 +21,12 @@ public sealed class CommittedTelemetrySeedTests(SeederFixture fixture)
     public async Task RunAsync_OnTheCommittedSeedInModeTwo_StoresTheHistoryOfTheFortyEightHours()
     {
         var stopwatch = Stopwatch.StartNew();
+
         var job = await _fixture.RunJobAsync(
             [TelemetryHistorySeedTestData.TelemetryArgument],
             TestContext.Current.CancellationToken,
             anchor: TelemetryHistorySeedTestData.ThursdayAnchor);
+
         stopwatch.Stop();
 
         var machineIds = await _fixture.LoadMachineIdsByKeyAsync();
@@ -38,11 +44,13 @@ public sealed class CommittedTelemetrySeedTests(SeederFixture fixture)
         TestContext.Current.SendDiagnosticMessage(
             $"Measured: elapsed {stopwatch.Elapsed:g}, "
             + $"telemetry database {size / TelemetryHistorySeedTestData.BytesPerMegabyte:F0} MB");
+
         job.ExitCode.Should().Be(expected: 0);
         hasMarker.Should().BeTrue();
         HistoryAssertions.AssertSamples(TelemetryHistorySeedTestData.CommittedExpectation, machineIds, counts, range);
         HistoryAssertions.AssertEpisodes(TelemetryHistorySeedTestData.CommittedExpectation, machineIds, episodes, step);
         HistoryAssertions.AssertCases(TelemetryHistorySeedTestData.CommittedExpectation, machineIds, cases, signals);
+
         HistoryAssertions.AssertDrainWorkOrders(
             TelemetryHistorySeedTestData.CommittedExpectation, machineIds, signals, runs, actions, orders, toolCalls);
     }
@@ -57,6 +65,7 @@ public sealed class CommittedTelemetrySeedTests(SeederFixture fixture)
 
         var orders = await _fixture.LoadWorkOrdersAsync();
         job.ExitCode.Should().Be(expected: 0);
+
         orders.Where(order => order.Title is TelemetryHistorySeedTestData.LatheWorkOrderTitle
                 or TelemetryHistorySeedTestData.PumpWorkOrderTitle)
             .Should()
@@ -70,6 +79,7 @@ public sealed class CommittedTelemetrySeedTests(SeederFixture fixture)
         {
             Pooling = false,
         }.ConnectionString;
+
         await using var connection = new NpgsqlConnection(connectionString);
         await connection.OpenAsync();
         await using var command = new NpgsqlCommand(TelemetryHistorySeedTestData.DatabaseSizeSql, connection);

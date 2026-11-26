@@ -4,10 +4,12 @@ using HealthyFac.Telemetry.Application.StatusDefinitions;
 using HealthyFac.Telemetry.IntegrationTests.Database.Data;
 using HealthyFac.Telemetry.IntegrationTests.MachineRegistrations.Data;
 using HealthyFac.Telemetry.IntegrationTests.StatusDefinitions.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.IntegrationTests.StatusDefinitions;
 
 [Collection(TelemetryDefinitionsCollection.Name)]
+[Feature(TestFeatures.SignalModel)]
 public sealed class UpdateStatusDefinitionTests(TelemetryDatabaseFixture fixture)
 {
     private readonly TelemetryDatabaseFixture _fixture = fixture;
@@ -17,10 +19,12 @@ public sealed class UpdateStatusDefinitionTests(TelemetryDatabaseFixture fixture
     {
         var tenant = _fixture.ArrangeMachineTenant();
         var machineId = await _fixture.CreateStatusDefinitionMachineAsync(tenant);
+
         await _fixture.CreateStatusDefinitionAsync(
             tenant.CompanyId,
             machineId,
             StatusDefinitionTestData.Code);
+
         var statusId = await _fixture.CreateStatusDefinitionAsync(
             tenant.CompanyId,
             machineId,
@@ -41,6 +45,7 @@ public sealed class UpdateStatusDefinitionTests(TelemetryDatabaseFixture fixture
         var tenant = _fixture.ArrangeMachineTenant();
         var machineId = await _fixture.CreateStatusDefinitionMachineAsync(tenant);
         var otherMachineId = await _fixture.CreateStatusDefinitionMachineAsync(tenant);
+
         var statusId = await _fixture.CreateStatusDefinitionAsync(
             tenant.CompanyId,
             machineId,
@@ -60,10 +65,12 @@ public sealed class UpdateStatusDefinitionTests(TelemetryDatabaseFixture fixture
     {
         var tenant = _fixture.ArrangeMachineTenant();
         var machineId = await _fixture.CreateStatusDefinitionMachineAsync(tenant);
+
         var statusId = await _fixture.CreateStatusDefinitionAsync(
             tenant.CompanyId,
             machineId,
             StatusDefinitionTestData.Code);
+
         await _fixture.RemoveStatusDefinitionRowAsync(tenant, statusId);
 
         var act = () => _fixture.UpdateStatusDefinitionAsync(
@@ -81,6 +88,7 @@ public sealed class UpdateStatusDefinitionTests(TelemetryDatabaseFixture fixture
         var tenant = _fixture.ArrangeMachineTenant();
         var otherTenant = _fixture.ArrangeMachineTenant();
         var machineId = await _fixture.CreateStatusDefinitionMachineAsync(otherTenant);
+
         var statusId = await _fixture.CreateStatusDefinitionAsync(
             otherTenant.CompanyId,
             machineId,

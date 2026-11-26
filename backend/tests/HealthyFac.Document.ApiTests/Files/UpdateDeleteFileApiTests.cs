@@ -1,10 +1,12 @@
 using System.Net;
 using HealthyFac.Document.ApiTests.Files.Data;
 using HealthyFac.Document.ApiTests.Hosting;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Document.ApiTests.Files;
 
 [Collection(DocumentApiCollection.Name)]
+[Feature(TestFeatures.Files)]
 public sealed class UpdateDeleteFileApiTests(DocumentApiFixture fixture)
 {
     private const string DeletePermission = "files:delete";
@@ -126,6 +128,7 @@ public sealed class UpdateDeleteFileApiTests(DocumentApiFixture fixture)
 
         using var update = await client.PutAsync(
             path, new StringContent(UpdateBody(file.RowVersion)), TestContext.Current.CancellationToken);
+
         using var delete = await client.DeleteAsync(path, TestContext.Current.CancellationToken);
 
         update.StatusCode.Should().Be(HttpStatusCode.Unauthorized);

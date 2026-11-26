@@ -184,6 +184,7 @@ public static class DefinitionDraftTestData
             EntryId,
             tentativeMachineId,
             new MetricDraftValues { Key = "temperature" });
+
         Reach(draft, state);
 
         return draft;
@@ -199,6 +200,7 @@ public static class DefinitionDraftTestData
             EntryId,
             tentativeMachineId,
             new StatusDraftValues { Code = "E1" });
+
         Reach(draft, state);
 
         return draft;

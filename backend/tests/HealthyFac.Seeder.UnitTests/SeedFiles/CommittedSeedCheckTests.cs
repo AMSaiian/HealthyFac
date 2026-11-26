@@ -8,9 +8,11 @@ using HealthyFac.Seeder.TelemetryHistory;
 using HealthyFac.Seeder.Timeline;
 using HealthyFac.Seeder.UnitTests.SeedFiles.Data;
 using HealthyFac.Seeder.WorkOrders;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Seeder.UnitTests.SeedFiles;
 
+[Feature(TestFeatures.Seeding)]
 public sealed class CommittedSeedCheckTests
 {
     private const int CatchUpBatchReadings = 10000;
@@ -49,10 +51,11 @@ public sealed class CommittedSeedCheckTests
             CommittedSeedTestData.TelemetryFile,
             root =>
             {
-                var step = root[propertyName: "steps"]![index: 0]!;
-                step[propertyName: "from"] = "h-40";
-                step[propertyName: "until"] = "h-39";
+                var step = root["steps"]![0]!;
+                step["from"] = "h-40";
+                step["until"] = "h-39";
             });
+
         var events = LoadEvents(folder, isTelemetry: true);
 
         var failures = await RunCheckAsync(folder, events, CommittedSeedTestData.WednesdayAnchor, isTelemetry: true);
@@ -69,10 +72,11 @@ public sealed class CommittedSeedCheckTests
             CommittedSeedTestData.MachinesFile,
             root =>
             {
-                var changes = root[propertyName: "stateChanges"]!.AsArray();
+                var changes = root["stateChanges"]!.AsArray();
                 changes.Add(PumpChange(at: "wd-1 10:00", state: "inMaintenance"));
                 changes.Add(PumpChange(at: "wd+0 06:00", state: "operational"));
             });
+
         var events = LoadEvents(folder, isTelemetry: true);
 
         var failures = await RunCheckAsync(folder, events, CommittedSeedTestData.WednesdayAnchor, isTelemetry: true);
@@ -87,7 +91,8 @@ public sealed class CommittedSeedCheckTests
     {
         var folder = CommittedSeedTestData.CopyWith(
             CommittedSeedTestData.MachinesFile,
-            root => root[propertyName: "machines"]![index: 0]![propertyName: "appliedBy"] = "nobody");
+            root => root["machines"]![0]!["appliedBy"] = "nobody");
+
         var events = LoadEvents(folder);
 
         var failures = await RunCheckAsync(folder, events, CommittedSeedTestData.WednesdayAnchor);
@@ -101,7 +106,8 @@ public sealed class CommittedSeedCheckTests
     {
         var folder = CommittedSeedTestData.CopyWith(
             CommittedSeedTestData.WorkOrdersFile,
-            root => CommittedSeedTestData.FindOrder(root, key: "wear-rings")[propertyName: "createdAt"] = "wd+2 15:00");
+            root => CommittedSeedTestData.FindOrder(root, key: "wear-rings")["createdAt"] = "wd+2 15:00");
+
         var events = LoadEvents(folder);
 
         var failures = await RunCheckAsync(folder, events, CommittedSeedTestData.WednesdayAnchor);
@@ -117,8 +123,9 @@ public sealed class CommittedSeedCheckTests
         var folder = CommittedSeedTestData.CopyWith(
             CommittedSeedTestData.WorkOrdersFile,
             root =>
-                CommittedSeedTestData.FindOrder(root, key: "pump-seal")[propertyName: "assignment"]!
-                    [propertyName: "at"] = "wd-7 15:05");
+                CommittedSeedTestData.FindOrder(root, key: "pump-seal")["assignment"]!
+                    ["at"] = "wd-7 15:05");
+
         var events = LoadEvents(folder);
 
         var failures = await RunCheckAsync(folder, events, CommittedSeedTestData.WednesdayAnchor);
@@ -133,7 +140,7 @@ public sealed class CommittedSeedCheckTests
     {
         var folder = CommittedSeedTestData.CopyWith(
             CommittedSeedTestData.WorkOrdersFile,
-            root => CommittedSeedTestData.FindOrder(root, key: "wear-rings")[propertyName: "createdAt"] = "yesterday");
+            root => CommittedSeedTestData.FindOrder(root, key: "wear-rings")["createdAt"] = "yesterday");
 
         var act = () => LoadEvents(folder);
 
@@ -143,10 +150,10 @@ public sealed class CommittedSeedCheckTests
     private static JsonNode PumpChange(string at, string state) =>
         new JsonObject
         {
-            [propertyName: "machine"] = "pump",
-            [propertyName: "changedBy"] = "maksym",
-            [propertyName: "at"] = at,
-            [propertyName: "state"] = state,
+            ["machine"] = "pump",
+            ["changedBy"] = "maksym",
+            ["at"] = at,
+            ["state"] = state,
         };
 
     private static IReadOnlyList<SeedEvent> LoadEvents(SeedFolder folder, bool isTelemetry = false)
@@ -161,7 +168,7 @@ public sealed class CommittedSeedCheckTests
             new WorkOrdersPart(null!),
         ];
 
-        return SeedPlan.Load(parts, folder).Select(planned => planned.Event).ToList();
+        return [.. SeedPlan.Load(parts, folder).Select(planned => planned.Event)];
     }
 
     private static Task<IReadOnlyList<SeedCheckFailure>> RunCheckAsync(

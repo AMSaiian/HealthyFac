@@ -27,6 +27,7 @@ public sealed class EncryptedNullableGuidConverter(IIdEncryptor encryptor) : Jso
         }
 
         var encrypted = reader.GetString();
+
         if (string.IsNullOrEmpty(encrypted))
         {
             return null;

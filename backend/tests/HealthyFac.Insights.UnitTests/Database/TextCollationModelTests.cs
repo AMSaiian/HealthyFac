@@ -1,10 +1,12 @@
 using HealthyFac.Insights.UnitTests.Database.Data;
 using HealthyFac.Shared.Infrastructure.Persistence.Collations;
+using HealthyFac.Testing.Features;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace HealthyFac.Insights.UnitTests.Database;
 
+[Feature(TestFeatures.Persistence)]
 public sealed class TextCollationModelTests
 {
     private const string JsonbColumnType = "jsonb";
@@ -32,10 +34,11 @@ public sealed class TextCollationModelTests
     }
 
     private static List<IProperty> GetTextProperties() =>
-        InsightsModelFactory.GetEntityTypes()
+    [
+        .. InsightsModelFactory.GetEntityTypes()
             .SelectMany(entity => entity.GetProperties())
-            .Where(property => property.ClrType == typeof(string) && property.GetColumnType() != JsonbColumnType)
-            .ToList();
+            .Where(property => property.ClrType == typeof(string) && property.GetColumnType() != JsonbColumnType),
+    ];
 
     private static string ExpectedCollation(IProperty property) =>
         TextCollationModelTestData.CaseSensitiveColumns.Contains(Describe(property))

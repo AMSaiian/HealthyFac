@@ -3,10 +3,14 @@ using HealthyFac.Telemetry.Domain.DefinitionDrafts;
 using HealthyFac.Telemetry.Domain.DefinitionDrafts.ProposalEntries;
 using HealthyFac.Telemetry.IntegrationTests.Database.Data;
 using HealthyFac.Telemetry.IntegrationTests.DefinitionDrafts.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.IntegrationTests.DefinitionDrafts;
 
 [Collection(TelemetryDefinitionDraftsCollection.Name)]
+[Feature(TestFeatures.Drafts)]
+[Feature(TestFeatures.Ingest)]
+[Feature(TestFeatures.SignalModel)]
 public sealed class StoreProposedDefinitionDraftsTests(TelemetryDatabaseFixture fixture)
 {
     private readonly TelemetryDatabaseFixture _fixture = fixture;
@@ -27,15 +31,19 @@ public sealed class StoreProposedDefinitionDraftsTests(TelemetryDatabaseFixture 
 
         metrics.Should().HaveCount(expected: 2);
         statuses.Should().HaveCount(expected: 2);
+
         metrics.Concat<IDefinitionDraft>(statuses)
             .Should()
             .OnlyContain(draft => draft.State == DefinitionDraftState.AwaitingTarget);
+
         metrics.Single(draft => draft.ProposalEntryId == withTarget.DraftId)
             .TargetMachineId.Should()
             .Be(targetMachineId);
+
         metrics.Single(draft => draft.ProposalEntryId == withoutTarget.DraftId)
             .TargetMachineId.Should()
             .BeNull();
+
         entries.Select(entry => entry.Id).Should().BeEquivalentTo([withTarget.DraftId, withoutTarget.DraftId]);
         entries.Should().OnlyContain(entry => entry.State == ProposalEntryState.Awaiting);
     }

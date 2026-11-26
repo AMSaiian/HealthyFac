@@ -4,6 +4,7 @@ using HealthyFac.Gateway.IntegrationTests.Proxy.Data;
 using HealthyFac.Gateway.IntegrationTests.Realtime.Data;
 using HealthyFac.Shared.Web.Metrics;
 using HealthyFac.Shared.Web.Realtime;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using OpenTelemetry.Trace;
@@ -13,6 +14,8 @@ using Serilog.Core;
 namespace HealthyFac.Gateway.IntegrationTests.Realtime;
 
 [Collection(GatewayProxyCollection.Name)]
+[Feature(TestFeatures.Gateway)]
+[Feature(TestFeatures.Realtime)]
 public sealed class RealtimeObservabilityTests(GatewayEnvironment environment) : IAsyncLifetime
 {
     private const string ConnectionsMeter = "Microsoft.AspNetCore.Http.Connections";

@@ -2,10 +2,12 @@ using System.Net;
 using HealthyFac.Gateway.IntegrationTests.Hosting;
 using HealthyFac.Gateway.IntegrationTests.RateLimiting.Data;
 using HealthyFac.Testing.Authentication;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Gateway.IntegrationTests.RateLimiting;
 
 [Collection(GatewayLimitsCollection.Name)]
+[Feature(TestFeatures.Gateway)]
 public sealed class PerUserRateLimitTests(GatewayEnvironment environment)
     : IAsyncLifetime
 {
@@ -22,12 +24,15 @@ public sealed class PerUserRateLimitTests(GatewayEnvironment environment)
     {
         await using var gateway = _environment.CreateGateway(_core, settings: RateLimitTestData.DefaultLimitOfTwo);
         using var firstUserClient = gateway.CreateAuthenticatedClient(new TestTokenClaims { Subject = Guid.NewGuid() });
+
         using var secondUserClient =
             gateway.CreateAuthenticatedClient(new TestTokenClaims { Subject = Guid.NewGuid() });
+
         await firstUserClient.SpendDefaultLimitAsync();
 
         using var firstUserResponse = await firstUserClient.GetAsync(
             RateLimitTestData.MachinesRoute, TestContext.Current.CancellationToken);
+
         using var secondUserResponse = await secondUserClient.GetAsync(
             RateLimitTestData.MachinesRoute, TestContext.Current.CancellationToken);
 

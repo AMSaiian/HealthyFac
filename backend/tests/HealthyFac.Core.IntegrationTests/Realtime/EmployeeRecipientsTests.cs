@@ -4,11 +4,14 @@ using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Employees;
 using HealthyFac.Core.IntegrationTests.Employees.Data;
 using HealthyFac.Core.IntegrationTests.Realtime.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Core.IntegrationTests.Realtime;
 
 [Collection(CoreEmployeesCollection.Name)]
+[Feature(TestFeatures.Realtime)]
+[Feature(TestFeatures.Companies)]
 public sealed class EmployeeRecipientsTests(CoreDatabaseFixture fixture)
 {
     private readonly CoreDatabaseFixture _fixture = fixture;
@@ -19,9 +22,11 @@ public sealed class EmployeeRecipientsTests(CoreDatabaseFixture fixture)
         var companyId = await _fixture.CreateCompanyAsync(EmployeeRecipientsTestData.CompanyName);
         var first = await ArrangeAsync(companyId, EmployeeRecipientsTestData.FirstEmail);
         var second = await ArrangeAsync(companyId, EmployeeRecipientsTestData.SecondEmail);
+
         var unprovisionedId = await _fixture.ArrangeUnprovisionedEmployeeAsync(
             companyId,
             Options(EmployeeRecipientsTestData.UnprovisionedEmail));
+
         using var scope = _fixture.CreateUserScope(companyId);
         var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
 

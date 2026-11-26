@@ -32,16 +32,22 @@ public static class EmployeeInviteEndpoints
         public IEndpointRouteBuilder MapEmployeeInviteEndpoints()
         {
             var group = app.MapGroup(EmployeeInviteRoutes.BaseRoute);
+
             group.MapPost(EmployeeInviteRoutes.Root, CreateAsync)
                 .RequireAuthorization(CorePermissions.Employees.Invite);
+
             group.MapPost(EmployeeInviteRoutes.Resend, ResendAsync)
                 .RequireAuthorization(CorePermissions.Employees.Invite);
+
             group.MapPost(EmployeeInviteRoutes.Search, SearchAsync)
                 .RequireAuthorization(CorePermissions.Employees.Invite);
+
             group.MapDelete(EmployeeInviteRoutes.ById, RevokeAsync)
                 .RequireAuthorization(CorePermissions.Employees.Invite);
+
             group.MapPost(EmployeeInviteRoutes.Verify, VerifyAsync)
                 .AllowAnonymous();
+
             group.MapPost(EmployeeInviteRoutes.Accept, AcceptAsync)
                 .AllowAnonymous();
 

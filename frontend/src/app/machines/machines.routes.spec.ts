@@ -135,7 +135,7 @@ class ResizeObserverStub {
   disconnect = vi.fn();
 }
 
-describe('machines routes', () => {
+describe('machines routes', { tags: ['Machines', 'SignalModel', 'Drafts', 'Files'] }, () => {
   afterEach(() => {
     vi.unstubAllGlobals();
   });

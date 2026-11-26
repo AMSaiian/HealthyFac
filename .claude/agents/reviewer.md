@@ -50,7 +50,7 @@ round: read it before you write, and finish or replace that round.
 - spec.md is the truth: its decisions, its ACs, and its code to preserve. plan.md is the
   agreed way to it. Artur's words quoted by the spec writer change neither until spec.md
   changes.
-- The code, the ticks, the `Red:`, `Proof:`, `Full run`, `Checkpoint`, and browser lines,
+- The code, the ticks, the `Red:`, `Proof:`, and browser lines,
   the Deviations, and the `Addressed after round` lines are claims of the executor. Check
   each claim that a finding or an AC depends on against the code, the diff, or your own
   run.
@@ -64,7 +64,7 @@ Never Grep a pattern that prints whole entries (e.g., `^\*   Steps? `): Read the
 - plan.md header: the first 20 lines.
 - The open cycle: the cycle of the `Cycle:` line. Grep `^#{1,3} ` in plan.md, take the
   range from `### Cycle N` to the next heading of level 1 to 3, and Read it. It holds the
-  steps, the `Red:` and `Proof:` lines, the `Full run` lines, and `#### Deviations` (with
+  steps, the `Red:` and `Proof:` lines, and `#### Deviations` (with
   the `Inline fix, cycle N` entries: changes of the spec writer at Artur's request).
 - The ACs of the cycle: Grep `^\*   \*\*AC(<numbers of the Spec: line>)` in spec.md, and the
   rows of the cycle steps under `## Acceptance Criteria Map` in plan.md.
@@ -99,13 +99,15 @@ Read a full file only for a reference that points outside these parts.
   not left half-applied.
 - The changes follow the agent-workflow rules and the rule files of their paths.
 - Correctness, error handling, concurrency, security, and project conventions.
-- Full run, per test area (`backend`, `frontend`, `tooling`): run `pwsh .claude/tree-id.ps1 -Repo
-  <repo path> -Area <area>`. When the ID equals a `Full run <area>:` line of plan.md, the
-  executor tested this code: do not run that area again, and run only the tests that you
-  doubt. Otherwise run the full commands of that area (`CLAUDE.md`, **Build and Test**). Use
+- Test runs, per test area (`backend`, `frontend`, `tooling`): run `pwsh .claude/run-tests.ps1
+  -ShowResults -Repo <repo path>`. A `current` `pass` result of the area means that the executor
+  tested this code (`Full run` or `Affected run`; in the last cycle a `Full run` of `backend` and
+  `frontend`): do not run that area again, and run only the tests that you doubt. Otherwise run
+  `pwsh .claude/run-tests.ps1 -Area <area> -Changed`, and in the last cycle the full commands of
+  `backend` and `frontend` (`CLAUDE.md`, **Build and Test**). Use
   the shell only for: build, test, git diff/log/show, `pwsh scripts/verify-stack.ps1 up|reset|stop`,
-  `pwsh scripts/agent-chrome.ps1 restore|status`, `pwsh .claude/tree-id.ps1`, and
-  `pwsh .claude/check-review-routing.ps1`.
+  `pwsh scripts/agent-chrome.ps1 restore|status`, `pwsh .claude/tree-id.ps1`,
+  `pwsh .claude/run-tests.ps1`, and `pwsh .claude/check-review-routing.ps1`.
 - Checkpoint review: on a `checkpoint <x>` message, review `git diff <base tree>
   <checkpoint tree>` for the design, the rules, and the plan. Run no tests. Add the
   findings to `## Open` with `Status: NEW (checkpoint <x>)`, all [CODE] or [SPEC]. Do not
@@ -118,8 +120,7 @@ Read a full file only for a reference that points outside these parts.
   "no proof line" finding for a test that a `Red:` or `Proof:` line names; run an own
   disable-and-rerun only for a test you doubt. A missing line is a MINOR [CODE] finding; its fix
   is the proof run, not a code change.
-- A `Full run tooling:` line with the current tree (`pwsh .claude/tree-id.ps1 -Repo <repo path>
-  -Area tooling`) means that the tool suites ran: do not run them again.
+- A `current` `pass` result of `tooling` means that the tool suites ran: do not run them again.
 - A browser check step marked `[!] ... WAITING: ...; retried: ...` is no finding. Write
   `browser waiting` in the round line.
 - Each new route flow has route flow tests (`frontend-angular.md`, **Tests**). A missing

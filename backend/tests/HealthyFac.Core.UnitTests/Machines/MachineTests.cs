@@ -1,8 +1,10 @@
 using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Core.UnitTests.Machines.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.UnitTests.Machines;
 
+[Feature(TestFeatures.Machines)]
 public sealed class MachineTests
 {
     [Fact]
@@ -26,6 +28,7 @@ public sealed class MachineTests
         machine.ChangeState(MachineState.InMaintenance, MachineTestData.LaterStartedAt);
 
         machine.StateHistory.Should().HaveCount(expected: 2);
+
         machine.StateHistory.MaxBy(row => row.StartedAt)
             .Should()
             .BeEquivalentTo(

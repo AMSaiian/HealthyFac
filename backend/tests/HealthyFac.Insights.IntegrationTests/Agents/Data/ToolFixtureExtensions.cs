@@ -39,12 +39,13 @@ public static class ToolFixtureExtensions
             ManualPassageLog? manualPassages = null
         )
         {
-            var caseId = (await fixture.LoadCasesAsync()).First().Id;
+            var caseId = (await fixture.LoadCasesAsync())[0].Id;
             var runId = existingRunId ?? await fixture.AddRunningRunAsync(caseId);
             using var scope = fixture.Inner.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<IInsightsDbContext>();
             var run = await dbContext.AgentRuns.SingleAsync(candidate => candidate.Id == runId);
             var lease = scope.ServiceProvider.GetRequiredService<IAgentRunLease>();
+
             var context = new ToolContext
             {
                 CompanyId = CaseTestData.CompanyId,
@@ -56,9 +57,11 @@ public static class ToolFixtureExtensions
                 CurrentCallId = callId is null ? () => Guid.NewGuid().ToString(format: "N") : () => callId,
                 RenewLease = token => lease.RenewAsync(run, token),
             };
+
             var function = fixture.Inner.GetSingleton<ToolRegistry>()
                 .For(AgentRole.Planner, context)
                 .Single(candidate => candidate.Name == toolName);
+
             var arguments = new AIFunctionArguments(
                 JsonSerializer.Deserialize<Dictionary<string, object?>>(argumentsJson));
 
@@ -72,6 +75,7 @@ public static class ToolFixtureExtensions
             using var scope = fixture.Inner.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<IInsightsDbContext>();
             var run = await dbContext.AgentRuns.SingleAsync(candidate => candidate.Id == runId);
+
             var maintenanceCase = await dbContext.MaintenanceCases
                 .Include(candidate => candidate.Signals)
                 .SingleAsync(candidate => candidate.Id == run.CaseId);
@@ -100,15 +104,18 @@ public static class ToolFixtureExtensions
         {
             using var scope = fixture.Inner.ScopeFactory.CreateScope();
             var messageType = TMessage.MessageType;
+
             var payloads = await scope.ServiceProvider.GetRequiredService<InsightsDbContext>()
                 .OutboxMessages
                 .Where(message => message.Type == messageType)
                 .Select(message => message.Payload)
                 .ToListAsync();
 
-            return payloads
-                .Select(payload => JsonSerializer.Deserialize<TMessage>(payload, MessagingJsonOptions.Instance)!)
-                .ToList();
+            return
+            [
+                .. payloads.Select(payload =>
+                    JsonSerializer.Deserialize<TMessage>(payload, MessagingJsonOptions.Instance)!),
+            ];
         }
 
         public async Task<IReadOnlyList<AgentToolCall>> LoadToolCallsAsync()
@@ -134,6 +141,7 @@ public static class ToolFixtureExtensions
                 sizeBytes: 1024,
                 CaseTestData.Now,
                 traceParent: null);
+
             var document = new IngestedDocument(
                 attempt.FileId,
                 companyId,
@@ -142,12 +150,13 @@ public static class ToolFixtureExtensions
                 attempt.Id,
                 extension: "pdf",
                 pageCount: 1);
+
             foreach (var text in chunkTexts)
             {
                 document.AddChunk(
                     $"page {document.Chunks.Count + 1}",
                     text,
-                    Enumerable.Repeat(element: 1f, IngestAttemptTestData.EmbeddingDimensions).ToArray());
+                    [.. Enumerable.Repeat(element: 1f, IngestAttemptTestData.EmbeddingDimensions)]);
             }
 
             await fixture.Inner.SaveAsync(attempt, document);

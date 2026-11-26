@@ -2,10 +2,13 @@ using HealthyFac.Seeder.IntegrationTests.Hosting;
 using HealthyFac.Seeder.IntegrationTests.WorkOrders.Data;
 using HealthyFac.Seeder.Moments;
 using HealthyFac.Seeder.SeedFiles;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Seeder.IntegrationTests.WorkOrders;
 
 [Collection(SeederCollection.Name)]
+[Feature(TestFeatures.Seeding)]
+[Feature(TestFeatures.WorkOrders)]
 public sealed class WorkOrdersSeedTests(SeederFixture fixture)
 {
     private readonly SeederFixture _fixture = fixture;
@@ -17,6 +20,7 @@ public sealed class WorkOrdersSeedTests(SeederFixture fixture)
 
         var orders = await _fixture.LoadWorkOrdersAsync();
         orders.Should().HaveCount(WorkOrdersTestData.OrderCount);
+
         orders.GroupBy(order => order.Current.Status)
             .ToDictionary(group => group.Key, group => group.Count())
             .Should()
@@ -34,15 +38,18 @@ public sealed class WorkOrdersSeedTests(SeederFixture fixture)
         var rows = await _fixture.LoadHistoryAsync(context, pumpSeal.Id, TestContext.Current.CancellationToken);
         var history = rows.OrderBy(row => row.Revision).ToList();
         history.Select(row => row.Status).Should().Equal(WorkOrdersTestData.PumpSealStatuses);
+
         history.Select(row => row.CreatedBy)
             .Should()
             .Equal(WorkOrdersTestData.PumpSealActors.Select(actor => context.GetActor(actor).UserId));
+
         for (var index = 0; index < history.Count; index++)
         {
             var expected = SeedCalendar.ToUtc(
                 RelativeMoment.Parse(WorkOrdersTestData.PumpSealMoments[index]),
                 WorkOrdersTestData.Anchor,
                 context.Zone);
+
             history[index].CreatedAt.Should().BeCloseTo(expected.UtcDateTime, TimeSpan.FromSeconds(seconds: 1));
         }
     }
@@ -86,6 +93,7 @@ public sealed class WorkOrdersSeedTests(SeederFixture fixture)
         var rows = await _fixture.LoadHistoryAsync(context, order.Id, TestContext.Current.CancellationToken);
         var history = rows.OrderBy(row => row.Revision).ToList();
         history.Select(row => row.Status).Should().Equal(WorkOrdersTestData.RepeatedStatuses);
+
         history.Select(row => row.CreatedBy)
             .Should()
             .Equal(WorkOrdersTestData.RepeatedActors.Select(actor => context.GetActor(actor).UserId));

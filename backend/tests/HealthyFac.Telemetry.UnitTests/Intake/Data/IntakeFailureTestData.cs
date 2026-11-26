@@ -6,19 +6,19 @@ namespace HealthyFac.Telemetry.UnitTests.Intake.Data;
 
 public static class IntakeFailureTestData
 {
-    public static TheoryData<Exception> TransientFailures => new()
-    {
+    public static TheoryData<Exception> TransientFailures =>
+    [
         new TimeoutException(),
         new NpgsqlException(message: "connection lost", new SocketException()),
         new DbUpdateException(message: "save failed", new TimeoutException()),
         new DbUpdateException(message: "save failed", new NpgsqlException(message: "x", new SocketException())),
-    };
+    ];
 
-    public static TheoryData<Exception> PermanentFailures => new()
-    {
+    public static TheoryData<Exception> PermanentFailures =>
+    [
         new InvalidOperationException(),
         new ArgumentException(message: "bad"),
         new DbUpdateException(message: "save failed", new InvalidOperationException()),
         new DbUpdateException(message: "save failed"),
-    };
+    ];
 }

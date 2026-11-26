@@ -26,6 +26,7 @@ public sealed class MessageRelay(IReadOnlyList<IRelayEndpoint> endpoints)
             cancellationToken.ThrowIfCancellationRequested();
 
             var next = await FindOldestPendingAsync(cancellationToken);
+
             if (next is null)
             {
                 return;
@@ -40,9 +41,11 @@ public sealed class MessageRelay(IReadOnlyList<IRelayEndpoint> endpoints)
     )
     {
         (IRelayEndpoint Sender, OutboxMessage Row)? oldest = null;
+
         foreach (var endpoint in _endpoints)
         {
             var row = await endpoint.FindOldestPendingAsync(cancellationToken);
+
             if (row is not null && (oldest is null || IsOlder(row, oldest.Value.Row)))
             {
                 oldest = (endpoint, row);
@@ -71,6 +74,7 @@ public sealed class MessageRelay(IReadOnlyList<IRelayEndpoint> endpoints)
     )
     {
         var receivers = _endpoints.Where(endpoint => endpoint.Handles(row.Type)).ToList();
+
         foreach (var receiver in receivers)
         {
             await receiver.AddToInboxAsync(row, cancellationToken);
@@ -83,6 +87,7 @@ public sealed class MessageRelay(IReadOnlyList<IRelayEndpoint> endpoints)
             await receiver.DrainAsync(cancellationToken);
 
             var failure = await receiver.FindFailureAsync(row.Id, cancellationToken);
+
             if (failure is not null)
             {
                 throw new InvalidOperationException(

@@ -1,11 +1,13 @@
 using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Employees;
 using HealthyFac.Shared.Application.Realtime;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Core.IntegrationTests.Realtime;
 
 [Collection(CoreEmployeesCollection.Name)]
+[Feature(TestFeatures.Realtime)]
 public sealed class RealtimeRegistrationTests(CoreDatabaseFixture fixture)
 {
     private readonly CoreDatabaseFixture _fixture = fixture;

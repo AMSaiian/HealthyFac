@@ -4,9 +4,11 @@ using HealthyFac.Insights.Application.Extraction.Signals;
 using HealthyFac.Insights.Infrastructure.Extraction;
 using HealthyFac.Insights.UnitTests.Extraction.Data;
 using HealthyFac.Shared.Application.DownstreamScopes;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Insights.UnitTests.Extraction;
 
+[Feature(TestFeatures.Ingest)]
 public sealed class TelemetryMachineSignalCatalogTests
 {
     private const int PageSize = 100;
@@ -36,15 +38,18 @@ public sealed class TelemetryMachineSignalCatalogTests
 
         signals.Metrics.Should().Equal(new SignalReference { Id = TempId, Key = "temp" });
         signals.StatusCodes.Should().HaveCount(StatusCount).And.OnlyHaveUniqueItems();
+
         signals.Statuses.Select(status => status.Id)
             .Should()
             .Equal(Enumerable.Range(start: 0, StatusCount).Select(StatusId));
 
         var searches = _factory.Calls.Where(call => call.Method == HttpMethod.Post.Method).ToList();
         searches.Should().HaveCount(expected: 3);
+
         searches.Select(call => call.Body)
             .Should()
             .AllSatisfy(body => body.Should().Contain(expected: "\"limit\":100"));
+
         searches.Select(call => OffsetOf(call.Body!)).Should().Equal(0, 100, 200);
     }
 
@@ -101,6 +106,7 @@ public sealed class TelemetryMachineSignalCatalogTests
     private static object StatusPage(string body)
     {
         var offset = OffsetOf(body);
+
         var items = Enumerable.Range(offset, Math.Min(PageSize, StatusCount - offset))
             .Select(index => new { id = Encrypted(StatusId(index)), code = $"E{index}" })
             .ToArray();

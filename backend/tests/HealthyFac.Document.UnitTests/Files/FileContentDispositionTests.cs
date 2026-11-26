@@ -1,9 +1,11 @@
 using HealthyFac.Document.Application.Files;
 using HealthyFac.Document.Domain.Files;
 using HealthyFac.Document.UnitTests.Files.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Document.UnitTests.Files;
 
+[Feature(TestFeatures.Files)]
 public sealed class FileContentDispositionTests
 {
     [Fact]

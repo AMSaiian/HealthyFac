@@ -1,9 +1,12 @@
 using HealthyFac.Shared.Infrastructure.Messaging.Receiving;
 using HealthyFac.Shared.IntegrationTests.Messaging.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.IntegrationTests.Messaging;
 
 [Collection(MessagingTransportCollection.Name)]
+[Feature(TestFeatures.Messaging)]
+[Feature(TestFeatures.Realtime)]
 public sealed class InboxRealtimePushTests(TransportCollectionFixture fixture)
 {
     private readonly TransportCollectionFixture _fixture = fixture;
@@ -18,6 +21,7 @@ public sealed class InboxRealtimePushTests(TransportCollectionFixture fixture)
             InboxProcessorTestData.UserActorId,
             InboxProcessorTestData.UserCompanyId,
             InboxTestData.Now);
+
         var processor = _fixture.Create<InboxProcessor>();
 
         await processor.RunAsync(CancellationToken.None);
@@ -39,6 +43,7 @@ public sealed class InboxRealtimePushTests(TransportCollectionFixture fixture)
             InboxProcessorTestData.UserActorId,
             InboxProcessorTestData.UserCompanyId,
             InboxTestData.Now);
+
         var processor = _fixture.Create<InboxProcessor>();
 
         await processor.RunAsync(CancellationToken.None);
@@ -63,6 +68,7 @@ public sealed class InboxRealtimePushTests(TransportCollectionFixture fixture)
             InboxProcessorTestData.UserActorId,
             InboxProcessorTestData.UserCompanyId,
             InboxTestData.Now);
+
         var processor = _fixture.Create<InboxProcessor>();
 
         await processor.RunAsync(CancellationToken.None);
@@ -70,6 +76,7 @@ public sealed class InboxRealtimePushTests(TransportCollectionFixture fixture)
         _fixture.InboxObserver.Calls.Take(count: 2)
             .Should()
             .Equal(InboxRealtimeTestData.StartingCall, InboxRealtimeTestData.CommittedCall);
+
         _fixture.InboxObserver.Calls.Count(call => call == InboxRealtimeTestData.CommittedCall)
             .Should()
             .Be(expected: 1);
@@ -85,6 +92,7 @@ public sealed class InboxRealtimePushTests(TransportCollectionFixture fixture)
             InboxProcessorTestData.UserActorId,
             InboxProcessorTestData.UserCompanyId,
             InboxTestData.Now);
+
         var processor = _fixture.Create<InboxProcessor>();
 
         await processor.RunAsync(CancellationToken.None);
@@ -94,6 +102,7 @@ public sealed class InboxRealtimePushTests(TransportCollectionFixture fixture)
 
         callsAfterFailure.Should().StartWith(InboxRealtimeTestData.StartingCall);
         callsAfterFailure.Should().NotContain(InboxRealtimeTestData.CommittedCall);
+
         _fixture.InboxObserver.Calls.Count(call => call == InboxRealtimeTestData.CommittedCall)
             .Should()
             .Be(expected: 1);

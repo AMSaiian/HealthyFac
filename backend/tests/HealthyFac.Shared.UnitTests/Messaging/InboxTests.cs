@@ -1,10 +1,12 @@
 using HealthyFac.Shared.Infrastructure.Messaging.Receiving;
 using HealthyFac.Shared.UnitTests.Messaging.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Shared.UnitTests.Messaging;
 
+[Feature(TestFeatures.Messaging)]
 public sealed class InboxTests
 {
     [Fact]

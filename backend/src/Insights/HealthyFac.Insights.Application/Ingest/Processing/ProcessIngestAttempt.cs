@@ -127,6 +127,7 @@ public sealed class ProcessIngestAttemptRequestHandler(
     private async Task ProcessAsync(ProcessIngestAttemptRequest request, CancellationToken cancellationToken)
     {
         var snapshot = await LoadSnapshotAsync(request, cancellationToken);
+
         if (snapshot is null)
         {
             return;
@@ -149,7 +150,9 @@ public sealed class ProcessIngestAttemptRequestHandler(
                 screening,
                 extraction,
                 linked.Token);
+
             var state = await CompleteAsync(snapshot, result, screening.Log, extraction.Log, cancellationToken);
+
             if (state == IngestState.Completed)
             {
                 await FinishAsync(snapshot, new IngestOutcome { State = state }, startedAt, result);
@@ -180,6 +183,7 @@ public sealed class ProcessIngestAttemptRequestHandler(
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
             await InterruptAsync(snapshot, IngestInterruptReason.ServiceStopped);
+
             await FinishAsync(
                 snapshot,
                 new IngestOutcome
@@ -204,6 +208,7 @@ public sealed class ProcessIngestAttemptRequestHandler(
         catch (OperationCanceledException)
         {
             var isInactive = await IsNoLongerActiveAsync(snapshot.AttemptId, CancellationToken.None);
+
             if (!isInactive)
             {
                 throw;
@@ -217,6 +222,7 @@ public sealed class ProcessIngestAttemptRequestHandler(
                 exception,
                 message: "Ingest attempt {AttemptId} failed with an unexpected error.",
                 snapshot.AttemptId);
+
             await FailAsync(
                 snapshot,
                 IngestErrorCode.ProviderUnavailable,
@@ -278,6 +284,7 @@ public sealed class ProcessIngestAttemptRequestHandler(
             async token =>
             {
                 var locked = await LockOwnAttemptAsync(snapshot, token);
+
                 if (locked is null)
                 {
                     return null;
@@ -285,6 +292,7 @@ public sealed class ProcessIngestAttemptRequestHandler(
 
                 var now = _timeProvider.GetUtcNow().UtcDateTime;
                 locked.ChangeMachine(result.MachineId, result.MachineChangedAt);
+
                 var document = new IngestedDocument(
                     snapshot.FileId,
                     snapshot.CompanyId,
@@ -293,6 +301,7 @@ public sealed class ProcessIngestAttemptRequestHandler(
                     locked.Id,
                     locked.Extension,
                     result.PageCount);
+
                 for (var index = 0; index < result.Chunks.Count; index++)
                 {
                     var chunk = result.Chunks[index];
@@ -300,6 +309,7 @@ public sealed class ProcessIngestAttemptRequestHandler(
                 }
 
                 _dbContext.IngestedDocuments.Add(document);
+
                 if (screening is not null)
                 {
                     _dbContext.AgentRuns.Add(screening.ToRun(snapshot.AttemptId));
@@ -313,6 +323,7 @@ public sealed class ProcessIngestAttemptRequestHandler(
                     result.Chunks.Count,
                     result.Mapped.DraftCount,
                     result.Mapped.Warning);
+
                 if (result.Mapped.Message is not null)
                 {
                     _outbox.Add(result.Mapped.Message);
@@ -354,6 +365,7 @@ public sealed class ProcessIngestAttemptRequestHandler(
             async token =>
             {
                 var locked = await LockOwnAttemptAsync(snapshot, token);
+
                 if (locked is null)
                 {
                     return null;
@@ -398,10 +410,12 @@ public sealed class ProcessIngestAttemptRequestHandler(
             snapshot.FileName,
             IngestState.Failed,
             isActorSkipped: false);
+
         _logger.LogWarning(
             message: "Ingest attempt {AttemptId} failed with the error code {ErrorCode}.",
             snapshot.AttemptId,
             code.Value);
+
         await FinishAsync(
             snapshot,
             new IngestOutcome { State = IngestState.Failed, ErrorCode = code },
@@ -414,6 +428,7 @@ public sealed class ProcessIngestAttemptRequestHandler(
             async token =>
             {
                 var locked = await LockOwnAttemptAsync(snapshot, token);
+
                 if (locked is null)
                 {
                     return null;
@@ -495,6 +510,7 @@ public sealed class ProcessIngestAttemptRequestHandler(
     )
     {
         var duration = _timeProvider.GetElapsedTime(startedAt);
+
         var resultName = outcome.State == IngestState.Completed
             ? ObservabilityConstants.Ingest.Results.Completed
             : outcome.State == IngestState.Failed
@@ -502,9 +518,11 @@ public sealed class ProcessIngestAttemptRequestHandler(
                 : ObservabilityConstants.Ingest.Results.Interrupted;
 
         _metrics.RecordAttempt(resultName, outcome.ErrorCode?.Value, outcome.InterruptReason?.Value);
+
         if (result is not null)
         {
             var message = result.Mapped.Message;
+
             _metrics.RecordCompleted(
                 result.PageCount,
                 result.Chunks.Count,
@@ -516,6 +534,7 @@ public sealed class ProcessIngestAttemptRequestHandler(
         _processSpan?.SetTag(ObservabilityConstants.Ingest.Tags.Result, resultName);
         _processSpan?.SetTag(ObservabilityConstants.Ingest.Tags.ErrorCode, outcome.ErrorCode?.Value);
         _processSpan?.SetTag(ObservabilityConstants.Ingest.Tags.InterruptReason, outcome.InterruptReason?.Value);
+
         if (outcome.State == IngestState.Failed)
         {
             _processSpan?.SetStatus(ActivityStatusCode.Error);

@@ -167,6 +167,7 @@ public sealed class ProposeWorkOrderToolRequestHandler(IInsightsDbContext dbCont
             request.RunId,
             request.EpisodeIds,
             cancellationToken);
+
         var actionId = await ActionBuffering.AddAsync(
             _dbContext,
             request.RunId,
@@ -175,7 +176,7 @@ public sealed class ProposeWorkOrderToolRequestHandler(IInsightsDbContext dbCont
             ActionBuffering.Serialize(
                 new ProposeWorkOrderPayload
                 {
-                    SignalIds = request.EpisodeIds.Distinct().ToList(),
+                    SignalIds = [.. request.EpisodeIds.Distinct()],
                     Title = request.Title,
                     Description = request.Description,
                     Priority = request.Priority,

@@ -1,16 +1,23 @@
 using System.Net;
 using HealthyFac.Core.ApiTests.Hosting;
 using HealthyFac.Core.ApiTests.Shifts.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.ApiTests.Shifts;
 
 [Collection(CoreApiCollection.Name)]
+[Feature(TestFeatures.Shifts)]
 public sealed class ShiftInputTests(CoreApiFixture fixture)
 {
     private readonly CoreApiFixture _fixture = fixture;
 
-    [Fact]
-    public async Task CreateVersion_WithBlockEndingAtMidnight_Returns400()
+    [Theory]
+    [MemberData(nameof(ShiftApiTestData.VersionBlockBoundaries), MemberType = typeof(ShiftApiTestData))]
+    public async Task CreateVersion_WithBlocksAtTheBoundary_ReturnsExpectedStatus(
+        string caseName,
+        IReadOnlyList<string> blockRanges,
+        HttpStatusCode expectedStatus
+    )
     {
         var supervisor = await _fixture.ArrangeActiveEmployeeAsync(ShiftApiTestData.WorkerEmail);
         var claims = _fixture.CreateShiftClaims(supervisor.IdentityUserId, ShiftApiTestData.ManagePermission);
@@ -19,68 +26,24 @@ public sealed class ShiftInputTests(CoreApiFixture fixture)
             HttpMethod.Post,
             ShiftApiTestData.TemplatesPath(supervisor.EncryptedId),
             claims,
-            _fixture.CreateVersionBody(ShiftApiTestData.MidnightEndBlock, ShiftApiTestData.EffectiveFromDaysAhead));
+            _fixture.CreateVersionBody(blockRanges, ShiftApiTestData.EffectiveFromDaysAhead));
 
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.StatusCode.Should().Be(expectedStatus, caseName);
     }
 
-    [Fact]
-    public async Task CreateVersion_WithBlockEndingAt2355_Returns201()
-    {
-        var supervisor = await _fixture.ArrangeActiveEmployeeAsync(ShiftApiTestData.WorkerEmail);
-        var claims = _fixture.CreateShiftClaims(supervisor.IdentityUserId, ShiftApiTestData.ManagePermission);
-
-        var response = await _fixture.SendShiftRequestAsync(
-            HttpMethod.Post,
-            ShiftApiTestData.TemplatesPath(supervisor.EncryptedId),
-            claims,
-            _fixture.CreateVersionBody(ShiftApiTestData.LatestEndBlock, ShiftApiTestData.EffectiveFromDaysAhead));
-
-        response.StatusCode.Should().Be(HttpStatusCode.Created);
-    }
-
-    [Fact]
-    public async Task CreateVersion_WithSevenBlocksOnADay_Returns201()
-    {
-        var supervisor = await _fixture.ArrangeActiveEmployeeAsync(ShiftApiTestData.WorkerEmail);
-        var claims = _fixture.CreateShiftClaims(supervisor.IdentityUserId, ShiftApiTestData.ManagePermission);
-
-        var response = await _fixture.SendShiftRequestAsync(
-            HttpMethod.Post,
-            ShiftApiTestData.TemplatesPath(supervisor.EncryptedId),
-            claims,
-            _fixture.CreateVersionBody(ShiftApiTestData.SevenBlocks, ShiftApiTestData.EffectiveFromDaysAhead));
-
-        response.StatusCode.Should().Be(HttpStatusCode.Created);
-    }
-
-    [Fact]
-    public async Task ScheduleDays_WithEndBeforeStart_Returns400()
+    [Theory]
+    [MemberData(nameof(ShiftApiTestData.InvalidDayRanges), MemberType = typeof(ShiftApiTestData))]
+    public async Task ScheduleDays_WithInvalidRange_Returns400(string caseName, string from, string to)
     {
         var worker = await _fixture.ArrangeActiveEmployeeAsync(ShiftApiTestData.WorkerEmail);
         var claims = _fixture.CreateShiftClaims(worker.IdentityUserId, ShiftApiTestData.ReadPermission);
 
         var response = await _fixture.SendShiftRequestAsync(
             HttpMethod.Get,
-            ShiftApiTestData.ScheduleDaysPath(worker.EncryptedId, ShiftApiTestData.Date, ShiftApiTestData.EarlierDate),
+            ShiftApiTestData.ScheduleDaysPath(worker.EncryptedId, from, to),
             claims);
 
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-    }
-
-    [Fact]
-    public async Task ScheduleDays_WithMalformedDate_Returns400()
-    {
-        var worker = await _fixture.ArrangeActiveEmployeeAsync(ShiftApiTestData.WorkerEmail);
-        var claims = _fixture.CreateShiftClaims(worker.IdentityUserId, ShiftApiTestData.ReadPermission);
-
-        var response = await _fixture.SendShiftRequestAsync(
-            HttpMethod.Get,
-            ShiftApiTestData.ScheduleDaysPath(
-                worker.EncryptedId, ShiftApiTestData.MalformedDate, ShiftApiTestData.Date),
-            claims);
-
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest, caseName);
     }
 
     [Fact]

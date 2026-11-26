@@ -7,10 +7,12 @@ using HealthyFac.Core.IntegrationTests.Machines.Data;
 using HealthyFac.Core.IntegrationTests.Shifts.Data;
 using HealthyFac.Core.IntegrationTests.WorkOrders.Data;
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.IntegrationTests.WorkOrders;
 
 [Collection(CoreWorkOrdersCollection.Name)]
+[Feature(TestFeatures.WorkOrders)]
 public sealed class GetWorkOrderTests(CoreDatabaseFixture fixture)
 {
     private readonly CoreDatabaseFixture _fixture = fixture;
@@ -19,13 +21,16 @@ public sealed class GetWorkOrderTests(CoreDatabaseFixture fixture)
     public async Task GetWorkOrder_InOwnScope_ReturnsAssignedAndOwnBacklogOnly()
     {
         var tenant = await _fixture.ArrangeShiftTenantAsync();
+
         await _fixture.SeedVersionAsync(
             tenant.EmployeeId,
             ShiftTestData.Today.AddDays(value: -30),
             ShiftTestData.Morning,
             ShiftTestData.Afternoon);
+
         _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "07:00"));
         var supervisorId = Guid.CreateVersion7();
+
         var assigned = await _fixture.CreateWorkOrderAsync(
             tenant.CompanyId,
             supervisorId,
@@ -34,10 +39,12 @@ public sealed class GetWorkOrderTests(CoreDatabaseFixture fixture)
                 AccessScope.Company,
                 assigneeId: tenant.EmployeeId,
                 plannedStartLocal: ShiftTestData.LocalStart(ShiftTestData.Tomorrow, WorkOrderTestData.ScheduledTime)));
+
         var ownBacklog = await _fixture.CreateWorkOrderAsync(
             tenant.CompanyId,
             tenant.IdentityUserId,
             WorkOrderTestData.NewRequest(tenant.CompanyId, AccessScope.Own));
+
         var foreignBacklog = await _fixture.CreateWorkOrderAsync(
             tenant.CompanyId,
             supervisorId,
@@ -63,6 +70,7 @@ public sealed class GetWorkOrderTests(CoreDatabaseFixture fixture)
     {
         var tenant = await _fixture.ArrangeShiftTenantAsync();
         var otherCompanyId = await _fixture.CreateCompanyAsync(WorkOrderTestData.OtherCompanyName);
+
         var created = await _fixture.CreateWorkOrderAsync(
             otherCompanyId,
             Guid.CreateVersion7(),
@@ -77,12 +85,15 @@ public sealed class GetWorkOrderTests(CoreDatabaseFixture fixture)
     public async Task GetWorkOrderHistory_Always_ReturnsRowsNewestFirst()
     {
         var tenant = await _fixture.ArrangeShiftTenantAsync();
+
         await _fixture.SeedVersionAsync(
             tenant.EmployeeId,
             ShiftTestData.Today.AddDays(value: -30),
             ShiftTestData.Morning,
             ShiftTestData.Afternoon);
+
         _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "07:00"));
+
         var created = await _fixture.CreateWorkOrderAsync(
             tenant.CompanyId,
             tenant.IdentityUserId,
@@ -96,10 +107,10 @@ public sealed class GetWorkOrderTests(CoreDatabaseFixture fixture)
         var history = page.Items;
 
         history.Select(row => row.Revision).Should().Equal(2, 1);
-        history[index: 0].Status.Should().Be(WorkOrderStatus.Staged);
-        history[index: 0].AssigneeName.Should().Contain(ShiftTestData.EmployeeFirstName);
-        history[index: 1].Status.Should().Be(WorkOrderStatus.Backlog);
-        history[index: 1].CreatedBy.Should().Be(tenant.IdentityUserId);
+        history[0].Status.Should().Be(WorkOrderStatus.Staged);
+        history[0].AssigneeName.Should().Contain(ShiftTestData.EmployeeFirstName);
+        history[1].Status.Should().Be(WorkOrderStatus.Backlog);
+        history[1].CreatedBy.Should().Be(tenant.IdentityUserId);
         history.Select(row => row.EstimateMinutes).Should().Equal(WorkOrderTestData.OneHour, WorkOrderTestData.OneHour);
     }
 
@@ -107,13 +118,16 @@ public sealed class GetWorkOrderTests(CoreDatabaseFixture fixture)
     public async Task GetWorkOrderHistory_With23Rows_PagesByRevisionWithNextAfter()
     {
         var tenant = await _fixture.ArrangeShiftTenantAsync();
+
         var created = await _fixture.CreateWorkOrderAsync(
             tenant.CompanyId,
             tenant.IdentityUserId,
             WorkOrderTestData.NewRequest(tenant.CompanyId, AccessScope.Company));
+
         for (var step = 1; step <= 22; step++)
         {
             var rowVersion = await _fixture.LoadWorkOrderRowVersionAsync(created.Id);
+
             await _fixture.UpdateWorkOrderAsync(
                 tenant.CompanyId,
                 tenant.IdentityUserId,
@@ -143,6 +157,7 @@ public sealed class GetWorkOrderTests(CoreDatabaseFixture fixture)
     public async Task GetWorkOrderHistory_WithExactlyOnePage_HasNoNextAfter()
     {
         var tenant = await _fixture.ArrangeShiftTenantAsync();
+
         var created = await _fixture.CreateWorkOrderAsync(
             tenant.CompanyId,
             tenant.IdentityUserId,
@@ -158,14 +173,17 @@ public sealed class GetWorkOrderTests(CoreDatabaseFixture fixture)
     public async Task GetWorkOrder_WithDeletedMachine_ShowsTheNameAndTheFlag()
     {
         var tenant = await _fixture.ArrangeShiftTenantAsync();
+
         var machineId = await _fixture.CreateMachineAsync(
             tenant.CompanyId,
             WorkOrderTestData.MachineName,
             WorkOrderTestData.MachineSerialNumber);
+
         var created = await _fixture.CreateWorkOrderAsync(
             tenant.CompanyId,
             tenant.IdentityUserId,
             WorkOrderTestData.NewRequest(tenant.CompanyId, AccessScope.Company, machineId));
+
         await _fixture.DeleteMachineAsync(tenant.CompanyId, machineId);
 
         var response = await GetAsync(tenant, created.Id, AccessScope.Company);

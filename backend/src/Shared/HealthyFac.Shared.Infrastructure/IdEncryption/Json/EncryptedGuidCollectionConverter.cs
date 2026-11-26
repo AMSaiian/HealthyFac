@@ -32,6 +32,7 @@ public sealed class EncryptedGuidCollectionConverter<TCollection>(IIdEncryptor e
         }
 
         var ids = new List<Guid>();
+
         while (reader.Read() && reader.TokenType != JsonTokenType.EndArray)
         {
             ids.Add(_elementConverter.Read(ref reader, typeof(Guid), options));

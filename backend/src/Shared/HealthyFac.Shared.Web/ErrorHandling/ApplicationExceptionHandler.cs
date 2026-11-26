@@ -38,6 +38,7 @@ public class ApplicationExceptionHandler : IExceptionHandler
     )
     {
         var builder = ResolveBuilder(exception.GetType());
+
         if (builder is null)
         {
             return false;
@@ -202,6 +203,7 @@ public class ApplicationExceptionHandler : IExceptionHandler
             Type = ProblemDetailsConstants.Unprocessable.TypeUrl,
             Detail = unprocessableException.Message,
         };
+
         foreach (var (key, value) in unprocessableException.Extensions)
         {
             problemDetails.Extensions[key] = value;

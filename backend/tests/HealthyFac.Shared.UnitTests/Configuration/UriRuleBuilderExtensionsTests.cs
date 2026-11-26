@@ -1,8 +1,10 @@
 using HealthyFac.Shared.Application.Configuration;
 using HealthyFac.Shared.UnitTests.Configuration.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.UnitTests.Configuration;
 
+[Feature(TestFeatures.Platform)]
 public sealed class UriRuleBuilderExtensionsTests
 {
     [Theory]

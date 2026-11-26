@@ -2,9 +2,11 @@ using System.Net;
 using HealthyFac.Gateway.IntegrationTests.Hosting;
 using HealthyFac.Gateway.IntegrationTests.RateLimiting.Data;
 using HealthyFac.Testing.Containers;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Gateway.IntegrationTests.RateLimiting;
 
+[Feature(TestFeatures.Gateway)]
 public sealed class RateLimitRedisOutageTests : IAsyncLifetime
 {
     private const string ClientAddress = "203.0.113.150";
@@ -43,10 +45,12 @@ public sealed class RateLimitRedisOutageTests : IAsyncLifetime
         using var client = gateway.CreateAuthenticatedClient();
 
         var statusCodes = new List<HttpStatusCode>();
+
         for (var attempt = 0; attempt < RateLimitTestData.DefaultRequestsDuringOutage; attempt++)
         {
             using var response = await client.GetAsync(
                 RateLimitTestData.MachinesRoute, TestContext.Current.CancellationToken);
+
             statusCodes.Add(response.StatusCode);
         }
 

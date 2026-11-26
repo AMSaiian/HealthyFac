@@ -1,9 +1,11 @@
 using HealthyFac.Shared.Application.Filters;
 using HealthyFac.Shared.Application.Grids;
 using HealthyFac.Shared.UnitTests.Grids.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.UnitTests.Grids;
 
+[Feature(TestFeatures.Persistence)]
 public sealed class GridRequestValidatorTests
 {
     [Theory]
@@ -54,6 +56,7 @@ public sealed class GridRequestValidatorTests
     public void Validate_WithUnknownSortColumn_Fails()
     {
         var validator = new TestGridRequestValidator([TestSortColumn.Name]);
+
         var sort = new GridSort<TestSortColumn>
             { Column = TestSortColumn.CreatedAt, Direction = SortDirection.Ascending };
 
@@ -87,6 +90,7 @@ public sealed class GridRequestValidatorTests
             .ContainSingle()
             .Which.ErrorMessage.Should()
             .Be(GridErrors.Validation.DateRangeNotUtc);
+
         toResult.Errors.Should().ContainSingle().Which.ErrorMessage.Should().Be(GridErrors.Validation.DateRangeNotUtc);
     }
 

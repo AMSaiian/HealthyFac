@@ -4,10 +4,12 @@ using HealthyFac.Core.ApiTests.Drafts.Data;
 using HealthyFac.Core.ApiTests.Hosting;
 using HealthyFac.Core.ApiTests.Machines.Data;
 using HealthyFac.Shared.Application.Grids;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.ApiTests.Machines;
 
 [Collection(CoreApiCollection.Name)]
+[Feature(TestFeatures.Machines)]
 public sealed class SearchMachinesApiTests(CoreApiFixture fixture)
 {
     private const string WithoutFilterBody = "{\"offset\":0,\"limit\":25}";
@@ -80,17 +82,22 @@ public sealed class SearchMachinesApiTests(CoreApiFixture fixture)
             MachineApiTestData.SearchPath,
             _fixture.CreateMachineClaims(MachineApiTestData.ReadPermission),
             WithoutFilterBody);
+
         var content = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
         using var document = JsonDocument.Parse(content);
+
         var ids = document.RootElement.GetProperty(propertyName: "items")
             .EnumerateArray()
             .Select(item => _fixture.IdEncryptor.Decrypt(item.GetProperty(propertyName: "id").GetString()!))
             .ToList();
+
         var totalCount = document.RootElement.GetProperty(propertyName: "totalCount").GetInt32();
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
+
         ids.Should()
             .BeEquivalentTo([_fixture.IdEncryptor.Decrypt(first), _fixture.IdEncryptor.Decrypt(second)]);
+
         ids.Select(id => id.ToString()).Should().BeInAscendingOrder(StringComparer.Ordinal);
         totalCount.Should().Be(expected: 2);
     }
@@ -103,6 +110,7 @@ public sealed class SearchMachinesApiTests(CoreApiFixture fixture)
             MachineApiTestData.SearchPath,
             _fixture.CreateMachineClaims(MachineApiTestData.ReadPermission),
             MachineApiTestData.SearchWithBackwardsGoLiveRangeBody);
+
         var content = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -116,6 +124,7 @@ public sealed class SearchMachinesApiTests(CoreApiFixture fixture)
             MachineApiTestData.SearchPath,
             _fixture.CreateMachineClaims(MachineApiTestData.ReadPermission),
             body);
+
         var content = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         using var document = JsonDocument.Parse(content);

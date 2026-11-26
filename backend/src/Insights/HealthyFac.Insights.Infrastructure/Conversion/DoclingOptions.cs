@@ -27,12 +27,15 @@ public sealed class DoclingOptionsValidator : AbstractValidator<DoclingOptions>
         RuleFor(options => options.BaseUrl)
             .MustBeAbsoluteHttpUri()
             .WithMessage(DoclingMessages.BaseUrlInvalid);
+
         RuleFor(options => options.ApiKey)
             .NotEmpty()
             .WithMessage(DoclingMessages.ApiKeyRequired);
+
         RuleFor(options => options.PollSeconds)
             .GreaterThan(valueToCompare: 0)
             .WithMessage(DoclingMessages.PollSecondsInvalid);
+
         RuleFor(options => options.MaxPages)
             .GreaterThan(valueToCompare: 0)
             .WithMessage(DoclingMessages.MaxPagesInvalid);

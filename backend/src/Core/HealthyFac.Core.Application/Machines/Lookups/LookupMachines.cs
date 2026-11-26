@@ -86,6 +86,7 @@ public sealed class LookupMachinesRequestHandler(ICoreDbContext dbContext)
         }
 
         var query = _dbContext.Machines.Where(machine => machine.CompanyId == request.CompanyId);
+
         if (!string.IsNullOrEmpty(request.Search))
         {
             query = query.Where(machine => machine.Name.Contains(request.Search));

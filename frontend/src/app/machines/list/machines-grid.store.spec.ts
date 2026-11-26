@@ -44,7 +44,7 @@ interface Setup {
   messages: { add: ReturnType<typeof vi.fn> };
 }
 
-describe('MachinesGridStore', () => {
+describe('MachinesGridStore', { tags: ['Machines'] }, () => {
   const realtime = createFakeRealtimeConnection();
   async function setup(options: { hasPermission?: boolean; isConfirmed?: boolean } = {}): Promise<Setup> {
     const messages = { add: vi.fn() };

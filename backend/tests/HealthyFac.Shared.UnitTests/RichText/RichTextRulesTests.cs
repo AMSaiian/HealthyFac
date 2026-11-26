@@ -1,7 +1,9 @@
 using HealthyFac.Shared.UnitTests.RichText.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.UnitTests.RichText;
 
+[Feature(TestFeatures.Platform)]
 public sealed class RichTextRulesTests
 {
     [Fact]
@@ -27,6 +29,7 @@ public sealed class RichTextRulesTests
             .ContainSingle()
             .Which.ErrorMessage.Should()
             .Be(RichTextRulesTestData.TooMuchFormattingMessage);
+
         policy.CallCount.Should().Be(expected: 0);
     }
 
@@ -54,6 +57,7 @@ public sealed class RichTextRulesTests
             .ContainSingle()
             .Which.ErrorMessage.Should()
             .Be(RichTextRulesTestData.NotAllowedMessage);
+
         policy.CallCount.Should().Be(expected: 1);
     }
 

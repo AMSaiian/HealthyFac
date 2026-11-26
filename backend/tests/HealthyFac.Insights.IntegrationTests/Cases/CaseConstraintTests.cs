@@ -3,11 +3,13 @@ using HealthyFac.Insights.Infrastructure.Cases.Persistence;
 using HealthyFac.Insights.IntegrationTests.Cases.Data;
 using HealthyFac.Insights.IntegrationTests.Database;
 using HealthyFac.Insights.IntegrationTests.Database.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.EntityFrameworkCore;
 
 namespace HealthyFac.Insights.IntegrationTests.Cases;
 
 [Collection(InsightsCollection.Name)]
+[Feature(TestFeatures.Cases)]
 public sealed class CaseConstraintTests(InsightsFixture fixture)
 {
     private readonly InsightsFixture _fixture = fixture;

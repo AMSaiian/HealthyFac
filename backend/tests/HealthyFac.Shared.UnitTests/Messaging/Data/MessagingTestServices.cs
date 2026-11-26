@@ -19,6 +19,7 @@ public static class MessagingTestServices
 
         services.AddSingleton<TimeProvider>(new FakeTimeProvider(new DateTimeOffset(MessagingTestData.Now)));
         services.AddActorContext();
+
         services.AddMessagingDbContext<ITestServiceDbContext, TestServiceDbContext>((_, options) =>
             options.UseNpgsql(MessagingTestData.ConnectionString));
 

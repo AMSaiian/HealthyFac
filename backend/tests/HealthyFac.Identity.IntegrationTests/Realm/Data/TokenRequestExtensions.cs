@@ -28,6 +28,7 @@ public static class TokenRequestExtensions
         )
         {
             using var client = new HttpClient { BaseAddress = new Uri(fixture.Server.BaseAddress) };
+
             using var request = new HttpRequestMessage(HttpMethod.Post, TokenPath)
             {
                 Content = new FormUrlEncodedContent(form),
@@ -47,18 +48,20 @@ public static class TokenRequestExtensions
         public async Task<string> GetSupervisorAccessTokenAsync()
         {
             var clientId = await fixture.Server.CreatePasswordGrantClientAsync();
+
             var response = await fixture.RequestTokenAsync(
                 new Dictionary<string, string>
                 {
-                    [key: "grant_type"] = "password",
-                    [key: "client_id"] = clientId,
-                    [key: "client_secret"] = KeycloakTestServer.PasswordGrantClientSecret,
-                    [key: "username"] = RealmTestData.SupervisorEmail,
-                    [key: "password"] = RealmTestData.SupervisorPassword,
+                    ["grant_type"] = "password",
+                    ["client_id"] = clientId,
+                    ["client_secret"] = KeycloakTestServer.PasswordGrantClientSecret,
+                    ["username"] = RealmTestData.SupervisorEmail,
+                    ["password"] = RealmTestData.SupervisorPassword,
                 });
+
             response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-            return response.Body[propertyName: "access_token"]!.GetValue<string>();
+            return response.Body["access_token"]!.GetValue<string>();
         }
     }
 
@@ -66,7 +69,7 @@ public static class TokenRequestExtensions
     {
         public JsonObject AccessTokenClaims() =>
             KeycloakRealmFixtureExtensions.DecodePayload(
-                response.Body[propertyName: "access_token"]!.GetValue<string>());
+                response.Body["access_token"]!.GetValue<string>());
     }
 
     extension(JsonObject claims)

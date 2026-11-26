@@ -1,9 +1,11 @@
 using System.Globalization;
 using HealthyFac.Shared.Infrastructure.Persistence.CheckConstraints;
 using HealthyFac.Shared.UnitTests.Persistence.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.UnitTests.Persistence;
 
+[Feature(TestFeatures.Persistence)]
 public sealed class CheckConstraintSqlTests
 {
     [Theory]

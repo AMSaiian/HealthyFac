@@ -78,7 +78,7 @@ function setup(canManage = true): HttpTestingController {
   return TestBed.inject(HttpTestingController);
 }
 
-describe('work orders routes', () => {
+describe('work orders routes', { tags: ['WorkOrders'] }, () => {
   afterEach(() => {
     vi.unstubAllGlobals();
   });

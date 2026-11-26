@@ -34,6 +34,7 @@ public sealed class RecordWorkOrderDraftDismissedRequestHandler(IInsightsDbConte
             .SingleOrDefaultAsync(
                 action => action.Id == request.DraftId && action.Kind == AgentActionKind.ProposeWorkOrder,
                 cancellationToken);
+
         var signals = await _dbContext.MachineSignals
             .Where(signal => signal.WorkOrderDraftId == request.DraftId
                 && signal.CaseId == request.CaseId

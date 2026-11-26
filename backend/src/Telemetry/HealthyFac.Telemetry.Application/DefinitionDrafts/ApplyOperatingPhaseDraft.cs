@@ -108,7 +108,8 @@ public sealed class ApplyOperatingPhaseDraftRequestHandler(ITelemetryDbContext d
             throw new UnprocessableException(DefinitionDraftErrors.DraftUsesDrafts);
         }
 
-        var body = await _dbContext.BuildPhaseBodyAsync(request, request.MachineId, cancellationToken);
+        var (conditions, limits) = await _dbContext.BuildPhaseBodyAsync(request, request.MachineId, cancellationToken);
+
         var phase = new OperatingPhase(
             request.MachineId,
             request.Code,
@@ -116,8 +117,9 @@ public sealed class ApplyOperatingPhaseDraftRequestHandler(ITelemetryDbContext d
             request.Description,
             request.Priority,
             request.IsTracked,
-            body.Conditions,
-            body.Limits);
+            conditions,
+            limits);
+
         _dbContext.OperatingPhases.Add(phase);
         draft.MarkApplied();
 

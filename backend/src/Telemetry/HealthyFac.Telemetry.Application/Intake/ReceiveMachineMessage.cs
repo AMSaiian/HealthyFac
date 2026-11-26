@@ -136,7 +136,7 @@ public sealed class ReceiveMachineMessageRequestHandler(
         new()
         {
             Result = result,
-            ErrorCode = result == ReceiveMachineMessageResult.Rejected ? message.Received.Errors[index: 0].Code : null,
+            ErrorCode = result == ReceiveMachineMessageResult.Rejected ? message.Received.Errors[0].Code : null,
             SampledAt = message.Received.SampledAt,
         };
 

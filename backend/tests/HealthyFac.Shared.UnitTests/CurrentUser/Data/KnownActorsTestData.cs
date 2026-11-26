@@ -24,6 +24,7 @@ public static class KnownActorsTestData
         get
         {
             var data = new TheoryData<string>();
+
             foreach (var value in ActorKind.All.Select(kind => kind.Value)
                 .Concat(ServiceName.All.Select(service => service.Value))
                 .Concat(ServiceActor.All.Select(flow => flow.Value)))

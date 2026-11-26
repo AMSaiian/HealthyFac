@@ -5,7 +5,7 @@ import type { Clock } from './clock';
 import { minuteTicker, todayOf } from './clock-ticks';
 import { Temporal } from './temporal';
 
-describe('clock-ticks', () => {
+describe('clock-ticks', { tags: ['Platform'] }, () => {
   let currentNow = Temporal.Instant.from('2027-06-01T20:59:30Z');
   const clock: Clock = { now: () => currentNow, timeZoneId: () => 'Europe/Kyiv' };
 

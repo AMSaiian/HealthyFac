@@ -2,11 +2,14 @@ using System.Net;
 using HealthyFac.Gateway.IntegrationTests.Hosting;
 using HealthyFac.Gateway.IntegrationTests.Revocation.Data;
 using HealthyFac.Shared.Infrastructure.Revocation;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Gateway.IntegrationTests.Revocation;
 
 [Collection(GatewayLimitsCollection.Name)]
+[Feature(TestFeatures.Gateway)]
+[Feature(TestFeatures.Identity)]
 public sealed class RevocationTests(GatewayEnvironment environment)
     : IAsyncLifetime
 {
@@ -24,6 +27,7 @@ public sealed class RevocationTests(GatewayEnvironment environment)
         var userId = Guid.NewGuid();
         await using var gateway = _environment.CreateGateway(_core);
         await RevokeAsync(gateway, userId);
+
         using var client = gateway.CreateAuthenticatedClient(
             RevocationTestData.CreateClaims(userId, RevocationTestData.TokenAge));
 
@@ -39,6 +43,7 @@ public sealed class RevocationTests(GatewayEnvironment environment)
         var userId = Guid.NewGuid();
         await using var gateway = _environment.CreateGateway(_core);
         await RevokeAsync(gateway, userId);
+
         using var client = gateway.CreateAuthenticatedClient(
             RevocationTestData.CreateClaims(userId, RevocationTestData.TokenYoungAge));
 

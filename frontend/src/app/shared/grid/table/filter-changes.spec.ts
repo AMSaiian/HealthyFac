@@ -1,39 +1,14 @@
 import { isFilterChanged } from '@shared/grid/table/filter-changes';
 
-describe('isFilterChanged', () => {
-  it('isFilterChanged_WithSameValuesInOtherOrder_ReturnsFalse', () => {
-    const applied = ['low', 'high'];
-    const pending = ['high', 'low'];
-
+describe('isFilterChanged', { tags: ['Persistence'] }, () => {
+  it.each([
+    ['SameValuesInOtherOrder_ReturnsFalse', ['low', 'high'], ['high', 'low'], false],
+    ['AddedValue_ReturnsTrue', ['low'], ['low', 'high'], true],
+    ['RemovedValue_ReturnsTrue', ['low', 'high'], ['low'], true],
+    ['TwoEmptyLists_ReturnsFalse', [], [], false],
+  ])('isFilterChanged_With%s', (_name, applied, pending, expected) => {
     const result = isFilterChanged(applied, pending);
 
-    expect(result).toBe(false);
-  });
-
-  it('isFilterChanged_WithAddedValue_ReturnsTrue', () => {
-    const applied = ['low'];
-    const pending = ['low', 'high'];
-
-    const result = isFilterChanged(applied, pending);
-
-    expect(result).toBe(true);
-  });
-
-  it('isFilterChanged_WithRemovedValue_ReturnsTrue', () => {
-    const applied = ['low', 'high'];
-    const pending = ['low'];
-
-    const result = isFilterChanged(applied, pending);
-
-    expect(result).toBe(true);
-  });
-
-  it('isFilterChanged_WithTwoEmptyLists_ReturnsFalse', () => {
-    const applied: string[] = [];
-    const pending: string[] = [];
-
-    const result = isFilterChanged(applied, pending);
-
-    expect(result).toBe(false);
+    expect(result).toBe(expected);
   });
 });

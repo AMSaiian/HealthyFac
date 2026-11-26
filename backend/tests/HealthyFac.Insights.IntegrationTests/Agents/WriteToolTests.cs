@@ -10,10 +10,12 @@ using HealthyFac.Insights.IntegrationTests.Cases;
 using HealthyFac.Insights.IntegrationTests.Cases.Data;
 using HealthyFac.Insights.Messaging.WorkOrders;
 using HealthyFac.Telemetry.Messaging.Signals;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Insights.IntegrationTests.Agents;
 
 [Collection(SignalCaseCollection.Name)]
+[Feature(TestFeatures.Cases)]
 public sealed class WriteToolTests(SignalCaseFixture fixture)
 {
     private const string Reason = "No work is needed.";
@@ -47,14 +49,17 @@ public sealed class WriteToolTests(SignalCaseFixture fixture)
     {
         var runId = await ArrangeAsync();
         _fixture.Agents.WorkOrders.Answer.Add(OpenWorkOrder(OpenWorkOrderId));
+
         await _fixture.CallToolAsync(
             ProposeWorkOrderToolRequest.ToolName,
             Propose(CaseTestData.FirstEpisodeId),
             existingRunId: runId);
+
         await _fixture.CallToolAsync(
             LinkWorkOrderToolRequest.ToolName,
             LinkArguments(OpenWorkOrderId, CaseTestData.SecondEpisodeId),
             existingRunId: runId);
+
         await _fixture.CallToolAsync(
             CloseCaseToolRequest.ToolName,
             $$"""{"reason":"{{Reason}}"}""",
@@ -86,6 +91,7 @@ public sealed class WriteToolTests(SignalCaseFixture fixture)
     public async Task Fail_WithBufferedActions_DiscardsThemAndSendsNothing()
     {
         var runId = await ArrangeAsync();
+
         await _fixture.CallToolAsync(
             ProposeWorkOrderToolRequest.ToolName,
             Propose(CaseTestData.FirstEpisodeId),
@@ -107,10 +113,12 @@ public sealed class WriteToolTests(SignalCaseFixture fixture)
     public async Task Commit_Twice_StoresOneActionAndOneMessage()
     {
         var runId = await ArrangeAsync();
+
         await _fixture.CallToolAsync(
             ProposeWorkOrderToolRequest.ToolName,
             Propose(CaseTestData.FirstEpisodeId),
             existingRunId: runId);
+
         await _fixture.CommitRunAsync(runId);
 
         await _fixture.CommitRunAsync(runId);
@@ -131,6 +139,7 @@ public sealed class WriteToolTests(SignalCaseFixture fixture)
             Propose(CaseTestData.FirstEpisodeId),
             existingRunId: runId,
             callId: RepeatedCallId);
+
         await _fixture.CallToolAsync(
             ProposeWorkOrderToolRequest.ToolName,
             Propose(CaseTestData.FirstEpisodeId),
@@ -152,10 +161,12 @@ public sealed class WriteToolTests(SignalCaseFixture fixture)
             ProposeWorkOrderToolRequest.ToolName,
             Propose(CaseTestData.FirstEpisodeId),
             existingRunId: runId);
+
         await _fixture.CallToolAsync(
             ProposeWorkOrderToolRequest.ToolName,
             Propose(CaseTestData.SecondEpisodeId),
             existingRunId: runId);
+
         await _fixture.CommitRunAsync(runId);
 
         var first = await _fixture.LoadSignalAsync(CaseTestData.FirstEpisodeId);
@@ -163,15 +174,17 @@ public sealed class WriteToolTests(SignalCaseFixture fixture)
         var messages = await _fixture.ReadOutboxAsync<WorkOrderDraftProposed>();
         messages.Should().HaveCount(expected: 2);
         first.WorkOrderDraftId.Should().NotBe(second.WorkOrderDraftId!.Value);
+
         messages.Select(message => message.DraftId)
             .Should()
-            .BeEquivalentTo([first.WorkOrderDraftId!.Value, second.WorkOrderDraftId!.Value]);
+            .BeEquivalentTo([first.WorkOrderDraftId.Value, second.WorkOrderDraftId.Value]);
     }
 
     [Fact]
     public async Task Propose_ForAnEpisodeOfAnEarlierActionOfTheRun_IsRejectedAndBuffersNothingMore()
     {
         var runId = await ArrangeAsync();
+
         await _fixture.CallToolAsync(
             ProposeWorkOrderToolRequest.ToolName,
             Propose(CaseTestData.FirstEpisodeId),
@@ -185,13 +198,14 @@ public sealed class WriteToolTests(SignalCaseFixture fixture)
         var actions = await _fixture.LoadActionsAsync();
         var calls = await _fixture.LoadToolCallsAsync();
         actions.Should().ContainSingle();
-        calls.Last().Outcome.Should().Be(ToolCallOutcome.Rejected);
+        calls[^1].Outcome.Should().Be(ToolCallOutcome.Rejected);
     }
 
     [Fact]
     public async Task Propose_ForAResolvedEpisode_IsRejected()
     {
         var runId = await ArrangeAsync();
+
         await _fixture.HandleSignalAsync(
             CaseTestData.Message(CaseTestData.FirstEpisodeId, sequence: 2, SignalEpisodeStateValue.Resolved));
 
@@ -210,6 +224,7 @@ public sealed class WriteToolTests(SignalCaseFixture fixture)
     public async Task Propose_ForAnEpisodeOfAnotherCase_IsRejected()
     {
         var runId = await ArrangeAsync();
+
         await _fixture.HandleSignalAsync(
             CaseTestData.Message(CaseTestData.ThirdEpisodeId, sequence: 1, machineId: CaseTestData.OtherMachineId));
 
@@ -246,6 +261,7 @@ public sealed class WriteToolTests(SignalCaseFixture fixture)
     {
         var runId = await ArrangeAsync();
         _fixture.Agents.WorkOrders.Answer.Add(OpenWorkOrder(OpenWorkOrderId));
+
         await _fixture.CallToolAsync(
             LinkWorkOrderToolRequest.ToolName,
             LinkArguments(OpenWorkOrderId, CaseTestData.FirstEpisodeId),

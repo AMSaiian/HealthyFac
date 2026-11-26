@@ -12,6 +12,7 @@ using HealthyFac.Insights.Infrastructure.Ai;
 using HealthyFac.Insights.Infrastructure.Extraction;
 using HealthyFac.Insights.UnitTests.Agents.Data;
 using HealthyFac.Insights.UnitTests.Extraction.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging.Testing;
 using Microsoft.Extensions.Options;
@@ -22,6 +23,7 @@ namespace HealthyFac.Insights.UnitTests.Extraction;
 /// Sends one extraction through the real Google client against a recording handler, so the request shows what Gemini
 /// receives: the system prompt, the settings, and the declarations of the four tools.
 /// </summary>
+[Feature(TestFeatures.Ingest)]
 public sealed class GeminiStructuredOutputTests
 {
     private const string Model = "gemini-test-model";
@@ -42,11 +44,13 @@ public sealed class GeminiStructuredOutputTests
         await RunAsync();
 
         var body = ReadBody().RootElement;
+
         var declarations = body.GetProperty(propertyName: "tools")
             .EnumerateArray()
             .SelectMany(tool => tool.GetProperty(propertyName: "functionDeclarations").EnumerateArray())
             .Select(declaration => declaration.GetProperty(propertyName: "name").GetString())
             .ToList();
+
         declarations.Should().BeEquivalentTo(ToolNames);
         var generationConfig = body.GetProperty(propertyName: "generationConfig");
         generationConfig.TryGetProperty(propertyName: "responseMimeType", out _).Should().BeFalse();
@@ -92,6 +96,7 @@ public sealed class GeminiStructuredOutputTests
             vertexAI: false,
             apiKey: "test-api-key",
             clientOptions: new ClientOptions { HttpClientFactory = () => _handler.CreateClient(string.Empty) });
+
         var options = Options.Create(
             new GeminiOptions
             {
@@ -100,12 +105,15 @@ public sealed class GeminiStructuredOutputTests
                 ChatModel = Model,
                 TriageModel = Model,
             });
+
         var agentOptions = Options.Create(new AgentOptions { ExtractorMaxIterations = 10, MaxConsecutiveErrors = 3 });
+
         var registry = new ToolRegistry(
             new TestAdvisorScopes(),
             ToolRegistry.FindToolTypes(InsightsApplicationAssembly.Instance),
             new FakeLogger(),
             new AgentJson(new PrefixIdEncryptor()));
+
         var extractor = new AgentDraftExtractor(
             client.AsIChatClient(Model),
             options,
@@ -113,7 +121,9 @@ public sealed class GeminiStructuredOutputTests
             new PassThroughProviderCalls(),
             registry,
             new FunctionToolCallIds());
+
         var input = ExtractionTestData.CreateInput();
+
         var session = new ExtractionSession
         {
             Buffer = new ExtractionBuffer(isMachineFile: false, fileMachineId: null, input.Units, input.Signals),

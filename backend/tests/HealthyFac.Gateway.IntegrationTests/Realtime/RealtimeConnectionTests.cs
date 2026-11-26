@@ -5,11 +5,14 @@ using HealthyFac.Gateway.IntegrationTests.Health.Data;
 using HealthyFac.Gateway.IntegrationTests.Hosting;
 using HealthyFac.Gateway.IntegrationTests.Realtime.Data;
 using HealthyFac.Shared.Web.Realtime;
+using HealthyFac.Testing.Features;
 using Microsoft.Net.Http.Headers;
 
 namespace HealthyFac.Gateway.IntegrationTests.Realtime;
 
 [Collection(GatewayProxyCollection.Name)]
+[Feature(TestFeatures.Gateway)]
+[Feature(TestFeatures.Realtime)]
 public sealed class RealtimeConnectionTests(GatewayEnvironment environment) : IAsyncLifetime
 {
     private const string UnusedCoreAddress = "http://127.0.0.1:1/";
@@ -68,11 +71,13 @@ public sealed class RealtimeConnectionTests(GatewayEnvironment environment) : IA
     public async Task Connection_WhenTokenExpires_ClosesWithinFifteenSeconds()
     {
         await using var gateway = _environment.CreateGateway(_core);
+
         var token = gateway.Tokens.CreateToken(
             RealtimeTestData.Claims(Guid.NewGuid()) with
             {
                 Lifetime = ShortLifetime,
             });
+
         await using var client = await RealtimeTestClient.ConnectAsync(gateway, token);
 
         var isClosed = await client.WaitForCloseAsync(CloseTimeout);
@@ -102,6 +107,7 @@ public sealed class RealtimeConnectionTests(GatewayEnvironment environment) : IA
             $"{RealtimeConstants.HubPath}/negotiate?negotiateVersion=1",
             content: null,
             TestContext.Current.CancellationToken);
+
         var body = await response.Content.ReadFromJsonAsync<JsonElement>(TestContext.Current.CancellationToken);
 
         return body.GetProperty(propertyName: "connectionToken").GetString()!;

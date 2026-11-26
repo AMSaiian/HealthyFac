@@ -32,6 +32,7 @@ public static class SeedCompletionFixtureExtensions
                 SeederFixture.CreateConfiguration(fixture.CreateSettings()),
                 anchor ?? FullSeedTestData.SaturdayAnchor,
                 cancellationToken);
+
             await fixture.CreateResettersAsync();
 
             return new JobResult { ExitCode = exitCode, Output = log.ToString()! };
@@ -43,6 +44,7 @@ public static class SeedCompletionFixtureExtensions
             {
                 Pooling = false,
             }.ConnectionString;
+
             await using var connection = new NpgsqlConnection(connectionString);
             await connection.OpenAsync();
             await using var command = new NpgsqlCommand(SeedCompletionTestData.InsertReceivedMessageSql, connection);
@@ -53,14 +55,17 @@ public static class SeedCompletionFixtureExtensions
         public async Task<DataSnapshot> TakeSnapshotAsync()
         {
             var tables = new SortedDictionary<string, string>(StringComparer.Ordinal);
+
             foreach (var service in SeederTestData.ServiceNames)
             {
                 var connectionString = new NpgsqlConnectionStringBuilder(fixture.ConnectionStringOf(service))
                 {
                     Pooling = false,
                 }.ConnectionString;
+
                 await using var connection = new NpgsqlConnection(connectionString);
                 await connection.OpenAsync();
+
                 foreach (var table in await ListTablesAsync(connection))
                 {
                     tables[$"{service}.{table}"] = await DescribeTableAsync(connection, table);
@@ -83,9 +88,12 @@ public static class SeedCompletionFixtureExtensions
         public async Task<int> CountBlobsAsync()
         {
             using var scope = fixture.Hosts.Document.CreateScope(SeederTestData.InitializationActor);
+
             var container = scope.ServiceProvider.GetRequiredService<BlobServiceClient>()
                 .GetBlobContainerClient(IngestTestData.BlobContainer);
+
             var count = 0;
+
             await foreach (var unused in container.GetBlobsAsync())
             {
                 count++;
@@ -111,6 +119,7 @@ public static class SeedCompletionFixtureExtensions
         await using var command = new NpgsqlCommand(SeedCompletionTestData.ListTablesSql, connection);
         await using var reader = await command.ExecuteReaderAsync();
         var tables = new List<string>();
+
         while (await reader.ReadAsync())
         {
             tables.Add(reader.GetString(ordinal: 0));
@@ -124,9 +133,11 @@ public static class SeedCompletionFixtureExtensions
         await using var hasColumn = new NpgsqlCommand(SeedCompletionTestData.HasUpdatedAtSql, connection);
         hasColumn.Parameters.AddWithValue(parameterName: "table", table);
         var isTimed = await hasColumn.ExecuteScalarAsync() is not null;
+
         var sql = isTimed
             ? $"""select count(*)::text || '|' || coalesce(max(updated_at)::text, '') from "{table}" """
             : $"""select count(*)::text from "{table}" """;
+
         await using var command = new NpgsqlCommand(sql, connection);
 
         return (string)(await command.ExecuteScalarAsync())!;

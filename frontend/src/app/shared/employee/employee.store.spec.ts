@@ -10,7 +10,7 @@ import { EmployeeStore } from './employee.store';
 
 const EMPLOYEE_URL = '/api/core/v1/employees/me';
 
-describe('EmployeeStore', () => {
+describe('EmployeeStore', { tags: ['Platform'] }, () => {
   const isAuthenticated = signal(true);
 
   function createStore(): { store: InstanceType<typeof EmployeeStore>; http: HttpTestingController } {

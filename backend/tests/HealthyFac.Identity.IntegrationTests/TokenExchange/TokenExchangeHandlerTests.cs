@@ -6,12 +6,14 @@ using HealthyFac.Shared.Infrastructure.Caching;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Shared.Infrastructure.CurrentUser.ServiceIdentity;
 using HealthyFac.Shared.Infrastructure.ServiceTokens;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Identity.IntegrationTests.TokenExchange;
 
 [Collection(KeycloakRealmCollection.Name)]
+[Feature(TestFeatures.Identity)]
 public sealed class TokenExchangeHandlerTests(KeycloakRealmCollectionFixture fixture)
 {
     private readonly TokenExchangeFixture _fixture = fixture.TokenExchange;
@@ -30,6 +32,7 @@ public sealed class TokenExchangeHandlerTests(KeycloakRealmCollectionFixture fix
 
         var claims = KeycloakRealmFixtureExtensions.DecodePayload(echo.ReceivedToken!);
         claims.Audiences().Should().Equal(TokenExchangeTestData.TargetClientId);
+
         claims[TokenExchangeTestData.SubjectClaim]!.GetValue<string>()
             .Should()
             .Be(RealmTestData.SupervisorIdentityId.ToString());
@@ -50,13 +53,16 @@ public sealed class TokenExchangeHandlerTests(KeycloakRealmCollectionFixture fix
                     [$"{ServiceOptions.SectionName}:Name"] = ServiceName.Core.Value,
                 })
             .Build();
+
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddServiceOptions(configuration);
         services.AddSharedRedis(configuration);
         services.AddServiceTokens(configuration);
+
         services.AddSingleton<IIncomingAccessTokenAccessor>(
             new FixedIncomingAccessTokenAccessor(subjectToken, RealmTestData.SupervisorIdentityId));
+
         services.AddHttpClient(TokenExchangeTestData.EchoClientName)
             .AddUserDelegatedToken(TokenExchangeTestData.TargetClientId, TokenExchangeTestData.ExchangeScopes)
             .ConfigurePrimaryHttpMessageHandler(() => echo);

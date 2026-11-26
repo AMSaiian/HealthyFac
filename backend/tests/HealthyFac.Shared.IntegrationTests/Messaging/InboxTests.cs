@@ -2,12 +2,14 @@ using System.Text.Json.Nodes;
 using HealthyFac.Shared.Application.Messaging;
 using HealthyFac.Shared.Infrastructure.Messaging.Receiving;
 using HealthyFac.Shared.IntegrationTests.Messaging.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Shared.IntegrationTests.Messaging;
 
 [Collection(MessagingStorageCollection.Name)]
+[Feature(TestFeatures.Messaging)]
 public sealed class InboxTests(PostgreSqlFixture fixture)
 {
     private readonly PostgreSqlFixture _fixture = fixture;
@@ -30,7 +32,7 @@ public sealed class InboxTests(PostgreSqlFixture fixture)
         var stored = await ReadMessageAsync(InboxTestData.NewMessageId);
         isStored.Should().BeTrue();
         stored.Should().NotBeNull();
-        stored!.Type.Should().Be(InboxTestData.MessageType);
+        stored.Type.Should().Be(InboxTestData.MessageType);
         stored.ReceivedOn.Should().Be(InboxTestData.Now);
         stored.NextAttemptOn.Should().Be(InboxTestData.Now);
         stored.ProcessedOn.Should().BeNull();
@@ -78,6 +80,7 @@ public sealed class InboxTests(PostgreSqlFixture fixture)
     {
         using var scope = _fixture.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<TestServiceDbContext>();
+
         await using var transaction =
             await dbContext.Database.BeginTransactionAsync(TestContext.Current.CancellationToken);
 
@@ -90,6 +93,7 @@ public sealed class InboxTests(PostgreSqlFixture fixture)
                 InboxTestData.ActorId,
                 InboxTestData.CompanyId,
                 TestContext.Current.CancellationToken);
+
         await transaction.RollbackAsync(TestContext.Current.CancellationToken);
 
         var messageCount = await CountMessagesAsync(InboxTestData.RolledBackMessageId);
@@ -101,6 +105,7 @@ public sealed class InboxTests(PostgreSqlFixture fixture)
     public async Task MarkProcessed_WithMessageLoadedInScope_PersistsProcessedOnOnSave()
     {
         using var receiveScope = _fixture.CreateScope();
+
         await receiveScope.ServiceProvider.GetRequiredService<IInbox>()
             .TryAddAsync(
                 InboxTestData.ProcessedMessageId,
@@ -110,13 +115,16 @@ public sealed class InboxTests(PostgreSqlFixture fixture)
                 InboxTestData.ActorId,
                 InboxTestData.CompanyId,
                 TestContext.Current.CancellationToken);
+
         using var processScope = _fixture.CreateScope();
         var dbContext = processScope.ServiceProvider.GetRequiredService<TestServiceDbContext>();
+
         var message =
             await dbContext.InboxMessages.SingleAsync(
                 pending => pending.Id == InboxTestData.ProcessedMessageId, TestContext.Current.CancellationToken);
 
         processScope.ServiceProvider.GetRequiredService<IInbox>().MarkProcessed(message);
+
         await processScope.ServiceProvider.GetRequiredService<ITestServiceDbContext>()
             .SaveChangesAsync(TestContext.Current.CancellationToken);
 
@@ -129,6 +137,7 @@ public sealed class InboxTests(PostgreSqlFixture fixture)
     public async Task MarkProcessed_WhenAnotherScopeCommittedFirst_RejectsSecondCommitWithItsBusinessChange()
     {
         using var receiveScope = _fixture.CreateScope();
+
         await receiveScope.ServiceProvider.GetRequiredService<IInbox>()
             .TryAddAsync(
                 InboxTestData.ConcurrentMessageId,
@@ -138,15 +147,19 @@ public sealed class InboxTests(PostgreSqlFixture fixture)
                 InboxTestData.ActorId,
                 InboxTestData.CompanyId,
                 TestContext.Current.CancellationToken);
+
         using var firstScope = _fixture.CreateScope();
         using var secondScope = _fixture.CreateScope();
         var firstMessage = await LoadMessageAsync(firstScope, InboxTestData.ConcurrentMessageId);
         var secondMessage = await LoadMessageAsync(secondScope, InboxTestData.ConcurrentMessageId);
         firstScope.ServiceProvider.GetRequiredService<IInbox>().MarkProcessed(firstMessage);
+
         await firstScope.ServiceProvider.GetRequiredService<ITestServiceDbContext>()
             .SaveChangesAsync(TestContext.Current.CancellationToken);
+
         secondScope.ServiceProvider.GetRequiredService<IOutbox>()
             .Add(new TestBusinessChange { Text = OutboxTestData.BusinessChangeText });
+
         secondScope.ServiceProvider.GetRequiredService<IInbox>().MarkProcessed(secondMessage);
 
         var act = () => secondScope.ServiceProvider.GetRequiredService<ITestServiceDbContext>().SaveChangesAsync();

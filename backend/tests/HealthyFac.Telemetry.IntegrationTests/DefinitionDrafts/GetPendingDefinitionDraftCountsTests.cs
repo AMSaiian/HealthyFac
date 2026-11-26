@@ -2,10 +2,13 @@ using HealthyFac.Telemetry.IntegrationTests.Database.Data;
 using HealthyFac.Telemetry.IntegrationTests.DefinitionDrafts.Data;
 using HealthyFac.Telemetry.IntegrationTests.MachineRegistrations.Data;
 using HealthyFac.Telemetry.IntegrationTests.StatusDefinitions.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.IntegrationTests.DefinitionDrafts;
 
 [Collection(TelemetryDefinitionDraftsCollection.Name)]
+[Feature(TestFeatures.Drafts)]
+[Feature(TestFeatures.SignalModel)]
 public sealed class GetPendingDefinitionDraftCountsTests(TelemetryDatabaseFixture fixture)
 {
     private readonly TelemetryDatabaseFixture _fixture = fixture;
@@ -24,7 +27,7 @@ public sealed class GetPendingDefinitionDraftCountsTests(TelemetryDatabaseFixtur
         var response = await _fixture.GetPendingDefinitionDraftCountsAsync(companyId);
 
         response.Counts.Should().ContainSingle().Which.MachineId.Should().Be(machineId);
-        response.Counts[index: 0].Count.Should().Be(expected: 2);
+        response.Counts[0].Count.Should().Be(expected: 2);
         response.Counts.Select(count => count.MachineId).Should().NotContain(emptyMachineId);
     }
 

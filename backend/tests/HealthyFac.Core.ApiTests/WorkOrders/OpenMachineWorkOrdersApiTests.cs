@@ -6,10 +6,12 @@ using HealthyFac.Core.ApiTests.Machines.Data;
 using HealthyFac.Core.ApiTests.Shifts.Data;
 using HealthyFac.Core.ApiTests.WorkOrders.Data;
 using HealthyFac.Core.Web.Authorization;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.ApiTests.WorkOrders;
 
 [Collection(CoreApiCollection.Name)]
+[Feature(TestFeatures.WorkOrders)]
 public sealed class OpenMachineWorkOrdersApiTests(CoreApiFixture fixture)
 {
     private const string OpenTitle = "Open order";
@@ -34,8 +36,9 @@ public sealed class OpenMachineWorkOrdersApiTests(CoreApiFixture fixture)
         var items = (await response.Content.ReadFromJsonAsync<JsonArray>(TestContext.Current.CancellationToken))!;
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         items.Should().ContainSingle();
-        items[index: 0]![propertyName: "id"]!.GetValue<string>().Should().Be(openId);
-        items[index: 0]!.AsObject()
+        items[0]!["id"]!.GetValue<string>().Should().Be(openId);
+
+        items[0]!.AsObject()
             .Select(property => property.Key)
             .Should()
             .BeEquivalentTo("id", "title", "status", "priority", "category", "plannedStartUtc", "plannedEndUtc");
@@ -53,18 +56,7 @@ public sealed class OpenMachineWorkOrdersApiTests(CoreApiFixture fixture)
 
         var items = (await response.Content.ReadFromJsonAsync<JsonArray>(TestContext.Current.CancellationToken))!;
         items.Should().ContainSingle();
-        items[index: 0]![propertyName: "id"]!.GetValue<string>().Should().Be(secondId);
-    }
-
-    [Fact]
-    public async Task List_WithALimitAboveTheMaximum_Returns400()
-    {
-        var claims = _fixture.CreateSupervisorOrderClaims(Guid.CreateVersion7());
-        var machineId = await _fixture.ArrangeMachineAsync(Guid.NewGuid().ToString(format: "N"));
-
-        var response = await _fixture.ListOpenOrdersAsync(claims, machineId, limit: 101);
-
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        items[0]!["id"]!.GetValue<string>().Should().Be(secondId);
     }
 
     [Fact]

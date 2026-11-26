@@ -1,10 +1,13 @@
 using System.Collections.Concurrent;
 using HealthyFac.Core.IntegrationTests.Concurrency.Data;
+using HealthyFac.Testing.Features;
 using HealthyFac.Testing.Persistence;
 
 namespace HealthyFac.Core.IntegrationTests.Concurrency;
 
 [Collection(CoreSaveGateCollection.Name)]
+[Feature(TestFeatures.Persistence)]
+[Feature(TestFeatures.Conventions)]
 public sealed class ConcurrentSaveGateTests(GateDatabaseFixture fixture)
 {
     private readonly GateDatabaseFixture _fixture = fixture;
@@ -30,10 +33,12 @@ public sealed class ConcurrentSaveGateTests(GateDatabaseFixture fixture)
             }));
 
         failures.Should().OnlyContain(failure => failure == null);
+
         events.Should()
             .ContainInOrder(
                 ConcurrentSaveGateTestData.SlowParticipantReachedSave,
                 ConcurrentSaveGateTestData.FastParticipantSaved);
+
         race.SaveCounts.Should().Equal(1, 1);
     }
 
@@ -70,6 +75,7 @@ public sealed class ConcurrentSaveGateTests(GateDatabaseFixture fixture)
             .BeOfType<TimeoutException>()
             .Which.Message.Should()
             .Contain(ConcurrentSaveGateTestData.OneOfTwoArrived);
+
         failures[1].Should().BeNull();
     }
 

@@ -33,6 +33,7 @@ public sealed class BrokerConnectionProvider : IAsyncDisposable
     public async Task<IConnection> GetConnectionAsync(CancellationToken cancellationToken = default(CancellationToken))
     {
         await _gate.WaitAsync(cancellationToken);
+
         try
         {
             if (_connection is { IsOpen: true })
@@ -42,6 +43,7 @@ public sealed class BrokerConnectionProvider : IAsyncDisposable
 
             var staleConnection = _connection;
             _connection = null;
+
             if (staleConnection is not null)
             {
                 await staleConnection.DisposeAsync();

@@ -3,11 +3,13 @@ using HealthyFac.Core.UnitTests.Employees.Data;
 using HealthyFac.Core.Web.Employees.Emails;
 using HealthyFac.Shared.Application.Observability;
 using HealthyFac.Shared.Web.Rendering;
+using HealthyFac.Testing.Features;
 using HealthyFac.Testing.Tracing;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Core.UnitTests.Employees;
 
+[Feature(TestFeatures.Companies)]
 public sealed class RazorEmployeeInviteEmailBuilderTests : IDisposable
 {
     private readonly ServiceProvider _services;
@@ -20,7 +22,9 @@ public sealed class RazorEmployeeInviteEmailBuilderTests : IDisposable
             .AddLogging()
             .AddRazorRendering()
             .BuildServiceProvider(validateScopes: true);
+
         _scope = _services.CreateScope();
+
         _builder = new RazorEmployeeInviteEmailBuilder(
             _scope.ServiceProvider.GetRequiredService<RazorComponentRenderer>());
     }
@@ -79,16 +83,20 @@ public sealed class RazorEmployeeInviteEmailBuilderTests : IDisposable
             .Where(span => span.TraceId == parent.TraceId
                 && span.OperationName == ObservabilityConstants.Spans.RazorRender)
             .ToList();
+
         var formats = spans.Select(span => span.GetTagItem(ObservabilityConstants.Rendering.Tags.Format)?.ToString());
+
         var tagValues = spans
             .SelectMany(span => span.TagObjects)
             .Select(tag => tag.Value?.ToString() ?? string.Empty)
             .ToList();
 
         spans.Should().HaveCount(expected: 2);
+
         formats.Should()
             .BeEquivalentTo(
-                [ObservabilityConstants.Rendering.Formats.Html, ObservabilityConstants.Rendering.Formats.Text]);
+                ObservabilityConstants.Rendering.Formats.Html, ObservabilityConstants.Rendering.Formats.Text);
+
         spans.Should().OnlyContain(span => span.ParentId == parent.Id);
         tagValues.Should().NotContain(value => value.Contains(InviteEmailBuilderTestData.Link));
     }

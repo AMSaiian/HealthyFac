@@ -28,6 +28,7 @@ public static class ScreeningFixtureExtensions
             var chunks = Enumerable.Range(start: 1, count)
                 .Select(number => new ConvertedChunk { Location = $"page {number}", Text = $"Text of chunk {number}." })
                 .ToList();
+
             fixture.Ingest.Converter.Behavior = _ => Task.FromResult(
                 new ConvertedDocument { PageCount = count, Chunks = chunks });
         }

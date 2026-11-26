@@ -16,10 +16,10 @@ public static class IdEncryptionOptionsValidatorTestData
     public const string SecondPrefix = "v2_";
     public const string PrefixWithDot = "v1.";
 
-    public static TheoryData<string> ValidKeys => new()
-    {
+    public static TheoryData<string> ValidKeys =>
+    [
         Valid256BitKey,
-    };
+    ];
 
     public static TheoryData<string, string> InvalidKeysWithExpectedError => new()
     {

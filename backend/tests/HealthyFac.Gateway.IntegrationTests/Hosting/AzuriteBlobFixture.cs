@@ -60,6 +60,7 @@ public sealed class AzuriteBlobFixture : IAsyncLifetime
             ContentType = contentType,
             ContentDisposition = disposition,
         };
+
         var credential = new StorageSharedKeyCredential(_storage.AccountName, _storage.AccountKey);
 
         return builder.ToSasQueryParameters(credential).ToString();

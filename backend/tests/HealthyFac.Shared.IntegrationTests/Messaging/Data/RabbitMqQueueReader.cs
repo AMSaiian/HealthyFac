@@ -34,9 +34,11 @@ public static class RabbitMqQueueReader
         await using var channel = await connection.CreateChannelAsync();
 
         using var cancellation = new CancellationTokenSource(timeout);
+
         while (!cancellation.IsCancellationRequested)
         {
             var result = await channel.BasicGetAsync(queueName, autoAck: true, cancellation.Token);
+
             if (result is null)
             {
                 await Task.Delay(TransportTestData.PollDelay, cancellation.Token);
@@ -70,9 +72,11 @@ public static class RabbitMqQueueReader
         await using var channel = await connection.CreateChannelAsync();
 
         using var cancellation = new CancellationTokenSource(timeout);
+
         while (!cancellation.IsCancellationRequested)
         {
             var result = await channel.BasicGetAsync(queueName, autoAck: true);
+
             if (result is null)
             {
                 await Task.Delay(TransportTestData.PollDelay);

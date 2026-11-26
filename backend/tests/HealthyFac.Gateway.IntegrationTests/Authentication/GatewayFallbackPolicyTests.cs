@@ -1,10 +1,13 @@
 using System.Net;
 using HealthyFac.Gateway.IntegrationTests.Authentication.Data;
 using HealthyFac.Gateway.IntegrationTests.Hosting;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Gateway.IntegrationTests.Authentication;
 
 [Collection(GatewayProxyCollection.Name)]
+[Feature(TestFeatures.Gateway)]
+[Feature(TestFeatures.Identity)]
 public sealed class GatewayFallbackPolicyTests(GatewayEnvironment environment)
     : IAsyncLifetime
 {
@@ -21,6 +24,7 @@ public sealed class GatewayFallbackPolicyTests(GatewayEnvironment environment)
         await using var gateway = _environment.CreateGateway(
             _core,
             settings: FallbackPolicyTestData.UnprotectedRouteSettings);
+
         using var client = gateway.CreateClient();
 
         using var response = await client.GetAsync(
@@ -37,6 +41,7 @@ public sealed class GatewayFallbackPolicyTests(GatewayEnvironment environment)
         await using var gateway = _environment.CreateGateway(
             _core,
             settings: FallbackPolicyTestData.UnprotectedRouteSettings);
+
         using var client = gateway.CreateAuthenticatedClient();
 
         using var response = await client.GetAsync(

@@ -36,7 +36,7 @@ public class UpdateFileRequestValidator : AbstractValidator<UpdateFileRequest>
         RuleFor(x => x.CompanyId).NotEmpty().WithMessage(FileErrors.CompanyIdRequired);
 
         RuleFor(x => x.MachineId)
-            .NotEmpty()
+            .NotEqual(Guid.Empty)
             .WithMessage(FileErrors.MachineIdRequired)
             .When(x => x.MachineId.HasValue);
 
@@ -99,6 +99,7 @@ public sealed class UpdateFileRequestHandler(IDocumentDbContext dbContext)
             ?? throw new NotFoundException(FileErrors.FileNotFound);
 
         var fileName = FileNames.StripStoredExtension(request.FileName, file.Extension);
+
         if (fileName.Length == 0)
         {
             throw new AppValidationException([new ValidationFailure(FileNameKey, FileErrors.NameRequired)]);

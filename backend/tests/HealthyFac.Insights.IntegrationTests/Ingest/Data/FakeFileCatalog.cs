@@ -32,6 +32,7 @@ public sealed class FakeFileCatalog : IFileCatalog
     public Task<IngestFileLink?> GetFileLinkForWorkerAsync(Guid fileId, CancellationToken cancellationToken)
     {
         CallCount++;
+
         if (Failure is not null)
         {
             throw Failure;

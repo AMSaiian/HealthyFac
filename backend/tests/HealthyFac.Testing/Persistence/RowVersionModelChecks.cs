@@ -24,6 +24,7 @@ public static class RowVersionModelChecks
     private static IEnumerable<string> FindWrongRowVersions(IEntityType entityType)
     {
         var isVersioned = typeof(IVersioned).IsAssignableFrom(entityType.ClrType);
+
         var foreignTokens = entityType.GetDeclaredProperties()
             .Where(property => property.IsConcurrencyToken)
             .Where(property => !isVersioned || property.Name != nameof(IVersioned.RowVersion))
@@ -35,6 +36,7 @@ public static class RowVersionModelChecks
         }
 
         var rowVersion = entityType.FindProperty(nameof(IVersioned.RowVersion));
+
         var isMapped = rowVersion is { IsConcurrencyToken: true, ValueGenerated: ValueGenerated.OnAddOrUpdate }
             && rowVersion.GetColumnName() == PersistenceConstants.RowVersionColumn;
 

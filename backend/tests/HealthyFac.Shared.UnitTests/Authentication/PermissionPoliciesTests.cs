@@ -1,9 +1,11 @@
 using HealthyFac.Shared.UnitTests.Authentication.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Shared.UnitTests.Authentication;
 
+[Feature(TestFeatures.Identity)]
 public sealed class PermissionPoliciesTests
 {
     [Fact]

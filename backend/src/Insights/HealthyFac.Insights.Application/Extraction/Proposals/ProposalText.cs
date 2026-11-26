@@ -26,6 +26,7 @@ public static partial class ProposalText
         }
 
         var builder = new StringBuilder(value.Length);
+
         foreach (var character in value)
         {
             builder.Append(char.IsControl(character) ? Space : character);

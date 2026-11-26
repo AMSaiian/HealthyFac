@@ -1,9 +1,11 @@
 using System.Reflection;
 using HealthyFac.Document.Infrastructure;
+using HealthyFac.Testing.Features;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace HealthyFac.Document.UnitTests.Database;
 
+[Feature(TestFeatures.Persistence)]
 public sealed class MigrationCountTests
 {
     private const string InitialCreateSuffix = "_InitialCreate";
@@ -22,8 +24,8 @@ public sealed class MigrationCountTests
             .ToList();
 
         migrationIds.Should().HaveCount(expected: 3);
-        migrationIds[index: 0].Should().EndWith(InitialCreateSuffix);
-        migrationIds[index: 1].Should().EndWith(FileIngestSuffix);
-        migrationIds[index: 2].Should().EndWith(FileDescriptionRichTextSuffix);
+        migrationIds[0].Should().EndWith(InitialCreateSuffix);
+        migrationIds[1].Should().EndWith(FileIngestSuffix);
+        migrationIds[2].Should().EndWith(FileDescriptionRichTextSuffix);
     }
 }

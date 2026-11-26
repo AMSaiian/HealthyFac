@@ -44,6 +44,7 @@ public static class DeploymentSettingsExtensions
                 Optional = true,
                 FileProvider = new PhysicalFileProvider(baseDirectory ?? AppContext.BaseDirectory),
             };
+
             source.ResolveFileProvider();
 
             var environmentIndex = configuration.Sources.ToList()

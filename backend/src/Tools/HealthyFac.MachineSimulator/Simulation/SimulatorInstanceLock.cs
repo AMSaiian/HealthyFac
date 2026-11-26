@@ -1,5 +1,4 @@
 using HealthyFac.MachineSimulator.Machines;
-using HealthyFac.MachineSimulator.Scenarios;
 using Npgsql;
 
 namespace HealthyFac.MachineSimulator.Simulation;
@@ -44,6 +43,7 @@ public sealed class SimulatorInstanceLock(IConfiguration configuration, ILogger<
     {
         var name = SimulatorDatabaseConstants.ConnectionStrings.Core;
         var connectionString = _configuration.GetConnectionString(name);
+
         if (string.IsNullOrWhiteSpace(connectionString))
         {
             throw new InvalidOperationException(SimulatorErrors.MissingConnectionString(name));
@@ -54,6 +54,7 @@ public sealed class SimulatorInstanceLock(IConfiguration configuration, ILogger<
         await using var command = new NpgsqlCommand(TryLockSql, connection);
         command.Parameters.AddWithValue(KeyParameter, LockKey);
         var isLockTaken = (bool)(await command.ExecuteScalarAsync(cancellationToken))!;
+
         if (isLockTaken)
         {
             _connection = connection;
@@ -81,6 +82,7 @@ public sealed class SimulatorInstanceLock(IConfiguration configuration, ILogger<
     public async ValueTask DisposeAsync()
     {
         var connection = Interlocked.Exchange(ref _connection, value: null);
+
         if (connection is null)
         {
             return;

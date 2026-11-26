@@ -20,6 +20,7 @@ public static class SignalsTestData
     public static MetricHistoryReply CreateHistoryReply()
     {
         var reply = new MetricHistoryReply();
+
         reply.Buckets.Add(
             new MetricBucket
             {

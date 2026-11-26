@@ -2,10 +2,12 @@ using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Drafts.Data;
 using HealthyFac.Core.IntegrationTests.Machines.Data;
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.IntegrationTests.Machines;
 
 [Collection(CoreMachinesCollection.Name)]
+[Feature(TestFeatures.Machines)]
 public sealed class MachineGoLiveTests(CoreDatabaseFixture fixture)
 {
     private readonly CoreDatabaseFixture _fixture = fixture;

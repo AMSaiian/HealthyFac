@@ -3,11 +3,13 @@ using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.Messaging;
 using HealthyFac.Shared.Application.Observability;
 using HealthyFac.Shared.IntegrationTests.Messaging.Data;
+using HealthyFac.Testing.Features;
 using HealthyFac.Testing.Tracing;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Shared.IntegrationTests.Messaging;
 
+[Feature(TestFeatures.Messaging)]
 public sealed class EndToEndTests(PipelineFixture fixture) : IClassFixture<PipelineFixture>
 {
     private readonly PipelineFixture _fixture = fixture;
@@ -17,10 +19,12 @@ public sealed class EndToEndTests(PipelineFixture fixture) : IClassFixture<Pipel
     {
         using var capture = new SpanCapture(ObservabilityConstants.Sources.Messaging);
         using var parent = new Activity(TracingTestData.ParentName).Start();
+
         using (var scope = _fixture.CreateScope())
         {
             scope.ServiceProvider.GetRequiredService<IOutbox>()
                 .Add(new TestRecorded { Text = TracingTestData.LinkedText });
+
             await scope.ServiceProvider.GetRequiredService<ITestServiceDbContext>()
                 .SaveChangesAsync(TestContext.Current.CancellationToken);
         }
@@ -48,8 +52,10 @@ public sealed class EndToEndTests(PipelineFixture fixture) : IClassFixture<Pipel
                 UserId = InboxProcessorTestData.UserActorId,
                 CompanyId = InboxProcessorTestData.UserCompanyId,
             });
+
         scope.ServiceProvider.GetRequiredService<IOutbox>()
             .Add(new TestRecorded { Text = InboxProcessorTestData.EndToEndText });
+
         await scope.ServiceProvider.GetRequiredService<ITestServiceDbContext>()
             .SaveChangesAsync(TestContext.Current.CancellationToken);
 

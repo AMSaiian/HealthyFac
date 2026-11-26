@@ -37,7 +37,7 @@ const WORK_ORDER: WorkOrder = {
   createdAt: '2027-05-01T08:00:00Z',
 };
 
-describe('ScheduleActionsStore', () => {
+describe('ScheduleActionsStore', { tags: ['WorkOrders'] }, () => {
   const get = vi.fn();
   const assign = vi.fn();
   const move = vi.fn();

@@ -1,3 +1,4 @@
+using System.Net;
 using System.Text.Json.Nodes;
 
 namespace HealthyFac.Core.ApiTests.Shifts.Data;
@@ -30,20 +31,21 @@ public static class ShiftApiTestData
     {
         var effectiveFrom = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(daysAhead);
         var days = new JsonArray();
+
         foreach (var weekday in new[] { "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday" })
         {
             days.Add(
                 new JsonObject
                 {
-                    [propertyName: "weekday"] = weekday,
-                    [propertyName: "blocks"] = new JsonArray(blockRanges.Select(ToBlock).ToArray()),
+                    ["weekday"] = weekday,
+                    ["blocks"] = new JsonArray(blockRanges.Select(ToBlock).ToArray()),
                 });
         }
 
         return new JsonObject
         {
-            [propertyName: "effectiveFrom"] = effectiveFrom.ToString(format: "yyyy-MM-dd"),
-            [propertyName: "days"] = days,
+            ["effectiveFrom"] = effectiveFrom.ToString(format: "yyyy-MM-dd"),
+            ["days"] = days,
         }.ToJsonString();
     }
 
@@ -53,6 +55,19 @@ public static class ShiftApiTestData
         $"v1/employees/{employeeId}/shift-overrides?from={Date}&to={Date}";
 
     public static string OverridePath(string employeeId) => $"v1/employees/{employeeId}/shift-overrides/{Date}";
+
+    public static TheoryData<string, IReadOnlyList<string>, HttpStatusCode> VersionBlockBoundaries => new()
+    {
+        { "block ending at midnight", [MidnightEndBlock], HttpStatusCode.BadRequest },
+        { "block ending at 23:55", [LatestEndBlock], HttpStatusCode.Created },
+        { "seven blocks on a day", SevenBlocks, HttpStatusCode.Created },
+    };
+
+    public static TheoryData<string, string, string> InvalidDayRanges => new()
+    {
+        { "end before start", Date, EarlierDate },
+        { "malformed date", MalformedDate, Date },
+    };
 
     public static string ScheduleDaysPath(string employeeId, string from, string to) =>
         $"v1/employees/{employeeId}/schedule/days?from={from}&to={to}";
@@ -77,6 +92,6 @@ public static class ShiftApiTestData
     {
         var parts = blockRange.Split(separator: '-');
 
-        return new JsonObject { [propertyName: "start"] = parts[0], [propertyName: "end"] = parts[1] };
+        return new JsonObject { ["start"] = parts[0], ["end"] = parts[1] };
     }
 }

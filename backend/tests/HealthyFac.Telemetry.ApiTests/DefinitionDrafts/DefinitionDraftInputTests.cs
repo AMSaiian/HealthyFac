@@ -2,10 +2,13 @@ using System.Net;
 using HealthyFac.Telemetry.ApiTests.DefinitionDrafts.Data;
 using HealthyFac.Telemetry.ApiTests.Hosting;
 using HealthyFac.Telemetry.ApiTests.MetricDefinitions.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.ApiTests.DefinitionDrafts;
 
 [Collection(TelemetryApiCollection.Name)]
+[Feature(TestFeatures.Drafts)]
+[Feature(TestFeatures.SignalModel)]
 public sealed class DefinitionDraftInputTests(TelemetryApiFixture fixture)
 {
     private readonly TelemetryApiFixture _fixture = fixture;
@@ -21,6 +24,7 @@ public sealed class DefinitionDraftInputTests(TelemetryApiFixture fixture)
             DefinitionDraftInputTestData.DismissPath(draft.DraftId),
             claims,
             DefinitionDraftInputTestData.DismissBody);
+
         var content = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
@@ -31,6 +35,7 @@ public sealed class DefinitionDraftInputTests(TelemetryApiFixture fixture)
     public async Task ApplyMetrics_WithADraftThatIsNotPending_Returns422WithTheDraftNotPendingKey()
     {
         var draft = await _fixture.ArrangeDismissedMetricDraftAsync();
+
         var claims = _fixture.CreateClaims(
             MetricDefinitionApiTestData.ReadPermission,
             MetricDefinitionApiTestData.WritePermission);
@@ -40,6 +45,7 @@ public sealed class DefinitionDraftInputTests(TelemetryApiFixture fixture)
             _fixture.DefinitionsPath(draft.MachineId),
             claims,
             _fixture.ApplyBodyWithDraft(draft.DraftId));
+
         var content = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);

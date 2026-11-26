@@ -114,5 +114,5 @@ public static class PhaseMatcherTestData
         new() { Discrete = new Dictionary<Guid, string> { [metricId] = value } };
 
     public static SampleValues WithStatus(bool active) =>
-        new() { ActiveStatusIds = active ? new HashSet<Guid> { StatusId } : new HashSet<Guid>() };
+        new() { ActiveStatusIds = active ? new HashSet<Guid> { StatusId } : [] };
 }

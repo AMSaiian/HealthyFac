@@ -73,7 +73,7 @@ public sealed class RunAgentRequestHandler(
 ) : RequestHandler<RunAgentRequest>
 {
     private readonly IInsightsDbContext _dbContext = dbContext;
-    private readonly IReadOnlyList<IAgentRunner> _runners = runners.ToList();
+    private readonly IReadOnlyList<IAgentRunner> _runners = [.. runners];
     private readonly TimeProvider _timeProvider = timeProvider;
     private readonly RunCommit _commit = commit;
     private readonly ILogger<RunAgentRequestHandler> _logger = logger;
@@ -107,6 +107,7 @@ public sealed class RunAgentRequestHandler(
                 exception,
                 message: "The case of the agent run {RunId} changed during the run.",
                 request.RunId);
+
             _dbContext.ChangeTracker.Clear();
             await _commit.FailCaseChangedAsync(request.RunId, cancellationToken);
         }
@@ -116,6 +117,7 @@ public sealed class RunAgentRequestHandler(
                 exception,
                 message: "The agent run {RunId} failed with an unexpected error.",
                 request.RunId);
+
             await FailRunAsync(request.RunId, cancellationToken);
         }
     }
@@ -148,6 +150,7 @@ public sealed class RunAgentRequestHandler(
                     candidate => candidate.Id == caseId && candidate.CompanyId == request.CompanyId,
                     cancellationToken)
             : null;
+
         var now = _timeProvider.GetUtcNow().UtcDateTime;
 
         if (maintenanceCase is null || maintenanceCase.State != CaseState.Open)

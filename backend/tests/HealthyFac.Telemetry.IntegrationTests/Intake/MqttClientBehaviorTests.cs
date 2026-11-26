@@ -1,12 +1,14 @@
 using System.Collections.Concurrent;
 using System.Text;
 using HealthyFac.Telemetry.IntegrationTests.Intake.Data;
+using HealthyFac.Testing.Features;
 using MQTTnet;
 using MQTTnet.Protocol;
 
 namespace HealthyFac.Telemetry.IntegrationTests.Intake;
 
 [Collection(TelemetryMqttCollection.Name)]
+[Feature(TestFeatures.Intake)]
 public sealed class MqttClientBehaviorTests(MqttIntakeFixture fixture)
 {
     private readonly MosquittoFixture _fixture = fixture.Mosquitto;
@@ -45,16 +47,20 @@ public sealed class MqttClientBehaviorTests(MqttIntakeFixture fixture)
         const string clientId = "redelivery-client";
         var sharedFilter = NewSharedFilter();
         var first = new ConcurrentBag<string>();
+
         var client = await _fixture.ConnectTelemetryAsync(
             clientId, isCleanStart: false, IntakeTestData.SessionExpirySeconds);
+
         await using (var receiving = new ReceivingClient(client, first, isAcknowledging: false))
         {
             await receiving.SubscribeAsync(sharedFilter);
             using var sender = await _fixture.ConnectSenderAsync();
+
             await MosquittoFixture.PublishAsync(
                 sender,
                 string.Format(IntakeTestData.GatewayTopicFormat, arg0: "gateway0"),
                 string.Format(IntakeTestData.PayloadFormat, arg0: 0));
+
             await ReceivingClient.WaitUntilAsync(() => first.Count >= 1);
         }
 
@@ -74,16 +80,20 @@ public sealed class MqttClientBehaviorTests(MqttIntakeFixture fixture)
         const string clientId = "acknowledged-client";
         var sharedFilter = NewSharedFilter();
         var first = new ConcurrentBag<string>();
+
         var client = await _fixture.ConnectTelemetryAsync(
             clientId, isCleanStart: false, IntakeTestData.SessionExpirySeconds);
+
         await using (var receiving = new ReceivingClient(client, first))
         {
             await receiving.SubscribeAsync(sharedFilter);
             using var sender = await _fixture.ConnectSenderAsync();
+
             await MosquittoFixture.PublishAsync(
                 sender,
                 string.Format(IntakeTestData.GatewayTopicFormat, arg0: "gateway0"),
                 string.Format(IntakeTestData.PayloadFormat, arg0: 0));
+
             await ReceivingClient.WaitUntilAsync(() => first.Count >= 1);
             await Task.Delay(IntakeTestData.QuietPeriod, TestContext.Current.CancellationToken);
         }
@@ -105,12 +115,15 @@ public sealed class MqttClientBehaviorTests(MqttIntakeFixture fixture)
         var liveReceived = new ConcurrentBag<string>();
         await using var live = new ReceivingClient(await _fixture.ConnectTelemetryAsync(), liveReceived);
         await live.SubscribeAsync(sharedFilter);
+
         var dead = await _fixture.ConnectTelemetryAsync(
             clientId: "expiring-client", isCleanStart: false, IntakeTestData.ShortSessionExpirySeconds);
+
         await using (var deadMember = new ReceivingClient(dead, deadReceived, isAcknowledging: false))
         {
             await deadMember.SubscribeAsync(sharedFilter);
             await PublishBatchAsync(offset: 0);
+
             await ReceivingClient.WaitUntilAsync(() =>
                 liveReceived.Count + deadReceived.Count >= IntakeTestData.MessageCount);
         }
@@ -130,8 +143,10 @@ public sealed class MqttClientBehaviorTests(MqttIntakeFixture fixture)
         var liveReceived = new ConcurrentBag<string>();
         await using var live = new ReceivingClient(await _fixture.ConnectTelemetryAsync(), liveReceived);
         await live.SubscribeAsync(sharedFilter);
+
         var dead = await _fixture.ConnectTelemetryAsync(
             clientId: "expired-client", isCleanStart: false, IntakeTestData.ShortSessionExpirySeconds);
+
         await using (var deadMember = new ReceivingClient(dead, deadReceived, isAcknowledging: false))
         {
             await deadMember.SubscribeAsync(sharedFilter);
@@ -152,8 +167,10 @@ public sealed class MqttClientBehaviorTests(MqttIntakeFixture fixture)
         const string clientId = "reconnecting-client";
         var sharedFilter = NewSharedFilter();
         var first = new ConcurrentBag<string>();
+
         var client = await _fixture.ConnectTelemetryAsync(
             clientId, isCleanStart: false, IntakeTestData.ShortSessionExpirySeconds);
+
         await using (var receiving = new ReceivingClient(client, first, isAcknowledging: false))
         {
             await receiving.SubscribeAsync(sharedFilter);
@@ -165,8 +182,10 @@ public sealed class MqttClientBehaviorTests(MqttIntakeFixture fixture)
         var second = new ConcurrentBag<string>();
         var reconnected = _fixture.CreateClient();
         await using var receivingAgain = new ReceivingClient(reconnected, second);
+
         await _fixture.ConnectTelemetryToSessionAsync(
             reconnected, clientId, IntakeTestData.ShortSessionExpirySeconds);
+
         await ReceivingClient.WaitUntilAsync(() => second.Count >= 1);
 
         second.Should().ContainSingle().Which.Should().Be(first.Single());
@@ -180,8 +199,10 @@ public sealed class MqttClientBehaviorTests(MqttIntakeFixture fixture)
         var liveReceived = new ConcurrentBag<string>();
         await using var live = new ReceivingClient(await _fixture.ConnectTelemetryAsync(), liveReceived);
         await live.SubscribeAsync(sharedFilter);
+
         var offline = await _fixture.ConnectTelemetryAsync(
             clientId: "offline-client", isCleanStart: false, IntakeTestData.SessionExpirySeconds);
+
         await using (var offlineMember = new ReceivingClient(offline, offlineReceived))
         {
             await offlineMember.SubscribeAsync(sharedFilter);
@@ -193,8 +214,10 @@ public sealed class MqttClientBehaviorTests(MqttIntakeFixture fixture)
         var liveCountWhileOffline = liveReceived.Count;
         var reconnected = _fixture.CreateClient();
         await using var offlineAgain = new ReceivingClient(reconnected, offlineReceived);
+
         await _fixture.ConnectTelemetryToSessionAsync(
             reconnected, clientId: "offline-client", IntakeTestData.SessionExpirySeconds);
+
         await ReceivingClient.WaitUntilAsync(() =>
             liveReceived.Count + offlineReceived.Count >= IntakeTestData.MessageCount);
 
@@ -211,8 +234,10 @@ public sealed class MqttClientBehaviorTests(MqttIntakeFixture fixture)
         var liveReceived = new ConcurrentBag<string>();
         await using var live = new ReceivingClient(await _fixture.ConnectTelemetryAsync(), liveReceived);
         await live.SubscribeAsync(sharedFilter);
+
         var (client, _) = await _fixture.ConnectTelemetryWithResultAsync(
             clientId: "unsubscribing-client", IntakeTestData.SessionExpirySeconds, IntakeTestData.ReceiveWindow);
+
         await using var held = new ReceivingClient(client, heldReceived, isAcknowledging: false);
         await held.SubscribeAsync(sharedFilter);
         await PublishBatchAsync(offset: 0, IntakeTestData.LargeMessageCount);
@@ -222,8 +247,10 @@ public sealed class MqttClientBehaviorTests(MqttIntakeFixture fixture)
 
         await held.UnsubscribeAsync(sharedFilter);
         await held.AcknowledgeHeldAndContinueAsync();
+
         await ReceivingClient.WaitUntilAsync(() =>
             liveReceived.Count + heldReceived.Count >= IntakeTestData.LargeMessageCount);
+
         await Task.Delay(IntakeTestData.QuietPeriod, TestContext.Current.CancellationToken);
 
         heldBeforeUnsubscribe.Should().Be(IntakeTestData.ReceiveWindow);
@@ -257,16 +284,19 @@ public sealed class MqttClientBehaviorTests(MqttIntakeFixture fixture)
     {
         const string clientId = "deleted-session-client";
         var (client, _) = await _fixture.ConnectTelemetryWithResultAsync(clientId, IntakeTestData.SessionExpirySeconds);
+
         await client.DisconnectAsync(
             new MqttClientDisconnectOptions
             {
                 Reason = MqttClientDisconnectOptionsReason.NormalDisconnection,
                 SessionExpiryInterval = 0,
             }, TestContext.Current.CancellationToken);
+
         client.Dispose();
 
         var (again, result) = await _fixture.ConnectTelemetryWithResultAsync(
             clientId, IntakeTestData.SessionExpirySeconds);
+
         again.Dispose();
 
         result.IsSessionPresent.Should().BeTrue();
@@ -282,6 +312,7 @@ public sealed class MqttClientBehaviorTests(MqttIntakeFixture fixture)
 
         var (again, result) = await _fixture.ConnectTelemetryWithResultAsync(
             clientId, IntakeTestData.SessionExpirySeconds);
+
         again.Dispose();
 
         result.IsSessionPresent.Should().BeTrue();
@@ -300,6 +331,7 @@ public sealed class MqttClientBehaviorTests(MqttIntakeFixture fixture)
 
         var (again, result) = await _fixture.ConnectTelemetryWithResultAsync(
             clientId, IntakeTestData.SessionExpirySeconds);
+
         again.Dispose();
 
         result.IsSessionPresent.Should().BeFalse();
@@ -352,8 +384,10 @@ public sealed class MqttClientBehaviorTests(MqttIntakeFixture fixture)
         var senderReceived = new ConcurrentBag<string>();
         var telemetryReceived = new ConcurrentBag<string>();
         await using var senderListener = new ReceivingClient(await _fixture.ConnectSenderAsync(), senderReceived);
+
         await using var telemetryListener = new ReceivingClient(
             await _fixture.ConnectTelemetryAsync(), telemetryReceived);
+
         await senderListener.SubscribeAsync(IntakeTestData.PlainFilter);
         await telemetryListener.SubscribeAsync(IntakeTestData.PlainFilter);
         using var sender = await _fixture.ConnectSenderAsync();
@@ -419,6 +453,7 @@ internal sealed class ReceivingClient : IAsyncDisposable
     {
         _client = client;
         _isAcknowledging = isAcknowledging;
+
         _client.ApplicationMessageReceivedAsync += async arguments =>
         {
             arguments.AutoAcknowledge = false;

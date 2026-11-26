@@ -32,13 +32,17 @@ public static class WorkOrderDraftEndpoints
         public IEndpointRouteBuilder MapWorkOrderDraftEndpoints()
         {
             var group = app.MapGroup(WorkOrderDraftRoutes.BaseRoute);
+
             group.MapPost(WorkOrderDraftRoutes.Search, SearchAsync)
                 .RequireAuthorization(CorePermissions.Drafts.Read);
+
             group.MapGet(WorkOrderDraftRoutes.ById, GetAsync)
                 .RequireAuthorization(CorePermissions.Drafts.Read);
+
             group.MapPost(WorkOrderDraftRoutes.Apply, ApplyAsync)
                 .RequireAuthorization(CorePermissions.Drafts.Write)
                 .RequireAuthorization(CorePermissions.WorkOrders.Write);
+
             group.MapPost(WorkOrderDraftRoutes.Dismiss, DismissAsync)
                 .RequireAuthorization(CorePermissions.Drafts.Write);
 

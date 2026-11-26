@@ -1,12 +1,14 @@
 using HealthyFac.Core.Infrastructure.Database;
 using HealthyFac.Core.UnitTests.Database.Data;
 using HealthyFac.Shared.Domain.Entities;
+using HealthyFac.Testing.Features;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace HealthyFac.Core.UnitTests.Database;
 
+[Feature(TestFeatures.Persistence)]
 public sealed class SoftDeleteModelTests
 {
     private const string UnusedConnectionString = "Host=unused;Database=unused";
@@ -45,9 +47,11 @@ public sealed class SoftDeleteModelTests
         var options = new DbContextOptionsBuilder<CoreDbContext>().UseNpgsql(UnusedConnectionString).Options;
         using var dbContext = new CoreDbContext(options);
 
-        return dbContext.GetService<IDesignTimeModel>()
-            .Model.GetEntityTypes()
-            .Where(entity => typeof(ISoftDeletable).IsAssignableFrom(entity.ClrType))
-            .ToList();
+        return
+        [
+            .. dbContext.GetService<IDesignTimeModel>()
+                .Model.GetEntityTypes()
+                .Where(entity => typeof(ISoftDeletable).IsAssignableFrom(entity.ClrType)),
+        ];
     }
 }

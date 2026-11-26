@@ -86,7 +86,7 @@ const JUMP_CASES: readonly [RealtimeNotificationKind, unknown, NotificationJump 
   ],
 ];
 
-describe('notification.store.utils', () => {
+describe('notification.store.utils', { tags: ['Realtime'] }, () => {
   it.each(JUMP_CASES)('jumpOf_For%s_GivesItsTarget', (kind, data, expected) => {
     expect(jumpOf(notificationOf(kind, data))).toEqual(expected);
   });

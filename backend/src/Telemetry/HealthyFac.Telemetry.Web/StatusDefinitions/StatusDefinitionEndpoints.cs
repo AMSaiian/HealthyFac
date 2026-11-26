@@ -36,16 +36,22 @@ public static class StatusDefinitionEndpoints
         public IEndpointRouteBuilder MapStatusDefinitionEndpoints()
         {
             var group = app.MapGroup(StatusDefinitionRoutes.BaseRoute);
+
             group.MapPost(StatusDefinitionRoutes.Root, CreateAsync)
                 .RequireAuthorization(TelemetryPermissions.StatusDefinitions.Write);
+
             group.MapPost(StatusDefinitionRoutes.Apply, ApplyAsync)
                 .RequireAuthorization(TelemetryPermissions.StatusDefinitions.Write);
+
             group.MapPost(StatusDefinitionRoutes.Search, SearchAsync)
                 .RequireAuthorization(TelemetryPermissions.StatusDefinitions.Read);
+
             group.MapGet(StatusDefinitionRoutes.ById, GetAsync)
                 .RequireAuthorization(TelemetryPermissions.StatusDefinitions.Read);
+
             group.MapPut(StatusDefinitionRoutes.ById, UpdateAsync)
                 .RequireAuthorization(TelemetryPermissions.StatusDefinitions.Write);
+
             group.MapDelete(StatusDefinitionRoutes.ById, DeleteAsync)
                 .RequireAuthorization(TelemetryPermissions.StatusDefinitions.Delete);
 

@@ -37,7 +37,7 @@ public sealed class InMemoryTokenCacheStorage : ITokenCacheStorage
         {
             lock (_gate)
             {
-                return _locks.Keys.ToList();
+                return [.. _locks.Keys];
             }
         }
     }
@@ -48,7 +48,7 @@ public sealed class InMemoryTokenCacheStorage : ITokenCacheStorage
         {
             lock (_gate)
             {
-                return _values.Keys.ToList();
+                return [.. _values.Keys];
             }
         }
     }
@@ -98,6 +98,7 @@ public sealed class InMemoryTokenCacheStorage : ITokenCacheStorage
         lock (_gate)
         {
             var isAcquired = _locks.TryAdd(key, owner);
+
             if (isAcquired)
             {
                 Interlocked.Increment(ref _lockAcquireCount);
@@ -129,6 +130,7 @@ public sealed class InMemoryTokenCacheStorage : ITokenCacheStorage
     public void StoreToken(string key, string token, DateTimeOffset refreshAt)
     {
         var json = new StoredToken { Token = token, RefreshAt = refreshAt }.ToJson();
+
         lock (_gate)
         {
             _values[key] = json;

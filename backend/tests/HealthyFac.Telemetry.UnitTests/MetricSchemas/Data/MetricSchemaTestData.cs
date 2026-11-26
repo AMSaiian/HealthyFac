@@ -43,21 +43,21 @@ public static class MetricSchemaTestData
     ) =>
         new()
         {
-            [propertyName: "sampledAt"] = SampledAt,
-            [propertyName: "metrics"] = new JsonObject
+            ["sampledAt"] = SampledAt,
+            ["metrics"] = new JsonObject
             {
                 [TemperatureKey] = temperature,
                 [DoorKey] = isDoorOpen,
                 [ModeKey] = mode,
             },
-            [propertyName: "statuses"] = new JsonArray((statuses ?? ["E042"]).Select(code => (JsonNode)code).ToArray()),
+            ["statuses"] = new JsonArray((statuses ?? ["E042"]).Select(code => (JsonNode)code).ToArray()),
         };
 
     public static JsonObject CreateEmptyMessage() =>
         new()
         {
-            [propertyName: "sampledAt"] = SampledAt, [propertyName: "metrics"] = new JsonObject(),
-            [propertyName: "statuses"] = new JsonArray(),
+            ["sampledAt"] = SampledAt, ["metrics"] = new JsonObject(),
+            ["statuses"] = new JsonArray(),
         };
 
     public static TheoryData<double, string> ValuesOutsideRangeAndStates => new()
@@ -68,8 +68,8 @@ public static class MetricSchemaTestData
         { 1e9, "AUTO" },
     };
 
-    public static TheoryData<string> BrokenMessages => new()
-    {
+    public static TheoryData<string> BrokenMessages =>
+    [
         Message(metrics: JsonMetrics("\"spindle.temperature\":\"71.5\"", DoorTrue, ModeAuto)),
         Message(metrics: JsonMetrics(Temperature, "\"door.open\":\"yes\"", ModeAuto)),
         Message(metrics: JsonMetrics(Temperature, DoorTrue, "\"spindle.mode\":1")),
@@ -83,7 +83,7 @@ public static class MetricSchemaTestData
         Message(sampledAt: "20261106"),
         Message(statuses: "[42]"),
         Message(metrics: "[]"),
-    };
+    ];
 
     private const string Temperature = "\"spindle.temperature\":71.5";
     private const string DoorTrue = "\"door.open\":true";

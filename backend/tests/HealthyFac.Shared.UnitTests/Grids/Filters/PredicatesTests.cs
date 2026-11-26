@@ -1,8 +1,10 @@
 using System.Linq.Expressions;
 using HealthyFac.Shared.Application.Filters;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.UnitTests.Grids.Filters;
 
+[Feature(TestFeatures.Persistence)]
 public sealed class PredicatesTests
 {
     private static readonly int[] Values = [1, 3, 6];

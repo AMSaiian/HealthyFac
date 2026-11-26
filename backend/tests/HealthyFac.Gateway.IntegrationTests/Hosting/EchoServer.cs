@@ -67,10 +67,12 @@ public sealed class EchoServer : IAsyncDisposable
                 {
                     [$"{ProxyOptions.SectionName}:KnownNetworks:0"] = LoopbackNetwork,
                 });
+
             builder.Services.AddSharedForwardedHeaders(builder.Configuration);
         }
 
         _app = builder.Build();
+
         _app.Use(async (context, next) =>
         {
             if (context.Request.Path == ReadinessPath)
@@ -134,6 +136,7 @@ public sealed class EchoServer : IAsyncDisposable
         var buffer = new byte[DrainBufferBytes];
         long total = 0;
         var read = await context.Request.Body.ReadAsync(buffer, context.RequestAborted);
+
         while (read > 0)
         {
             total += read;

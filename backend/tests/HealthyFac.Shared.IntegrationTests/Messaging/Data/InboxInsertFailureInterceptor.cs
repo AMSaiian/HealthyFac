@@ -45,6 +45,7 @@ public sealed class InboxInsertFailureInterceptor(int failureCount) : DbCommandI
     {
         var isInboxInsert = command.CommandText.Contains(DatabaseOutageTestData.InboxInsertCommand)
             && command.CommandText.Contains(DatabaseOutageTestData.InboxTableName);
+
         if (isInboxInsert && Interlocked.Increment(ref _injectedCount) <= _failureCount)
         {
             throw new NpgsqlException(DatabaseOutageTestData.InjectedFailureText, new TimeoutException());

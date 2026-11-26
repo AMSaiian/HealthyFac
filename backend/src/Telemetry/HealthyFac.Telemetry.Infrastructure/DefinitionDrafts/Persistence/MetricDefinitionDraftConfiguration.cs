@@ -75,14 +75,18 @@ public class MetricDefinitionDraftConfiguration : IEntityTypeConfiguration<Metri
         {
             table.HasCheckConstraint(DefinitionDraftCheckNames.MetricTarget, DefinitionDraftCheckNames.TargetSql);
             table.HasCheckConstraint(DefinitionDraftCheckNames.MetricRange, DefinitionDraftCheckNames.RangeSql);
+
             table.HasCheckConstraint(
                 DefinitionDraftCheckNames.MetricWarningLow, DefinitionDraftCheckNames.WarningLowSql);
+
             table.HasCheckConstraint(
                 DefinitionDraftCheckNames.MetricWarningHigh,
                 DefinitionDraftCheckNames.WarningHighSql);
+
             table.HasCheckConstraint(
                 DefinitionDraftCheckNames.MetricBehavior,
                 CheckConstraintSql.AllowedValues(column: "behavior", DraftMessageLimits.Behaviors.All));
+
             table.HasCheckConstraint(
                 DefinitionDraftCheckNames.MetricValueKind,
                 CheckConstraintSql.AllowedValues(column: "value_kind", DraftMessageLimits.ValueKinds.All));

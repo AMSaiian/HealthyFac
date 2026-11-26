@@ -84,13 +84,17 @@ public sealed class CoreDatabaseFixture : IAsyncLifetime, IResetBeforeEachTest
         services.AddApplicationServices();
         services.AddInfrastructureServices(configuration, environment);
         services.AddSingleton<IBackgroundQueue<RealtimePush>>(RealtimeQueue);
+
         services.ConfigureDbContext<CoreDbContext>(options =>
             options.AddInterceptors(SaveGate, Transactions, RetryOnce));
+
         services.AddSingleton<IEmailSender>(EmailSender);
+
         var otherHostedServices = services
             .Where(descriptor => descriptor.ServiceType == typeof(IHostedService)
                 && descriptor.ImplementationType?.Name != InboxProcessorTypeName)
             .ToList();
+
         otherHostedServices.ForEach(descriptor => services.Remove(descriptor));
         services.AddScoped<IEmployeeInviteEmailBuilder, PlainEmployeeInviteEmailBuilder>();
 
@@ -99,6 +103,7 @@ public sealed class CoreDatabaseFixture : IAsyncLifetime, IResetBeforeEachTest
         using var scope = ScopeFactory.CreateScope();
         await scope.ServiceProvider.GetRequiredService<CoreDbContext>().Database.MigrateAsync();
         await scope.ServiceProvider.GetRequiredService<ICoreDbInitializer>().SeedRequiredDataAsync();
+
         _resetter = await DatabaseResetter.CreateAsync(
             _database.ConnectionString,
             scope.ServiceProvider.GetRequiredService<CoreDbContext>());

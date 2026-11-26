@@ -31,7 +31,7 @@ function setup(canWrite: boolean): { element: HTMLElement; component: PhaseTable
   return { element: fixture.nativeElement as HTMLElement, component: fixture.componentInstance };
 }
 
-describe('PhaseTable', () => {
+describe('PhaseTable', { tags: ['SignalModel'] }, () => {
   it('rowButtons_WithoutWriteRight_ShowsTheEyeButtonAndNoDeleteButton', () => {
     const { element } = setup(false);
 

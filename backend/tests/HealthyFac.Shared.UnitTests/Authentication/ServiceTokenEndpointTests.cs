@@ -4,11 +4,13 @@ using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Shared.UnitTests.Authentication.Data;
 using HealthyFac.Shared.UnitTests.CurrentUser.Data;
 using HealthyFac.Testing.Authentication;
+using HealthyFac.Testing.Features;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Hosting;
 
 namespace HealthyFac.Shared.UnitTests.Authentication;
 
+[Feature(TestFeatures.Identity)]
 public sealed class ServiceTokenEndpointTests
 {
     private const string BearerScheme = "Bearer";

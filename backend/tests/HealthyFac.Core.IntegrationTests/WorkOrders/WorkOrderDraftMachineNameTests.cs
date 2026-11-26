@@ -5,11 +5,14 @@ using HealthyFac.Core.IntegrationTests.Machines.Data;
 using HealthyFac.Core.IntegrationTests.WorkOrders.Data;
 using HealthyFac.Shared.Application.Grids;
 using HealthyFac.Shared.Application.UseCases;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Core.IntegrationTests.WorkOrders;
 
 [Collection(CoreMachinesCollection.Name)]
+[Feature(TestFeatures.WorkOrders)]
+[Feature(TestFeatures.Drafts)]
 public sealed class WorkOrderDraftMachineNameTests(CoreDatabaseFixture fixture)
 {
     private const int PageLimit = 25;
@@ -20,8 +23,10 @@ public sealed class WorkOrderDraftMachineNameTests(CoreDatabaseFixture fixture)
     public async Task Search_ForADraftOfAMachine_ReturnsTheNameOfTheMachine()
     {
         var tenant = await _fixture.ArrangeMachineTenantAsync();
+
         var machineId = await _fixture.CreateMachineAsync(
             tenant.CompanyId, MachineTestData.MachineName, serialNumber: "DN-1");
+
         var draftId = await _fixture.SaveWorkOrderDraftAsync(tenant.CompanyId, machineId);
 
         var page = await SearchAsync(tenant.CompanyId);
@@ -35,12 +40,15 @@ public sealed class WorkOrderDraftMachineNameTests(CoreDatabaseFixture fixture)
     public async Task Get_ForADraftOfADeletedMachine_KeepsTheNameOfTheMachine()
     {
         var tenant = await _fixture.ArrangeMachineTenantAsync();
+
         var machineId = await _fixture.CreateMachineAsync(
             tenant.CompanyId, MachineTestData.MachineName, serialNumber: "DN-2");
+
         var draftId = await _fixture.SaveWorkOrderDraftAsync(tenant.CompanyId, machineId);
         await _fixture.DeleteMachineAsync(tenant.CompanyId, machineId);
 
         using var scope = _fixture.CreateUserScope(tenant.CompanyId);
+
         var response = await scope.ServiceProvider
             .GetRequiredService<IRequestHandler<GetWorkOrderDraftRequest, WorkOrderDraftResponse>>()
             .HandleAsync(

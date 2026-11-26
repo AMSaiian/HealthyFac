@@ -1,8 +1,10 @@
 using HealthyFac.Telemetry.Infrastructure.Intake.Mqtt;
 using HealthyFac.Telemetry.UnitTests.Intake.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.UnitTests.Intake;
 
+[Feature(TestFeatures.Intake)]
 public sealed class MqttIntakeOptionsValidatorTests
 {
     private readonly MqttIntakeOptionsValidator _validator = new();

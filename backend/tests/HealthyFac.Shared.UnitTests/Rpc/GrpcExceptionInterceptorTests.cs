@@ -1,10 +1,12 @@
 using Grpc.Core;
 using HealthyFac.Shared.UnitTests.Rpc.Data;
 using HealthyFac.Shared.Web.Rpc;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace HealthyFac.Shared.UnitTests.Rpc;
 
+[Feature(TestFeatures.Platform)]
 public sealed class GrpcExceptionInterceptorTests
 {
     private readonly GrpcExceptionInterceptor _interceptor = new(NullLogger<GrpcExceptionInterceptor>.Instance);

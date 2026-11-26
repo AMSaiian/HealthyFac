@@ -86,12 +86,14 @@ public sealed class DeleteShiftOverrideRequestHandler(
             token => DeleteAsync(request, token),
             IsolationLevel.Serializable,
             cancellationToken);
+
         _notifier.PushShiftChanged(request.CompanyId, change);
     }
 
     private async Task<ShiftChange> DeleteAsync(DeleteShiftOverrideRequest request, CancellationToken cancellationToken)
     {
         var zone = await _reader.GetZoneAsync(request.CompanyId, cancellationToken);
+
         var shifts = await _reader.LoadAsync(
             request.EmployeeId,
             zone,
@@ -99,8 +101,10 @@ public sealed class DeleteShiftOverrideRequestHandler(
             request.Date,
             isTracked: true,
             cancellationToken);
+
         var nowUtc = _timeProvider.GetUtcNow().UtcDateTime;
         ShiftDateRules.EnsureNotPast(request.Date, shifts.LocalDateOf(nowUtc));
+
         var existing = shifts.Overrides.SingleOrDefault()
             ?? throw new NotFoundException(ShiftErrors.Rejections.OverrideNotFound);
 
@@ -108,15 +112,17 @@ public sealed class DeleteShiftOverrideRequestHandler(
         _dbContext.Entry(existing).Property(stored => stored.RowVersion).OriginalValue = request.RowVersion;
         shifts.Overrides.Remove(existing);
         var template = shifts.Resolve(request.Date, request.Date);
+
         var keptBlocks = shifts.LocalDateOf(nowUtc) == request.Date
             ? TodayOverrideMerge.Merge(
-                before.Single().Blocks.ToList(),
-                template.Single().Blocks.ToList(),
+                [.. before.Single().Blocks],
+                [.. template.Single().Blocks],
                 nowUtc,
                 SlotRules.RoundUpToGrid(nowUtc))
             : null;
 
         IReadOnlyList<DaySchedule> after;
+
         if (keptBlocks is null || IsSameInstants(keptBlocks, template.Single().Blocks))
         {
             _dbContext.ShiftOverrides.Remove(existing);

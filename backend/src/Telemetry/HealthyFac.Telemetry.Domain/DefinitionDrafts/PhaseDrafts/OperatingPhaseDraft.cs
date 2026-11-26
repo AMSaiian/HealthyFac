@@ -96,6 +96,7 @@ public class OperatingPhaseDraft : IDefinitionDraft, IAuditable, ISoftDeletable,
             Priority = values.Priority,
             IsTracked = values.IsTracked,
         };
+
         draft._conditions.AddRange(conditions.Select(OperatingPhaseDraftCondition.Create));
         draft._limits.AddRange(limits.Select(OperatingPhaseDraftLimit.Create));
 
@@ -114,6 +115,7 @@ public class OperatingPhaseDraft : IDefinitionDraft, IAuditable, ISoftDeletable,
             },
             entry,
             isTargetRegistrationDeleted);
+
         TargetMachineId = outcome.TargetMachineId;
         TargetMachineDraftId = outcome.TargetMachineDraftId;
         State = outcome.State;
@@ -141,8 +143,12 @@ public class OperatingPhaseDraft : IDefinitionDraft, IAuditable, ISoftDeletable,
     /// <param name="draftId">The applied status draft.</param>
     /// <param name="definitionId">The new status definition.</param>
     /// <returns><see langword="true"/> when a condition moved.</returns>
-    public bool RetargetStatus(Guid draftId, Guid definitionId) =>
-        _conditions.Count(condition => condition.RetargetStatus(draftId, definitionId)) > 0;
+    public bool RetargetStatus(Guid draftId, Guid definitionId)
+    {
+        var movedConditions = _conditions.Count(condition => condition.RetargetStatus(draftId, definitionId));
+
+        return movedConditions > 0;
+    }
 
     /// <summary>
     /// Tells whether the phase draft uses a metric or a status draft.

@@ -5,6 +5,7 @@ using HealthyFac.Shared.Infrastructure.Caching;
 using HealthyFac.Shared.Infrastructure.Revocation;
 using HealthyFac.Testing.Caching;
 using HealthyFac.Testing.Containers;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Time.Testing;
@@ -12,6 +13,8 @@ using Microsoft.Extensions.Time.Testing;
 namespace HealthyFac.Gateway.IntegrationTests.Revocation;
 
 [Collection(GatewayLimitsCollection.Name)]
+[Feature(TestFeatures.Gateway)]
+[Feature(TestFeatures.Identity)]
 public sealed class RevocationRedisOutageTests(GatewayEnvironment environment)
     : IAsyncLifetime
 {
@@ -42,7 +45,9 @@ public sealed class RevocationRedisOutageTests(GatewayEnvironment environment)
             _stoppedRedis.ConnectionString,
             _core.Address,
             IPAddress.Parse(DownClientAddress));
+
         using var client = gateway.CreateAuthenticatedClient();
+
         using var firstFailure = await client.GetAsync(
             RevocationTestData.CoreRoute, TestContext.Current.CancellationToken);
 
@@ -56,6 +61,7 @@ public sealed class RevocationRedisOutageTests(GatewayEnvironment environment)
     {
         var store = new FlakyRevocationStore();
         var time = new FakeTimeProvider(DateTimeOffset.UtcNow);
+
         await using var gateway = _environment.CreateGateway(
             _core,
             configureServices: services =>
@@ -63,15 +69,21 @@ public sealed class RevocationRedisOutageTests(GatewayEnvironment environment)
                 services.Replace(ServiceDescriptor.Singleton<ITokenRevocationStore>(store));
                 services.Replace(ServiceDescriptor.Singleton<TimeProvider>(time));
             });
+
         using var client = gateway.CreateAuthenticatedClient();
+
         await gateway.Services.GetRequiredService<RedisResiliencePipeline>()
             .FailAsync(RedisConstants.Resilience.MinimumThroughput - 1);
+
         using var failedRead = await client.GetAsync(
             RevocationTestData.CoreRoute, TestContext.Current.CancellationToken);
+
         using var skippedRead = await client.GetAsync(
             RevocationTestData.CoreRoute, TestContext.Current.CancellationToken);
+
         var readsWhileOpen = store.ReadCount;
         time.Advance(RedisConstants.Resilience.BreakDuration);
+
         using var probeRead = await client.GetAsync(
             RevocationTestData.CoreRoute, TestContext.Current.CancellationToken);
 

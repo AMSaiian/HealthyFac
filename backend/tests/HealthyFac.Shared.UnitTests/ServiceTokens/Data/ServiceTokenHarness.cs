@@ -50,12 +50,14 @@ public sealed class ServiceTokenHarness : IDisposable
     public HttpClient CreateClient()
     {
         var serviceOptions = Options.Create(new ServiceOptions { Name = ServiceTokenTestData.ServiceName });
+
         var store = new TokenStore(
             Storage,
             Time,
             Options.Create(ServiceTokenTestData.Options),
             serviceOptions,
             NullLogger<TokenStore>.Instance);
+
         var cache = new ServiceTokenCache(
             new TokenEndpointClient(
                 new FixedHttpClientFactory(TokenEndpoint),
@@ -64,8 +66,10 @@ public sealed class ServiceTokenHarness : IDisposable
                 new FixedRandom(_jitterFraction)),
             store,
             serviceOptions);
+
         var client = new HttpClient(
             new ClientCredentialsHandler(cache, DownstreamScopes, serviceOptions) { InnerHandler = Resource });
+
         _clients.Add(client);
 
         return client;

@@ -28,10 +28,13 @@ public static class SignalEndpoints
         public IEndpointRouteBuilder MapSignalEndpoints()
         {
             var group = app.MapGroup(SignalRoutes.MachineRoute);
+
             group.MapGet(SignalRoutes.MetricHistory, GetMetricHistoryAsync)
                 .RequireAuthorization(TelemetryPermissions.Signals.Read);
+
             group.MapGet(SignalRoutes.SignalEpisodes, GetSignalEpisodesAsync)
                 .RequireAuthorization(TelemetryPermissions.Signals.Read);
+
             group.MapGet(SignalRoutes.PhaseTimes, GetPhaseTimesAsync)
                 .RequireAuthorization(TelemetryPermissions.Signals.Read);
 

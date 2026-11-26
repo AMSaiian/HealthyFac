@@ -49,6 +49,7 @@ internal sealed class IdEncryptionJsonOptionsConfigurator(IIdEncryptor encryptor
     public static void Apply(JsonSerializerOptions options, IIdEncryptor encryptor)
     {
         var resolver = options.TypeInfoResolver ?? new DefaultJsonTypeInfoResolver();
+
         options.TypeInfoResolver = resolver.WithAddedModifier(typeInfo =>
             IdEncryptionJsonModifier.Apply(typeInfo, encryptor)
         );

@@ -77,7 +77,7 @@ public sealed class HandlerRecorder
     {
         lock (_calls)
         {
-            return _calls.Where(call => call.Text == text).ToList();
+            return [.. _calls.Where(call => call.Text == text)];
         }
     }
 

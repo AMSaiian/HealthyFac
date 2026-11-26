@@ -1,9 +1,11 @@
 using HealthyFac.Telemetry.Domain.Evaluation.Phases;
 using HealthyFac.Telemetry.Domain.OperatingPhases;
 using HealthyFac.Telemetry.UnitTests.Evaluation.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.UnitTests.Evaluation;
 
+[Feature(TestFeatures.Evaluation)]
 public sealed class PhaseMatcherTests
 {
     private static readonly DateTime Start = SignalSeries.Start;

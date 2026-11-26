@@ -6,12 +6,16 @@ using HealthyFac.Seeder.TelemetryHistory.Persistence;
 using HealthyFac.Telemetry.Application.Intake;
 using HealthyFac.Telemetry.Domain.Intake;
 using HealthyFac.Telemetry.Infrastructure.Database;
+using HealthyFac.Testing.Features;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Seeder.IntegrationTests.TelemetryHistory;
 
 [Collection(SeederCollection.Name)]
+[Feature(TestFeatures.Seeding)]
+[Feature(TestFeatures.Intake)]
+[Feature(TestFeatures.Evaluation)]
 public sealed class ReadingRowWriterTests(SeederFixture fixture)
 {
     private readonly SeederFixture _fixture = fixture;
@@ -21,11 +25,15 @@ public sealed class ReadingRowWriterTests(SeederFixture fixture)
     {
         var context = await _fixture.RunMachinesSeedAsync(TestContext.Current.CancellationToken);
         var machineId = context.GetId(ReadingRowWriterTestData.LatheKey);
+
         var data = await HistoryRun.ReadDataAsync(
             _fixture.Hosts.Telemetry, machineId, TestContext.Current.CancellationToken);
+
         var sample = ReadingRowWriterTestData.CreateLatheSample(data, machineId);
+
         var rows = new HistoryMessageBuilder(_fixture.Hosts.Telemetry.GetService<IMachineMessageParser>(), data)
             .Build(sample);
+
         var later = sample.SampledAt + ReadingRowWriterTestData.Later;
         var payload = MachinePayloadBuilder.Build(sample.Sample, data.Definitions, later).Json;
         await WriteAsync([rows], TestContext.Current.CancellationToken);
@@ -41,22 +49,27 @@ public sealed class ReadingRowWriterTests(SeederFixture fixture)
                 },
                 TestContext.Current.CancellationToken);
 
-        var written = await LoadAsync(machineId, sample.SampledAt);
-        var received = await LoadAsync(machineId, later);
+        var (message, numeric, discrete, statuses) = await LoadAsync(machineId, sample.SampledAt);
+
+        var (receivedMessage, receivedNumeric, receivedDiscrete, receivedStatuses) =
+            await LoadAsync(machineId, later);
 
         response.Result.Should().Be(ReceiveMachineMessageResult.Stored);
-        written.Message.Errors.Should().BeEmpty();
-        received.Message.Errors.Should().BeEmpty();
-        written.Message.SchemaRevision.Should().Be(received.Message.SchemaRevision);
-        ReadingRowWriterTestData.RemoveSampledAt(written.Message.Payload!)
+        message.Errors.Should().BeEmpty();
+        receivedMessage.Errors.Should().BeEmpty();
+        message.SchemaRevision.Should().Be(receivedMessage.SchemaRevision);
+
+        ReadingRowWriterTestData.RemoveSampledAt(message.Payload!)
             .Should()
-            .Be(ReadingRowWriterTestData.RemoveSampledAt(received.Message.Payload!));
-        written.Numeric.Should().NotBeEmpty();
-        written.Numeric.Select(ToNumericKey).Should().Equal(received.Numeric.Select(ToNumericKey));
-        written.Discrete.Select(ToDiscreteKey).Should().Equal(received.Discrete.Select(ToDiscreteKey));
-        written.Statuses.Select(reading => reading.StatusDefinitionId)
+            .Be(ReadingRowWriterTestData.RemoveSampledAt(receivedMessage.Payload!));
+
+        numeric.Should().NotBeEmpty();
+        numeric.Select(ToNumericKey).Should().Equal(receivedNumeric.Select(ToNumericKey));
+        discrete.Select(ToDiscreteKey).Should().Equal(receivedDiscrete.Select(ToDiscreteKey));
+
+        statuses.Select(reading => reading.StatusDefinitionId)
             .Should()
-            .Equal(received.Statuses.Select(reading => reading.StatusDefinitionId));
+            .Equal(receivedStatuses.Select(reading => reading.StatusDefinitionId));
     }
 
     [Fact(Explicit = true)]
@@ -64,9 +77,12 @@ public sealed class ReadingRowWriterTests(SeederFixture fixture)
     {
         var context = await _fixture.RunMachinesSeedAsync(TestContext.Current.CancellationToken);
         var machineId = context.GetId(ReadingRowWriterTestData.LatheKey);
+
         var data = await HistoryRun.ReadDataAsync(
             _fixture.Hosts.Telemetry, machineId, TestContext.Current.CancellationToken);
+
         var sample = ReadingRowWriterTestData.CreateLatheSample(data, machineId);
+
         var rows = new HistoryMessageBuilder(_fixture.Hosts.Telemetry.GetService<IMachineMessageParser>(), data)
             .Build(sample, ReadingRowWriterTestData.MarkerId);
 
@@ -82,12 +98,17 @@ public sealed class ReadingRowWriterTests(SeederFixture fixture)
     {
         var context = await _fixture.RunMachinesSeedAsync(TestContext.Current.CancellationToken);
         var machineId = context.GetId(ReadingRowWriterTestData.LatheKey);
+
         var data = await HistoryRun.ReadDataAsync(
             _fixture.Hosts.Telemetry, machineId, TestContext.Current.CancellationToken);
+
         var sample = ReadingRowWriterTestData.CreateLatheSample(data, machineId);
+
         var built = new HistoryMessageBuilder(_fixture.Hosts.Telemetry.GetService<IMachineMessageParser>(), data)
             .Build(sample);
+
         using var stop = new CancellationTokenSource();
+
         var rows = new HistoryRows
         {
             Received = built.Received,
@@ -95,6 +116,7 @@ public sealed class ReadingRowWriterTests(SeederFixture fixture)
             Discrete = built.Discrete,
             Statuses = built.Statuses,
         };
+
         var act = () => WriteAsync([rows], stop.Token);
 
         var thrown = await Record.ExceptionAsync(act);
@@ -112,8 +134,10 @@ public sealed class ReadingRowWriterTests(SeederFixture fixture)
     {
         var context = await _fixture.RunMachinesSeedAsync(TestContext.Current.CancellationToken);
         var machineId = context.GetId(ReadingRowWriterTestData.LatheKey);
+
         var data = await HistoryRun.ReadDataAsync(
             _fixture.Hosts.Telemetry, machineId, TestContext.Current.CancellationToken);
+
         var sample = ReadingRowWriterTestData.CreateLatheSample(data, machineId);
         var parser = _fixture.Hosts.Telemetry.GetService<IMachineMessageParser>();
         var builder = new HistoryMessageBuilder(parser, ReadingRowWriterTestData.WithoutStatuses(data));
@@ -148,6 +172,7 @@ public sealed class ReadingRowWriterTests(SeederFixture fixture)
     {
         using var scope = _fixture.Hosts.Telemetry.CreateScope(SeederTestData.InitializationActor);
         var dbContext = scope.ServiceProvider.GetRequiredService<TelemetryDbContext>();
+
         var message = await dbContext.ReceivedMessages
             .AsNoTracking()
             .SingleAsync(candidate => candidate.MachineRegistrationId == machineId && candidate.SampledAt == sampledAt);

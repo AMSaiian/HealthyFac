@@ -1,10 +1,12 @@
 using System.Net;
 using HealthyFac.Core.ApiTests.Hosting;
 using HealthyFac.Core.ApiTests.Machines.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.ApiTests.Machines;
 
 [Collection(CoreApiCollection.Name)]
+[Feature(TestFeatures.Machines)]
 public sealed class MachineAuthorizationTests(CoreApiFixture fixture)
 {
     private readonly CoreApiFixture _fixture = fixture;
@@ -45,6 +47,7 @@ public sealed class MachineAuthorizationTests(CoreApiFixture fixture)
             MachineApiTestData.LookupPath,
             _fixture.CreateMachineClaims(MachineApiTestData.WritePermission),
             MachineApiTestData.LookupEmptyBody);
+
         var allowed = await _fixture.SendMachineRequestAsync(
             HttpMethod.Post,
             MachineApiTestData.LookupPath,
@@ -59,6 +62,7 @@ public sealed class MachineAuthorizationTests(CoreApiFixture fixture)
     public async Task Delete_WithoutDeletePermission_Returns403()
     {
         var machineId = await _fixture.ArrangeMachineAsync(MachineApiTestData.SerialNumber + "-del-denied");
+
         var claims = _fixture.CreateMachineClaims(
             MachineApiTestData.ReadPermission,
             MachineApiTestData.WritePermission);
@@ -155,6 +159,7 @@ public sealed class MachineAuthorizationTests(CoreApiFixture fixture)
             HttpMethod.Get,
             $"{MachineApiTestData.MachinesPath}/{machineId}",
             claims);
+
         var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);

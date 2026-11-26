@@ -4,10 +4,12 @@ using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Employees.Data;
 using HealthyFac.Core.IntegrationTests.Machines;
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.IntegrationTests.Companies;
 
 [Collection(CoreMachinesCollection.Name)]
+[Feature(TestFeatures.Companies)]
 public sealed class GetCurrentCompanyTests(CoreDatabaseFixture fixture)
 {
     private readonly CoreDatabaseFixture _fixture = fixture;

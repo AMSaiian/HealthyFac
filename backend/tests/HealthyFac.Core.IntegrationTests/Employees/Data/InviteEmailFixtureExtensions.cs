@@ -47,9 +47,8 @@ public static class InviteEmailFixtureExtensions
             await dbContext.SaveChangesAsync();
         }
 
-        public IReadOnlyList<EmailMessage> ReadSentEmails(string recipient) => fixture.EmailSender.Messages
-            .Where(message => message.To == recipient)
-            .ToList();
+        public IReadOnlyList<EmailMessage> ReadSentEmails(string recipient) =>
+            [.. fixture.EmailSender.Messages.Where(message => message.To == recipient)];
     }
 
     extension(Guid inviteId)
@@ -68,9 +67,10 @@ public static class InviteEmailFixtureExtensions
         {
             var start = message.TextBody.IndexOf(InviteEmailTestData.TokenMarker, StringComparison.Ordinal)
                 + InviteEmailTestData.TokenMarker.Length;
+
             var rest = message.TextBody[start..];
 
-            return new string(rest.TakeWhile(character => !char.IsWhiteSpace(character)).ToArray());
+            return new string([.. rest.TakeWhile(character => !char.IsWhiteSpace(character))]);
         }
     }
 }

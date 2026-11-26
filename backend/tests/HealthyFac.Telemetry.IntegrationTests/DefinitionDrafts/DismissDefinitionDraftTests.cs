@@ -4,10 +4,13 @@ using HealthyFac.Telemetry.Domain.DefinitionDrafts;
 using HealthyFac.Telemetry.IntegrationTests.Database.Data;
 using HealthyFac.Telemetry.IntegrationTests.DefinitionDrafts.Data;
 using HealthyFac.Telemetry.IntegrationTests.MachineRegistrations.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.IntegrationTests.DefinitionDrafts;
 
 [Collection(TelemetryDefinitionDraftsCollection.Name)]
+[Feature(TestFeatures.Drafts)]
+[Feature(TestFeatures.SignalModel)]
 public sealed class DismissDefinitionDraftTests(TelemetryDatabaseFixture fixture)
 {
     private readonly TelemetryDatabaseFixture _fixture = fixture;
@@ -73,6 +76,7 @@ public sealed class DismissDefinitionDraftTests(TelemetryDatabaseFixture fixture
         var foreignDraftId = await _fixture.StoreMetricDraftOnMachineAsync(otherCompanyId, machineId, isApplied: false);
 
         var foreignAct = () => _fixture.DismissDefinitionDraftAsync(DefinitionDraftTestData.CompanyId, foreignDraftId);
+
         var unknownAct = () => _fixture.DismissDefinitionDraftAsync(
             DefinitionDraftTestData.CompanyId, Guid.CreateVersion7());
 

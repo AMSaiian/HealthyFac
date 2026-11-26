@@ -1,8 +1,10 @@
 using HealthyFac.Shared.Application.Realtime;
 using HealthyFac.Shared.UnitTests.Realtime.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.UnitTests.Realtime;
 
+[Feature(TestFeatures.Realtime)]
 public sealed class RealtimeAudiencesTests
 {
     [Fact]
@@ -23,6 +25,7 @@ public sealed class RealtimeAudiencesTests
         var topics = RealtimeAudiences.TopicPermissions.Keys;
 
         topics.Should().BeEquivalentTo(RealtimeTopic.All);
+
         RealtimeAudiences.TopicPermissions.Values.Should()
             .OnlyContain(permission => !string.IsNullOrWhiteSpace(permission));
     }

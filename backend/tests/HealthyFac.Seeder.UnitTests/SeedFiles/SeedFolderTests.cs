@@ -2,9 +2,11 @@ using HealthyFac.Seeder.Moments;
 using HealthyFac.Seeder.SeedFiles;
 using HealthyFac.Seeder.UnitTests.SeedFiles.Data;
 using HealthyFac.Shared.Application.CurrentUser.Actors;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Seeder.UnitTests.SeedFiles;
 
+[Feature(TestFeatures.Seeding)]
 public sealed class SeedFolderTests
 {
     [Fact(Explicit = true)]

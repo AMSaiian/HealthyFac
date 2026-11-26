@@ -53,6 +53,7 @@ public static class OptionsBuilderExtensions
             services.AddSingleton<IValidator<TOptions>, TValidator>();
 
             var builder = services.AddOptions<TOptions>();
+
             builder = configuration is null
                 ? builder.BindConfiguration(configurationSection)
                 : builder.Bind(configuration.GetSection(configurationSection));

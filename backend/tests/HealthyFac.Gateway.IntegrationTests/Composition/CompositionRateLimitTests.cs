@@ -4,10 +4,13 @@ using System.Text;
 using HealthyFac.Gateway.IntegrationTests.Composition.Data;
 using HealthyFac.Gateway.IntegrationTests.Hosting;
 using HealthyFac.Gateway.IntegrationTests.RateLimiting.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Gateway.IntegrationTests.Composition;
 
 [Collection(GatewayLimitsCollection.Name)]
+[Feature(TestFeatures.Gateway)]
+[Feature(TestFeatures.Drafts)]
 public sealed class CompositionRateLimitTests(GatewayEnvironment environment) : IAsyncLifetime
 {
     private const string MachineSearchBody = """{"offset":0,"limit":25,"filter":{}}""";
@@ -29,14 +32,17 @@ public sealed class CompositionRateLimitTests(GatewayEnvironment environment) : 
         for (var attempt = 0; attempt <= RateLimitTestData.DefaultPermitLimit; attempt++)
         {
             using var content = new StringContent(MachineSearchBody, Encoding.UTF8, MediaTypeNames.Application.Json);
+
             using var response = await client.PostAsync(
                 CompositionStubs.PublicMachineSearch, content, TestContext.Current.CancellationToken);
+
             statusCodes.Add(response.StatusCode);
         }
 
         statusCodes.Take(RateLimitTestData.DefaultPermitLimit)
             .Should()
             .OnlyContain(status => status == HttpStatusCode.OK);
-        statusCodes.Last().Should().Be(HttpStatusCode.TooManyRequests);
+
+        statusCodes[^1].Should().Be(HttpStatusCode.TooManyRequests);
     }
 }

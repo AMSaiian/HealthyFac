@@ -55,7 +55,7 @@ function setup(inputs: { isBusy: boolean; applyingIds: readonly string[] }): Gri
   return fixture.componentInstance as unknown as GridAccess;
 }
 
-describe('DraftGrid', () => {
+describe('DraftGrid', { tags: ['Drafts'] }, () => {
   afterEach(() => {
     vi.unstubAllGlobals();
   });

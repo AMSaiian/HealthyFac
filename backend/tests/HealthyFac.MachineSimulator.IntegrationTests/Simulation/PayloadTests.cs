@@ -2,11 +2,13 @@ using System.Text.Json;
 using HealthyFac.MachineSimulator.IntegrationTests.Simulation.Data;
 using HealthyFac.Shared.Application.Observability;
 using HealthyFac.Shared.Infrastructure.Messaging.Transport;
+using HealthyFac.Testing.Features;
 using HealthyFac.Testing.Tracing;
 
 namespace HealthyFac.MachineSimulator.IntegrationTests.Simulation;
 
 [Collection(SimulatorCollection.Name)]
+[Feature(TestFeatures.Simulation)]
 public sealed class PayloadTests(SimulatorFixture fixture)
 {
     private readonly SimulatorFixture _fixture = fixture;
@@ -53,6 +55,7 @@ public sealed class PayloadTests(SimulatorFixture fixture)
                 .GetDateTime())
             .Select(time => time.ToUniversalTime().ToString(format: "O"))
             .ToList();
+
         times.Should().Equal(expectedTimes);
     }
 
@@ -67,6 +70,7 @@ public sealed class PayloadTests(SimulatorFixture fixture)
         var span = (await spans.WaitForSpansAsync(
             candidate => candidate.DisplayName == ObservabilityConstants.Simulator.PublishSpanName,
             expectedCount: 1)).Single();
+
         span.Kind.Should().Be(System.Diagnostics.ActivityKind.Producer);
         messages.Single().UserProperties[MessageHeaders.TraceParent].Should().Be(span.Id);
     }

@@ -4,7 +4,7 @@ import { LanguageStore } from '@shared/i18n/language.store';
 
 import { PlainDatePipe } from './plain-date.pipe';
 
-describe('PlainDatePipe', () => {
+describe('PlainDatePipe', { tags: ['Platform'] }, () => {
   function createPipe(): PlainDatePipe {
     TestBed.configureTestingModule({
       providers: [{ provide: LanguageStore, useValue: { language: () => 'en' } }],

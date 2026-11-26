@@ -24,7 +24,7 @@ function nativeControlsWithoutPrimeNg(source: string): string[] {
     );
 }
 
-describe('PrimeNG first', () => {
+describe('PrimeNG first', { tags: ['Conventions'] }, () => {
   const templates = import.meta.glob('./**/*.html', { query: '?raw', import: 'default', eager: true }) as Record<
     string,
     string

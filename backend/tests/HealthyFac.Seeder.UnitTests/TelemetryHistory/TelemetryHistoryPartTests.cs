@@ -2,9 +2,13 @@ using System.Text.Json.Nodes;
 using HealthyFac.Seeder.SeedFiles;
 using HealthyFac.Seeder.TelemetryHistory;
 using HealthyFac.Seeder.UnitTests.TelemetryHistory.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Seeder.UnitTests.TelemetryHistory;
 
+[Feature(TestFeatures.Seeding)]
+[Feature(TestFeatures.Intake)]
+[Feature(TestFeatures.Evaluation)]
 public sealed class TelemetryHistoryPartTests
 {
     [Fact(Explicit = true)]
@@ -15,6 +19,7 @@ public sealed class TelemetryHistoryPartTests
         events.Count(seedEvent => seedEvent.Item.StartsWith(TelemetryHistoryPartTestData.StepPrefix))
             .Should()
             .Be(TelemetryHistoryPartTestData.StepCount);
+
         events.Select(seedEvent => seedEvent.Item)
             .Should()
             .Contain(
@@ -22,8 +27,9 @@ public sealed class TelemetryHistoryPartTests
                 TelemetryHistoryPartTestData.MaintenanceStartItem,
                 TelemetryHistoryPartTestData.MaintenanceEndItem,
             ]);
+
         events[^1].Item.Should().Be(TelemetryHistoryPartTestData.MarkerItem);
-        events[index: 0].At.ToString().Should().Be(expected: "h-2");
+        events[0].At.ToString().Should().Be(expected: "h-2");
         events[^1].At.ToString().Should().Be(expected: "h-0");
     }
 
@@ -39,6 +45,7 @@ public sealed class TelemetryHistoryPartTests
             .Should()
             .BeGreaterThan(expected: -1)
             .And.BeLessThan(items.IndexOf(TelemetryHistoryPartTestData.MaintenanceStartItem));
+
         items.IndexOf($"{TelemetryHistoryPartTestData.StepPrefix}h-0:50")
             .Should()
             .BeGreaterThan(expected: -1)
@@ -60,6 +67,7 @@ public sealed class TelemetryHistoryPartTests
             TelemetryHistoryPartTestData.WorkOrderCompleteItem,
             TelemetryHistoryPartTestData.LinkItem,
         ];
+
         items.Select(item => events.Single(seedEvent => seedEvent.Item == item).At.ToString())
             .Should()
             .Equal(TelemetryHistoryPartTestData.WorkOrderMoments);
@@ -103,7 +111,7 @@ public sealed class TelemetryHistoryPartTests
     public void ReadEvents_WithAnUnknownDraftIdInMachines_FailsWithTheItemOfTheMachine()
     {
         var folder = TelemetryHistoryPartTestData.Folder(
-            machinesChange: root => root[propertyName: "machines"]![index: 0]![propertyName: "draftId"] =
+            machinesChange: root => root["machines"]![0]!["draftId"] =
                 "0190f3a0-0000-7000-8000-000000000e99");
 
         var act = () => CreatePart().ReadEvents(folder);

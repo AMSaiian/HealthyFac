@@ -3,11 +3,14 @@ using System.Net.Http.Json;
 using System.Text.Json.Nodes;
 using HealthyFac.Gateway.IntegrationTests.Composition.Data;
 using HealthyFac.Gateway.IntegrationTests.Hosting;
+using HealthyFac.Testing.Features;
 using static HealthyFac.Gateway.IntegrationTests.Composition.Data.DraftSearchCompositionTestData;
 
 namespace HealthyFac.Gateway.IntegrationTests.Composition;
 
 [Collection(GatewayProxyCollection.Name)]
+[Feature(TestFeatures.Gateway)]
+[Feature(TestFeatures.Drafts)]
 public sealed class DraftSearchCompositionTests(GatewayEnvironment environment) : IAsyncLifetime
 {
     private readonly GatewayEnvironment _environment = environment;
@@ -19,10 +22,12 @@ public sealed class DraftSearchCompositionTests(GatewayEnvironment environment) 
         await _core.StartAsync();
         await _telemetry.StartAsync();
         DraftSourceStub.Serve(_core, CoreSearchPath, CoreRows);
+
         DraftSourceStub.Serve(
             _telemetry,
             TelemetrySearchPath,
             TelemetryRows);
+
         _core.Respond(
             HttpMethod.Post,
             NamesPath,
@@ -49,19 +54,23 @@ public sealed class DraftSearchCompositionTests(GatewayEnvironment environment) 
             var page = await PostAsync(
                 client, new JsonObject
                 {
-                    [propertyName: "limit"] = PageLimit,
-                    [propertyName: "after"] = after?.DeepClone(),
+                    ["limit"] = PageLimit,
+                    ["after"] = after?.DeepClone(),
                 });
+
             ids.AddRange(
-                page[propertyName: "items"]!.AsArray().Select(item => item![propertyName: "id"]!.GetValue<string>()));
-            after = page[propertyName: "nextPosition"];
+                page["items"]!.AsArray().Select(item => item!["id"]!.GetValue<string>()));
+
+            after = page["nextPosition"];
         }
         while (after is not null && ids.Count <= MergedIds.Length);
 
         ids.Should().Equal(MergedIds);
+
         _core.Requests.Select(request => request.Path)
             .Should()
             .OnlyContain(path => path == CoreSearchPath || path == NamesPath);
+
         _telemetry.Requests.Select(request => request.Path)
             .Should()
             .OnlyContain(path => path == TelemetrySearchPath);
@@ -83,19 +92,22 @@ public sealed class DraftSearchCompositionTests(GatewayEnvironment environment) 
             var page = await PostAsync(
                 client, new JsonObject
                 {
-                    [propertyName: "limit"] = LongListLimit,
-                    [propertyName: "after"] = after?.DeepClone(),
+                    ["limit"] = LongListLimit,
+                    ["after"] = after?.DeepClone(),
                 });
-            totals.Add(page[propertyName: "totalCount"]!.GetValue<int>());
+
+            totals.Add(page["totalCount"]!.GetValue<int>());
+
             ids.AddRange(
-                page[propertyName: "items"]!.AsArray().Select(item => item![propertyName: "id"]!.GetValue<string>()));
-            after = page[propertyName: "nextPosition"];
+                page["items"]!.AsArray().Select(item => item!["id"]!.GetValue<string>()));
+
+            after = page["nextPosition"];
         }
         while (after is not null);
 
         var coreLimits = _core.Requests
             .Where(request => request.Path == CoreSearchPath)
-            .Select(request => JsonNode.Parse(request.Body)![propertyName: "limit"]!.GetValue<int>())
+            .Select(request => JsonNode.Parse(request.Body)!["limit"]!.GetValue<int>())
             .ToList();
 
         totals.Should().Equal(Enumerable.Repeat(LongListTotal, totals.Count));
@@ -118,11 +130,12 @@ public sealed class DraftSearchCompositionTests(GatewayEnvironment environment) 
             var page = await PostAsync(
                 client, new JsonObject
                 {
-                    [propertyName: "limit"] = PageLimit,
-                    [propertyName: "filter"] = JsonNode.Parse(json: """{"kinds":{"values":["machine"]}}"""),
-                    [propertyName: "after"] = after?.DeepClone(),
+                    ["limit"] = PageLimit,
+                    ["filter"] = JsonNode.Parse(json: """{"kinds":{"values":["machine"]}}"""),
+                    ["after"] = after?.DeepClone(),
                 });
-            after = page[propertyName: "nextPosition"];
+
+            after = page["nextPosition"];
         }
         while (after is not null);
 
@@ -136,12 +149,14 @@ public sealed class DraftSearchCompositionTests(GatewayEnvironment environment) 
         await using var gateway = CreateGateway();
         using var client = gateway.CreateAuthenticatedClient();
 
-        await PostAsync(client, new JsonObject { [propertyName: "limit"] = limit });
+        await PostAsync(client, new JsonObject { ["limit"] = limit });
 
         _core.Requests.Count(request => request.Path == CoreSearchPath)
             .Should()
             .Be(expected: 1);
+
         _telemetry.Requests.Should().ContainSingle();
+
         _core.Requests.Count(request => request.Path == NamesPath)
             .Should()
             .BeLessThanOrEqualTo(expected: 1);
@@ -153,17 +168,17 @@ public sealed class DraftSearchCompositionTests(GatewayEnvironment environment) 
         await using var gateway = CreateGateway();
         using var client = gateway.CreateAuthenticatedClient();
 
-        var page = await PostAsync(client, new JsonObject { [propertyName: "limit"] = 50 });
+        var page = await PostAsync(client, new JsonObject { ["limit"] = 50 });
 
-        var names = page[propertyName: "items"]!.AsArray()
+        var names = page["items"]!.AsArray()
             .ToDictionary(
-                item => item![propertyName: "id"]!.GetValue<string>(),
-                item => item![propertyName: "machineName"]?.GetValue<string>());
+                item => item!["id"]!.GetValue<string>(),
+                item => item!["machineName"]?.GetValue<string>());
 
-        names[key: "t1"].Should().Be(KnownMachineName);
-        names[key: "t2"].Should().Be(CreateDraftName);
-        names[key: "c1"].Should().Be(expected: "Core machine");
-        page[propertyName: "totalCount"]!.GetValue<int>().Should().Be(expected: 7);
+        names["t1"].Should().Be(KnownMachineName);
+        names["t2"].Should().Be(CreateDraftName);
+        names["c1"].Should().Be(expected: "Core machine");
+        page["totalCount"]!.GetValue<int>().Should().Be(expected: 7);
     }
 
     [Fact]
@@ -175,13 +190,13 @@ public sealed class DraftSearchCompositionTests(GatewayEnvironment environment) 
         var page = await PostAsync(
             client, new JsonObject
             {
-                [propertyName: "limit"] = 50,
-                [propertyName: "filter"] = JsonNode.Parse(json: """{"kinds":{"values":["machine"]}}"""),
+                ["limit"] = 50,
+                ["filter"] = JsonNode.Parse(json: """{"kinds":{"values":["machine"]}}"""),
             });
 
         _telemetry.Requests.Should().BeEmpty();
         _core.Requests.Count(request => request.Path == NamesPath).Should().Be(expected: 0);
-        page[propertyName: "items"]!.AsArray().Should().HaveCount(expected: 3);
+        page["items"]!.AsArray().Should().HaveCount(expected: 3);
     }
 
     [Fact]
@@ -193,13 +208,14 @@ public sealed class DraftSearchCompositionTests(GatewayEnvironment environment) 
         await PostAsync(
             client, new JsonObject
             {
-                [propertyName: "limit"] = 50,
-                [propertyName: "filter"] = JsonNode.Parse(json: """{"kinds":{"values":["metric","status"]}}"""),
+                ["limit"] = 50,
+                ["filter"] = JsonNode.Parse(json: """{"kinds":{"values":["metric","status"]}}"""),
             });
 
         _core.Requests.Count(request => request.Path == CoreSearchPath)
             .Should()
             .Be(expected: 0);
+
         _telemetry.Requests.Should().ContainSingle();
     }
 
@@ -208,11 +224,12 @@ public sealed class DraftSearchCompositionTests(GatewayEnvironment environment) 
     {
         await using var gateway = CreateGateway();
         using var client = gateway.CreateAuthenticatedClient();
+
         using var content = JsonContent.Create(
             new JsonObject
             {
-                [propertyName: "limit"] = 50,
-                [propertyName: "filter"] =
+                ["limit"] = 50,
+                ["filter"] =
                     JsonNode.Parse(json: """{"states":{"values":["pending","awaitingTarget"]}}"""),
             });
 
@@ -222,7 +239,8 @@ public sealed class DraftSearchCompositionTests(GatewayEnvironment environment) 
         var coreBody = JsonNode.Parse(_core.Requests.First(request => request.Path == CoreSearchPath).Body)!;
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        coreBody[propertyName: "filter"]![propertyName: "states"]![propertyName: "values"]!.AsArray()
+
+        coreBody["filter"]!["states"]!["values"]!.AsArray()
             .Select(value => value!.GetValue<string>())
             .Should()
             .Equal("pending");
@@ -233,7 +251,7 @@ public sealed class DraftSearchCompositionTests(GatewayEnvironment environment) 
     {
         await using var gateway = CreateGateway();
         using var client = gateway.CreateClient();
-        using var content = JsonContent.Create(new JsonObject { [propertyName: "limit"] = 5 });
+        using var content = JsonContent.Create(new JsonObject { ["limit"] = 5 });
 
         var response = await client.PostAsync(
             PublicSearchPath, content, TestContext.Current.CancellationToken);
@@ -246,7 +264,7 @@ public sealed class DraftSearchCompositionTests(GatewayEnvironment environment) 
     {
         await using var gateway = CreateGateway();
         using var client = gateway.CreateAuthenticatedClient();
-        using var content = JsonContent.Create(new JsonObject { [propertyName: "limit"] = 0 });
+        using var content = JsonContent.Create(new JsonObject { ["limit"] = 0 });
 
         var response = await client.PostAsync(
             PublicSearchPath, content, TestContext.Current.CancellationToken);
@@ -268,6 +286,7 @@ public sealed class DraftSearchCompositionTests(GatewayEnvironment environment) 
     private static async Task<JsonNode> PostAsync(HttpClient client, JsonObject body)
     {
         using var content = JsonContent.Create(body);
+
         using var response = await client.PostAsync(
             PublicSearchPath, content, TestContext.Current.CancellationToken);
 

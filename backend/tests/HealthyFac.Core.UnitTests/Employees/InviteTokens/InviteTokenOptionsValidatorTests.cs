@@ -1,8 +1,10 @@
 using HealthyFac.Core.Infrastructure.Employees.InviteTokens;
 using HealthyFac.Core.UnitTests.Employees.InviteTokens.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.UnitTests.Employees.InviteTokens;
 
+[Feature(TestFeatures.Companies)]
 public sealed class InviteTokenOptionsValidatorTests
 {
     private readonly InviteTokenOptionsValidator _validator = new();

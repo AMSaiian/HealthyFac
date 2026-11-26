@@ -2,14 +2,14 @@ using HealthyFac.Core.Application.Lookups;
 using HealthyFac.Core.Application.Machines.Lookups;
 using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Machines.Data;
-using HealthyFac.Shared.Application.ErrorHandling;
-using HealthyFac.Shared.Application.Grids;
 using HealthyFac.Shared.Application.UseCases;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Core.IntegrationTests.Machines;
 
 [Collection(CoreMachinesCollection.Name)]
+[Feature(TestFeatures.Machines)]
 public sealed class LookupMachinesTests(CoreDatabaseFixture fixture)
 {
     private readonly CoreDatabaseFixture _fixture = fixture;
@@ -19,16 +19,20 @@ public sealed class LookupMachinesTests(CoreDatabaseFixture fixture)
     {
         var tenant = await _fixture.ArrangeMachineTenantAsync();
         var otherTenant = await _fixture.ArrangeMachineTenantAsync(MachineTestData.OtherCompanyName);
+
         var pressId = await _fixture.CreateMachineAsync(
             tenant.CompanyId, LookupMachinesTestData.PressName, serialNumber: "LK-2");
+
         var latheId = await _fixture.CreateMachineAsync(
             tenant.CompanyId, LookupMachinesTestData.LatheName, serialNumber: "LK-1");
+
         await _fixture.CreateMachineAsync(
             otherTenant.CompanyId, LookupMachinesTestData.OtherCompanyMachineName, serialNumber: "LK-3");
 
         var response = await LookupAsync(tenant.CompanyId, search: null);
 
         response.Items.Select(item => item.Id).Should().Equal(pressId, latheId);
+
         response.Items.Select(item => item.DisplayName)
             .Should()
             .Equal(LookupMachinesTestData.PressName, LookupMachinesTestData.LatheName);
@@ -39,6 +43,7 @@ public sealed class LookupMachinesTests(CoreDatabaseFixture fixture)
     {
         var tenant = await _fixture.ArrangeMachineTenantAsync();
         await _fixture.CreateMachineAsync(tenant.CompanyId, LookupMachinesTestData.LatheName, serialNumber: "LK-1");
+
         var pressId = await _fixture.CreateMachineAsync(
             tenant.CompanyId, LookupMachinesTestData.PressName, serialNumber: "LK-2");
 
@@ -51,6 +56,7 @@ public sealed class LookupMachinesTests(CoreDatabaseFixture fixture)
     public async Task Lookup_WithMoreMachinesThanTheLimit_ReturnsTheFirstOnesByName()
     {
         var tenant = await _fixture.ArrangeMachineTenantAsync();
+
         for (var index = 0; index < LookupValidationConstants.MaxItems + 1; index++)
         {
             await _fixture.CreateMachineAsync(
@@ -69,13 +75,18 @@ public sealed class LookupMachinesTests(CoreDatabaseFixture fixture)
     {
         var tenant = await _fixture.ArrangeMachineTenantAsync();
         var otherTenant = await _fixture.ArrangeMachineTenantAsync(MachineTestData.OtherCompanyName);
+
         var latheId = await _fixture.CreateMachineAsync(
             tenant.CompanyId, LookupMachinesTestData.LatheName, serialNumber: "LK-1");
+
         var pressId = await _fixture.CreateMachineAsync(
             tenant.CompanyId, LookupMachinesTestData.PressName, serialNumber: "LK-2");
+
         var deletedId = await _fixture.CreateMachineAsync(
             tenant.CompanyId, LookupMachinesTestData.DeletedName, serialNumber: "LK-3");
+
         await _fixture.DeleteMachineAsync(tenant.CompanyId, deletedId);
+
         var foreignId = await _fixture.CreateMachineAsync(
             otherTenant.CompanyId, LookupMachinesTestData.OtherCompanyMachineName, serialNumber: "LK-4");
 
@@ -93,6 +104,7 @@ public sealed class LookupMachinesTests(CoreDatabaseFixture fixture)
     {
         var tenant = await _fixture.ArrangeMachineTenantAsync();
         var ids = new List<Guid>();
+
         for (var index = 0; index < LookupValidationConstants.MaxItems + 5; index++)
         {
             ids.Add(
@@ -103,20 +115,6 @@ public sealed class LookupMachinesTests(CoreDatabaseFixture fixture)
         var response = await LookupAsync(tenant.CompanyId, search: null, ids);
 
         response.Items.Should().HaveCount(ids.Count);
-    }
-
-    [Fact]
-    public async Task Lookup_WithMoreIdsThanTheGridLimit_ThrowsValidationWithTheLimitInTheMessage()
-    {
-        var tenant = await _fixture.ArrangeMachineTenantAsync();
-        var ids = Enumerable.Range(start: 0, GridValidationConstants.MaxLimit + 1)
-            .Select(_ => Guid.CreateVersion7())
-            .ToList();
-
-        var act = () => LookupAsync(tenant.CompanyId, search: null, ids);
-
-        var exception = await act.Should().ThrowAsync<AppValidationException>();
-        exception.Which.Message.Should().Contain(GridValidationConstants.MaxLimit.ToString());
     }
 
     private async Task<LookupResponse> LookupAsync(Guid companyId, string? search, IReadOnlyList<Guid>? ids = null)

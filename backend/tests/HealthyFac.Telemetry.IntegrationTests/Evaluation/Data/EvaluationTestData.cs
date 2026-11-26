@@ -25,12 +25,13 @@ public static class EvaluationTestData
         double stepSeconds = 1,
         params Guid[] activeStatusIds
     ) =>
-        values
+    [
+        .. values
             .Select((value, index) => new SeededSample(
                 start.AddSeconds(index * stepSeconds),
                 new Dictionary<Guid, double> { [arrangement.MetricId] = value },
-                activeStatusIds))
-            .ToList();
+                activeStatusIds)),
+    ];
 
     public static List<SeededSample> Constant(
         EvaluationArrangement arrangement,

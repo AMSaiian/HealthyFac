@@ -21,7 +21,7 @@ public static class ReceivedMessageTestData
     public static TheoryData<byte[]?, string?> InvalidPayloadForms => new()
     {
         { null, null },
-        { new byte[] { 0x7B, 0x7D }, "{}" },
+        { "{}"u8.ToArray(), "{}" },
     };
 
     public static TheoryData<byte[]?, string?> ValidPayloadForms => new()

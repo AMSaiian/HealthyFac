@@ -8,7 +8,7 @@ function createRoot(nonce: string | null): Element {
   return root;
 }
 
-describe('readCspNonce', () => {
+describe('readCspNonce', { tags: ['Identity'] }, () => {
   it('readCspNonce_WithValue_ReturnsValue', () => {
     const result = readCspNonce(createRoot('abc123'));
 

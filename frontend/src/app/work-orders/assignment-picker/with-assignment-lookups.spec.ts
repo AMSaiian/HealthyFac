@@ -27,7 +27,7 @@ function range(from: string, to: string): { from: Temporal.PlainDate; to: Tempor
   return { from: Temporal.PlainDate.from(from), to: Temporal.PlainDate.from(to) };
 }
 
-describe('withAssignmentLookups', () => {
+describe('withAssignmentLookups', { tags: ['WorkOrders'] }, () => {
   const scheduleDays = vi.fn();
   const freeSpans = vi.fn();
 

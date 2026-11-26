@@ -30,9 +30,11 @@ public static class IngestFixtureExtensions
         public async Task<byte[]> ReadBlobAsync(Guid fileId)
         {
             using var scope = fixture.Hosts.Document.CreateScope(SeederTestData.InitializationActor);
+
             var blob = scope.ServiceProvider.GetRequiredService<BlobServiceClient>()
                 .GetBlobContainerClient(IngestTestData.BlobContainer)
                 .GetBlobClient(fileId.ToString());
+
             var content = await blob.DownloadContentAsync();
 
             return content.Value.Content.ToArray();
@@ -42,8 +44,10 @@ public static class IngestFixtureExtensions
         {
             using var scope = fixture.Hosts.Insights.CreateScope(SeederTestData.InitializationActor);
             var dbContext = scope.ServiceProvider.GetRequiredService<InsightsDbContext>();
+
             var completedCount = await dbContext.IngestAttempts
                 .CountAsync(attempt => attempt.State == IngestState.Completed);
+
             var documentCount = await dbContext.IngestedDocuments.CountAsync();
             var chunkCount = await dbContext.DocumentChunks.CountAsync();
             var runCount = await dbContext.AgentRuns.CountAsync();

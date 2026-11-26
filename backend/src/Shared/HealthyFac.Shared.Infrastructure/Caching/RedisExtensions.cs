@@ -29,6 +29,7 @@ public static class RedisExtensions
         public IServiceCollection AddSharedRedis(IConfiguration configuration)
         {
             var isRegistered = services.Any(descriptor => descriptor.ServiceType == typeof(RedisResiliencePipeline));
+
             if (isRegistered)
             {
                 return services;
@@ -59,6 +60,7 @@ public static class RedisExtensions
         {
             services.AddKeyedSingleton<CircuitBreakerStateProvider>(RedisConstants.Resilience.PipelineKey);
             services.AddSingleton<RedisResiliencePipeline>();
+
             services.AddResiliencePipeline(
                 RedisConstants.Resilience.PipelineKey,
                 (builder, context) =>
@@ -66,6 +68,7 @@ public static class RedisExtensions
                     var provider = context.ServiceProvider;
 
                     builder.TimeProvider = provider.GetRequiredService<TimeProvider>();
+
                     builder.AddCircuitBreaker(
                         new CircuitBreakerStrategyOptions
                         {

@@ -4,10 +4,13 @@ using HealthyFac.Core.IntegrationTests.Employees.Data;
 using HealthyFac.Core.IntegrationTests.Machines;
 using HealthyFac.Core.IntegrationTests.Machines.Data;
 using HealthyFac.Core.Messaging.Machines;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.IntegrationTests.Drafts;
 
 [Collection(CoreMachinesCollection.Name)]
+[Feature(TestFeatures.Drafts)]
+[Feature(TestFeatures.Machines)]
 public sealed class ApplyMachineDraftGoLiveTests(CoreDatabaseFixture fixture)
 {
     private readonly CoreDatabaseFixture _fixture = fixture;

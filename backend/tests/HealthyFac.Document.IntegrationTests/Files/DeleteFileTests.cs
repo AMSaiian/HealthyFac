@@ -5,10 +5,12 @@ using HealthyFac.Document.IntegrationTests.Files.Data;
 using HealthyFac.Document.IntegrationTests.MachineRegistrations.Data;
 using HealthyFac.Document.Messaging.Files;
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Document.IntegrationTests.Files;
 
 [Collection(DocumentDatabaseCollection.Name)]
+[Feature(TestFeatures.Files)]
 public sealed class DeleteFileTests(DocumentDatabaseFixture fixture)
 {
     private readonly DocumentDatabaseFixture _fixture = fixture;
@@ -42,14 +44,14 @@ public sealed class DeleteFileTests(DocumentDatabaseFixture fixture)
 
         await _fixture.DeleteCompanyFileAsync(
             UpdateFileTestData.CompanyId,
-            new DeleteFileRequest { CompanyId = UpdateFileTestData.CompanyId, Id = ids[index: 0] });
+            new DeleteFileRequest { CompanyId = UpdateFileTestData.CompanyId, Id = ids[0] });
 
         var messages = await _fixture.ReadOutboxMessagesAsync<FileDeleted>();
 
         messages.Should()
             .ContainSingle()
             .Which.Should()
-            .Be(new FileDeleted { FileId = ids[index: 0], CompanyId = UpdateFileTestData.CompanyId });
+            .Be(new FileDeleted { FileId = ids[0], CompanyId = UpdateFileTestData.CompanyId });
     }
 
     [Fact]
@@ -57,9 +59,11 @@ public sealed class DeleteFileTests(DocumentDatabaseFixture fixture)
     {
         var ids = await _fixture.SeedFilesAsync(
             UpdateFileTestData.OtherCompanyId, [UpdateFileTestData.CompanyFile()]);
+
         var act = () => _fixture.DeleteCompanyFileAsync(
             UpdateFileTestData.CompanyId,
-            new DeleteFileRequest { CompanyId = UpdateFileTestData.CompanyId, Id = ids[index: 0] });
+            new DeleteFileRequest { CompanyId = UpdateFileTestData.CompanyId, Id = ids[0] });
+
         await act.Should().ThrowAsync<NotFoundException>();
 
         var messages = await _fixture.ReadOutboxMessagesAsync<FileDeleted>();
@@ -72,7 +76,8 @@ public sealed class DeleteFileTests(DocumentDatabaseFixture fixture)
     {
         var ids = await _fixture.SeedFilesAsync(
             UpdateFileTestData.CompanyId, [UpdateFileTestData.CompanyFile()]);
-        var request = new DeleteFileRequest { CompanyId = UpdateFileTestData.CompanyId, Id = ids[index: 0] };
+
+        var request = new DeleteFileRequest { CompanyId = UpdateFileTestData.CompanyId, Id = ids[0] };
         await _fixture.DeleteCompanyFileAsync(UpdateFileTestData.CompanyId, request);
 
         var act = () => _fixture.DeleteCompanyFileAsync(UpdateFileTestData.CompanyId, request);
@@ -88,7 +93,7 @@ public sealed class DeleteFileTests(DocumentDatabaseFixture fixture)
 
         var act = () => _fixture.DeleteCompanyFileAsync(
             UpdateFileTestData.CompanyId,
-            new DeleteFileRequest { CompanyId = UpdateFileTestData.CompanyId, Id = ids[index: 0] });
+            new DeleteFileRequest { CompanyId = UpdateFileTestData.CompanyId, Id = ids[0] });
 
         await act.Should().ThrowAsync<NotFoundException>();
     }
@@ -97,6 +102,7 @@ public sealed class DeleteFileTests(DocumentDatabaseFixture fixture)
     public async Task DeleteMachineFile_WithMachineInScope_SoftDeletes()
     {
         var machineId = await _fixture.RegisterMachineAsync(UpdateFileTestData.CompanyId);
+
         var ids = await _fixture.SeedFilesAsync(
             UpdateFileTestData.CompanyId,
             [
@@ -110,10 +116,10 @@ public sealed class DeleteFileTests(DocumentDatabaseFixture fixture)
             {
                 CompanyId = UpdateFileTestData.CompanyId,
                 MachineId = machineId,
-                Id = ids[index: 0],
+                Id = ids[0],
             });
 
-        var file = await _fixture.LoadFileRowAsync(ids[index: 0]);
+        var file = await _fixture.LoadFileRowAsync(ids[0]);
 
         file.DeletedAt.Should().NotBeNull();
     }
@@ -122,6 +128,7 @@ public sealed class DeleteFileTests(DocumentDatabaseFixture fixture)
     public async Task DeleteMachineFile_WithCompanyFile_Throws404()
     {
         var machineId = await _fixture.RegisterMachineAsync(UpdateFileTestData.CompanyId);
+
         var ids = await _fixture.SeedFilesAsync(
             UpdateFileTestData.CompanyId, [UpdateFileTestData.CompanyFile()]);
 
@@ -131,7 +138,7 @@ public sealed class DeleteFileTests(DocumentDatabaseFixture fixture)
             {
                 CompanyId = UpdateFileTestData.CompanyId,
                 MachineId = machineId,
-                Id = ids[index: 0],
+                Id = ids[0],
             });
 
         await act.Should().ThrowAsync<NotFoundException>();
@@ -141,6 +148,7 @@ public sealed class DeleteFileTests(DocumentDatabaseFixture fixture)
     public async Task DeleteCompanyFile_WithMachineFile_SoftDeletes()
     {
         var machineId = await _fixture.RegisterMachineAsync(UpdateFileTestData.CompanyId);
+
         var ids = await _fixture.SeedFilesAsync(
             UpdateFileTestData.CompanyId,
             [
@@ -150,9 +158,9 @@ public sealed class DeleteFileTests(DocumentDatabaseFixture fixture)
 
         await _fixture.DeleteCompanyFileAsync(
             UpdateFileTestData.CompanyId,
-            new DeleteFileRequest { CompanyId = UpdateFileTestData.CompanyId, Id = ids[index: 0] });
+            new DeleteFileRequest { CompanyId = UpdateFileTestData.CompanyId, Id = ids[0] });
 
-        var file = await _fixture.LoadFileRowAsync(ids[index: 0]);
+        var file = await _fixture.LoadFileRowAsync(ids[0]);
 
         file.DeletedAt.Should().NotBeNull();
     }
@@ -162,6 +170,7 @@ public sealed class DeleteFileTests(DocumentDatabaseFixture fixture)
     {
         var machineId = await _fixture.RegisterMachineAsync(UpdateFileTestData.CompanyId);
         var otherMachineId = await _fixture.RegisterMachineAsync(UpdateFileTestData.CompanyId);
+
         var ids = await _fixture.SeedFilesAsync(
             UpdateFileTestData.CompanyId,
             [
@@ -176,7 +185,7 @@ public sealed class DeleteFileTests(DocumentDatabaseFixture fixture)
             {
                 CompanyId = UpdateFileTestData.CompanyId,
                 MachineId = machineId,
-                Id = ids[index: 0],
+                Id = ids[0],
             });
 
         await act.Should().ThrowAsync<NotFoundException>();

@@ -1,7 +1,10 @@
 using HealthyFac.Telemetry.Application.OperatingPhases;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.UnitTests.OperatingPhases;
 
+[Feature(TestFeatures.SignalModel)]
+[Feature(TestFeatures.Evaluation)]
 public sealed class PhaseTimeCalculatorTests
 {
     private static readonly Guid Cutting = Guid.Parse(input: "22222222-2222-2222-2222-222222222222");
@@ -69,6 +72,7 @@ public sealed class PhaseTimeCalculatorTests
 
         result.UnknownModeSeconds.Should().Be(10 * 60);
         result.NoDataSeconds.Should().Be(25 * 60);
+
         (result.PhaseSeconds.Values.Sum() + result.UnknownModeSeconds + result.NoDataSeconds)
             .Should()
             .Be((To - From).TotalSeconds);

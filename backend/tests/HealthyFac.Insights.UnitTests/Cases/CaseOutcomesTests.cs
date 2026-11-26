@@ -1,9 +1,11 @@
 using HealthyFac.Insights.Application.Cases;
 using HealthyFac.Insights.Domain.Agents.Runs;
 using HealthyFac.Insights.UnitTests.Cases.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Insights.UnitTests.Cases;
 
+[Feature(TestFeatures.Cases)]
 public sealed class CaseOutcomesTests
 {
     [Fact]

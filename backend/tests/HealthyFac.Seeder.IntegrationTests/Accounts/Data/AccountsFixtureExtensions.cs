@@ -41,6 +41,7 @@ public static class AccountsFixtureExtensions
         {
             var clientId = await fixture.Keycloak.CreatePasswordGrantClientAsync();
             using var client = new HttpClient { BaseAddress = new Uri(fixture.Keycloak.BaseAddress) };
+
             using var response = await client.PostAsync(
                 string.Format(
                         SeederTestData.TokenPathFormat,
@@ -50,13 +51,14 @@ public static class AccountsFixtureExtensions
                 new FormUrlEncodedContent(
                     new Dictionary<string, string>
                     {
-                        [key: "grant_type"] = "password",
-                        [key: "client_id"] = clientId,
-                        [key: "client_secret"] = KeycloakTestServer.PasswordGrantClientSecret,
-                        [key: "username"] = email,
-                        [key: "password"] = password,
-                        [key: "scope"] = "openid organization",
+                        ["grant_type"] = "password",
+                        ["client_id"] = clientId,
+                        ["client_secret"] = KeycloakTestServer.PasswordGrantClientSecret,
+                        ["username"] = email,
+                        ["password"] = password,
+                        ["scope"] = "openid organization",
                     }));
+
             await response.EnsureSuccessAsync(TestContext.Current.CancellationToken);
 
             var body = await response.Content.ReadFromJsonAsync<JsonObject>();
@@ -76,6 +78,7 @@ public static class AccountsFixtureExtensions
         public async Task<int> CountUsersAsync(IEnumerable<Guid> employeeIds)
         {
             var count = 0;
+
             foreach (var employeeId in employeeIds)
             {
                 count += await fixture.FindUserAsync(employeeId) is null ? 0 : 1;
@@ -90,6 +93,7 @@ public static class AccountsFixtureExtensions
         var payload = token.Split(separator: '.')[1]
             .Replace(oldChar: '-', newChar: '+')
             .Replace(oldChar: '_', newChar: '/');
+
         payload = payload.PadRight(payload.Length + (4 - payload.Length % 4) % 4, paddingChar: '=');
 
         return JsonNode.Parse(Convert.FromBase64String(payload))!.AsObject();

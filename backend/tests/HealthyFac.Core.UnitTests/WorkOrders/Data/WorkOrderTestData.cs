@@ -7,13 +7,18 @@ public static class WorkOrderTestData
     public static readonly Guid CompanyId = Guid.Parse(input: "0f6c1d52-7a3e-4b8e-9d11-2f3a5c7e9b01");
     public static readonly Guid AssigneeId = Guid.Parse(input: "1a7d2e63-8b4f-4c9f-8e22-3a4b6d8f0c12");
     public static readonly Guid OtherAssigneeId = Guid.Parse(input: "2b8e3f74-9c50-4da0-9f33-4b5c7e9a1d23");
-    public static readonly DateTime StartLocal = new(year: 2027, month: 3, day: 29, hour: 9, minute: 0, second: 0);
-    public static readonly DateTime StartUtc = new(year: 2027, month: 3, day: 29, hour: 6, minute: 0, second: 0);
+
+    public static readonly DateTime StartLocal = new(
+        year: 2027, month: 3, day: 29, hour: 9, minute: 0, second: 0, DateTimeKind.Unspecified);
+
+    public static readonly DateTime StartUtc = new(
+        year: 2027, month: 3, day: 29, hour: 6, minute: 0, second: 0, DateTimeKind.Utc);
 
     public static readonly DateTime LaterStartLocal = new(
-        year: 2027, month: 3, day: 29, hour: 14, minute: 0, second: 0);
+        year: 2027, month: 3, day: 29, hour: 14, minute: 0, second: 0, DateTimeKind.Unspecified);
 
-    public static readonly DateTime LaterStartUtc = new(year: 2027, month: 3, day: 29, hour: 11, minute: 0, second: 0);
+    public static readonly DateTime LaterStartUtc = new(
+        year: 2027, month: 3, day: 29, hour: 11, minute: 0, second: 0, DateTimeKind.Utc);
 
     public static readonly WorkOrderSlot FirstSlot = new()
     {

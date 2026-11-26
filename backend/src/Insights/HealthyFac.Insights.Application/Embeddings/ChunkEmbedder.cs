@@ -52,14 +52,18 @@ public sealed class ChunkEmbedder(
     private async Task<float[]> EmbedOneAsync(string text, SemaphoreSlim gate, CancellationToken cancellationToken)
     {
         await gate.WaitAsync(cancellationToken);
+
         try
         {
             var options = new EmbeddingGenerationOptions { Dimensions = _limits.Dimensions };
+
             var result = await _providers.ExecuteAsync(
                 token => _generator.GenerateAsync([text], options, token),
                 cancellationToken);
+
             var embedding = result.FirstOrDefault() ?? throw new InvalidOperationException(NoEmbeddingMessage);
             var values = embedding.Vector;
+
             if (values.Length != _limits.Dimensions)
             {
                 throw new InvalidOperationException(string.Format(WrongSizeFormat, values.Length, _limits.Dimensions));

@@ -1,10 +1,14 @@
 using System.Text.RegularExpressions;
 using HealthyFac.Shared.UnitTests.Conventions.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.UnitTests.Conventions;
 
+[Feature(TestFeatures.Conventions)]
 public sealed class OptionsValidatorPlacementTests
 {
+    private static readonly char[] PathSeparators = [Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar];
+
     [Fact]
     public void OptionsValidators_InBackendSources_LiveInTheirOptionsFile()
     {
@@ -50,7 +54,7 @@ public sealed class OptionsValidatorPlacementTests
 
     private static bool IsSkipped(FileInfo file)
         => file.FullName
-            .Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+            .Split(PathSeparators)
             .Any(OptionsValidatorPlacementConstants.SkippedFolders.Contains);
 
     private static bool IsMisplaced(FileInfo file)
@@ -62,6 +66,6 @@ public sealed class OptionsValidatorPlacementTests
 
         return Regex
             .Matches(File.ReadAllText(file.FullName), OptionsValidatorPlacementConstants.ValidatorPattern)
-            .Any(match => file.Name != $"{match.Groups[groupname: "options"].Value}.cs");
+            .Any(match => file.Name != $"{match.Groups["options"].Value}.cs");
     }
 }

@@ -2,7 +2,7 @@ import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
 
 import { httpErrorKey, isHttpStatus } from './http-error-key';
 
-describe('httpErrorKey', () => {
+describe('httpErrorKey', { tags: ['Platform'] }, () => {
   it('httpErrorKey_WithOverrideForTheStatus_ReturnsTheOverride', () => {
     const error = new HttpErrorResponse({ status: HttpStatusCode.Conflict });
 

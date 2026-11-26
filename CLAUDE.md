@@ -22,8 +22,13 @@ The repo has three test areas: backend, frontend, and tooling (`.claude/`, `CLAU
     *   Integration and API tests (containers, at most 4 projects at a time): `dotnet test --test-modules "backend/tests/**/bin/Debug/net10.0/HealthyFac.*.IntegrationTests.dll;backend/tests/**/bin/Debug/net10.0/HealthyFac.*.ApiTests.dll" --max-parallel-test-modules 4`
     *   Without `--max-parallel-test-modules`, `dotnet test` runs `Environment.ProcessorCount` test projects at a time. The unit command uses that default.
     *   One project: `dotnet test --project <project> --filter <VSTest filter>`.
-*   **Frontend area** (`frontend/`, `keycloak-theme/`): `cd frontend && npm run lint && npx ng build && npx ng test --watch=false`. When `keycloak-theme/` changed, also `cd keycloak-theme && npm run lint && npm test`.
-*   **Script tests:** after a change under `.claude/` or `scripts/`, run the test script of the changed file: `pwsh .claude/tests/flow-scripts.tests.ps1`, `pwsh .claude/tests/rules.tests.ps1`, `pwsh .claude/hooks/tests/hook-scope.tests.ps1`, `pwsh scripts/tests/verify-slots.tests.ps1`, or `pwsh scripts/tests/agent-chrome.tests.ps1`. While you work, run `-Only <the sections of the scripts you changed>` of `flow-scripts.tests.ps1` and `hook-scope.tests.ps1`. `pwsh .claude/run-area.ps1 -Area tooling` runs the whole suites of the changed tool files once per cycle.
+    *   Affected tests: `pwsh .claude/run-tests.ps1 -Area <backend|frontend|tooling> [-Kind <unit|integration|all>]`, then one of `-Feature <names>`, `-Changed`, or `-Project <path> [-Filter <filter>]`. It builds, runs the tests of the selected features (the `Feature` traits of `test-features.json`), stores its result, and prints one `Affected run` line. `-Kind unit` needs no Docker. `-ShowResults` lists the stored results of the checkout.
+        *   `pwsh .claude/run-tests.ps1 -Area backend -Kind unit -Changed`
+        *   `pwsh .claude/run-tests.ps1 -Area backend -Kind integration -Feature Ingest,Drafts`
+        *   `pwsh .claude/run-tests.ps1 -Area frontend -Changed`
+        *   `pwsh .claude/run-tests.ps1 -Area tooling -Changed`
+*   **Frontend area** (`frontend/`, `keycloak-theme/`): `cd frontend && npm run lint && npx ng build && npx ng test --watch=false`. When `keycloak-theme/` changed, also `cd keycloak-theme && npm run lint && npm test`. `run-tests.ps1 -Area frontend` runs these two commands too when a `keycloak-theme/` path changed.
+*   **Script tests:** after a change under `.claude/` or `scripts/`, run the test script of the changed file: `pwsh .claude/tests/flow-scripts.tests.ps1`, `pwsh .claude/tests/rules.tests.ps1`, `pwsh .claude/hooks/tests/hook-scope.tests.ps1`, `pwsh scripts/tests/verify-slots.tests.ps1`, or `pwsh scripts/tests/agent-chrome.tests.ps1`. While you work, run `-Only <the sections of the scripts you changed>` of `flow-scripts.tests.ps1` and `hook-scope.tests.ps1`. `pwsh .claude/run-tests.ps1 -Area tooling -Changed` runs the whole suites of the changed tool files once per cycle.
 
 ## Rules
 `.claude/rules/` holds every rule, one file per rule, with its full text. That directory is the single source of truth.
@@ -68,3 +73,4 @@ The Stop and SubagentStop hooks (`.claude/hooks/verify-changed.ps1`) reformat th
 *   The reviewer subagent writes only `review.md` outside the repo: its `PreToolUse` hook (`.claude/hooks/reviewer-write-scope.ps1`) denies every other file.
 *   In every session, the `PreToolUse` hook `.claude/hooks/handoff-write-guard.ps1` denies the known shell writes to spec.md, plan.md, and review.md.
 *   Sessions that share one checkout share its changed files. The script headers explain the lock, the skips, and the guard against other writers. `.claude/hooks/tests/hook-scope.tests.ps1` checks them.
+*   After a clean run of `run-area.ps1` or `run-tests.ps1`, the hook finds the verified tree and formats and builds nothing. Outside a run it works as today.

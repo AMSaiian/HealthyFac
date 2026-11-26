@@ -99,6 +99,7 @@ public sealed class ScheduleChecks(
         var date = DateOnly.FromDateTime(plannedStartLocal);
         var shifts = await _reader.LoadAsync(assigneeId, zone, date, date, isTracked: false, cancellationToken);
         var slot = Occupancy.Of(workOrderId ?? Guid.Empty, plannedStartUtc, estimate, completedAtUtc: null);
+
         if (!SlotRules.FitsOneBlock(slot, shifts.Resolve(date, date).Single()))
         {
             throw new UnprocessableException(WorkOrderErrors.Rejections.OutsideShift);
@@ -111,6 +112,7 @@ public sealed class ScheduleChecks(
             slot.EndUtc,
             excludeWorkOrderId: null,
             cancellationToken);
+
         if (SlotRules.Overlaps(slot, occupied))
         {
             throw new UnprocessableException(WorkOrderErrors.Rejections.SlotTaken);
@@ -175,12 +177,8 @@ public sealed class ScheduleChecks(
 
     private async Task EnsureAssigneeAsync(Guid companyId, Guid assigneeId, CancellationToken cancellationToken)
     {
-        var status = await FindAssigneeStatusAsync(companyId, assigneeId, cancellationToken);
-
-        if (status is null)
-        {
-            throw new NotFoundException(WorkOrderErrors.Rejections.AssigneeNotFound);
-        }
+        var status = await FindAssigneeStatusAsync(companyId, assigneeId, cancellationToken)
+            ?? throw new NotFoundException(WorkOrderErrors.Rejections.AssigneeNotFound);
 
         if (status != EmployeeStatus.Active)
         {
@@ -191,6 +189,7 @@ public sealed class ScheduleChecks(
     private DateTime EnsureStart(DateTime plannedStartLocal, TimeZoneInfo zone)
     {
         var startUtc = ToStartUtc(plannedStartLocal, zone);
+
         if (!IsStartInRange(plannedStartLocal, startUtc, zone))
         {
             throw Invalid(WorkOrderErrors.Validation.StartOutOfRange);

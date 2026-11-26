@@ -1,8 +1,10 @@
 using HealthyFac.Document.Infrastructure.Files.Storage;
 using HealthyFac.Document.UnitTests.Files.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Document.UnitTests.Files;
 
+[Feature(TestFeatures.Files)]
 public sealed class FileStorageOptionsValidatorTests
 {
     private readonly FileStorageOptionsValidator _validator = new();

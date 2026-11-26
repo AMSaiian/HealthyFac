@@ -3,9 +3,11 @@ using HealthyFac.Insights.Application.Extraction.Proposals;
 using HealthyFac.Insights.Messaging.Drafts;
 using HealthyFac.Insights.UnitTests.Extraction.Data;
 using HealthyFac.Shared.Infrastructure.RichText;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Insights.UnitTests.Extraction;
 
+[Feature(TestFeatures.Ingest)]
 public sealed class DraftProposalMapperTests
 {
     private readonly DraftProposalMapper _mapper = new(new HtmlSanitizerRichTextPolicy());

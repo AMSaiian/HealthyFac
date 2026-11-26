@@ -6,10 +6,12 @@ using HealthyFac.Insights.IntegrationTests.Documents.Data;
 using HealthyFac.Insights.IntegrationTests.Ingest.Data;
 using HealthyFac.Insights.Messaging.Drafts;
 using HealthyFac.Insights.Messaging.Ingest;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Insights.IntegrationTests.Ingest;
 
 [Collection(InsightsCollection.Name)]
+[Feature(TestFeatures.Ingest)]
 public sealed class ScreeningTests(InsightsFixture fixture)
 {
     private const int ChunkCount = 5;
@@ -59,13 +61,13 @@ public sealed class ScreeningTests(InsightsFixture fixture)
         attempt.State.Should().Be(IngestState.Failed);
         attempt.ErrorCode.Should().Be(IngestErrorCode.UnsafeContent);
         attempt.ErrorDetail.Should().NotBeNull();
-        attempt.ErrorDetail!.Value.Location.Should().Be(expected: "page 4");
+        attempt.ErrorDetail.Value.Location.Should().Be(expected: "page 4");
         attempt.ErrorDetail.Value.Reason.Should().Be(ScreeningChatClient.UnsafeReason);
         _fixture.Ingest.ScreenerChat.Batches.Should().HaveCount(expected: 2);
         _fixture.Ingest.Embeddings.CallCount.Should().Be(expected: 0);
         _fixture.Ingest.Chat.CallCount.Should().Be(expected: 0);
         drafts.Should().BeEmpty();
-        states.Last().State.Should().Be(IngestMessageStates.Failed);
+        states[^1].State.Should().Be(IngestMessageStates.Failed);
         var run = runs.Should().ContainSingle().Subject;
         run.Verdict.Should().Be(AgentRunVerdict.Unsafe);
         run.InputTokens.Should().Be(2 * ScreeningChatClient.InputTokensPerCall);
@@ -75,8 +77,10 @@ public sealed class ScreeningTests(InsightsFixture fixture)
     public async Task RunOnce_WhenTheScreenerStaysUnavailable_FailsTheAttemptAndStoresAFailedScreenerRun()
     {
         _fixture.ArrangeFile();
+
         _fixture.Ingest.ScreenerChat.Failure = new HttpRequestException(
             message: "Screener is down", inner: null, System.Net.HttpStatusCode.ServiceUnavailable);
+
         var attemptId = await _fixture.StartAttemptAsync();
 
         await _fixture.RunWorkerAsync(TestContext.Current.CancellationToken);
@@ -95,8 +99,10 @@ public sealed class ScreeningTests(InsightsFixture fixture)
     public async Task RunOnce_WhenTheEmbeddingStaysUnavailableAfterSafeChunks_KeepsTheCompletedScreenerRun()
     {
         _fixture.ArrangeFile();
+
         _fixture.Ingest.Embeddings.Failure = new HttpRequestException(
             message: "Embedding is down", inner: null, System.Net.HttpStatusCode.ServiceUnavailable);
+
         var attemptId = await _fixture.StartAttemptAsync();
 
         await _fixture.RunWorkerAsync(TestContext.Current.CancellationToken);
@@ -117,8 +123,10 @@ public sealed class ScreeningTests(InsightsFixture fixture)
         _fixture.ArrangeFile();
         _fixture.ArrangeChunks(ChunkCount);
         _fixture.Ingest.ScreenerChat.FailFromCall = 2;
+
         _fixture.Ingest.ScreenerChat.Failure = new HttpRequestException(
             message: "Screener is down", inner: null, System.Net.HttpStatusCode.ServiceUnavailable);
+
         await _fixture.StartAttemptAsync();
 
         await _fixture.RunWorkerAsync(TestContext.Current.CancellationToken);

@@ -26,6 +26,7 @@ public static class SeedBaseDirectory
         }
 
         Directory.CreateDirectory(target);
+
         foreach (var file in Directory.GetFiles(source, searchPattern: "*", SearchOption.AllDirectories))
         {
             File.Copy(file, file.Replace(source, target));

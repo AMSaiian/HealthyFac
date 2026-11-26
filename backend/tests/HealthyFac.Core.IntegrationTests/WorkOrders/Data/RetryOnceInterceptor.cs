@@ -55,6 +55,7 @@ public sealed class RetryOnceInterceptor : DbCommandInterceptor
     private void FailOnce(DbCommand command)
     {
         var isWrite = command.CommandText.Contains(UpdateCommand) || command.CommandText.Contains(InsertCommand);
+
         if (isWrite && Interlocked.CompareExchange(ref _armed, value: 0, comparand: 1) == 1)
         {
             Interlocked.Increment(ref _injectedCount);

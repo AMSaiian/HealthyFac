@@ -38,9 +38,11 @@ public sealed class FleetSilence(
     public async Task<bool> CheckAsync(ITelemetryDbContext dbContext, DateTime now, CancellationToken cancellationToken)
     {
         var since = now.AddSeconds(-_options.SilenceLimitSeconds);
+
         var isAlive = await dbContext.ReceivedMessages
             .AsNoTracking()
             .AnyAsync(message => message.ReceivedAt >= since, cancellationToken);
+
         var isSilent = !isAlive;
 
         if (isSilent && !_isSilent)
@@ -48,6 +50,7 @@ public sealed class FleetSilence(
             _logger.LogWarning(
                 message: "No machine sent a message within {SilenceLimitSeconds} seconds.",
                 _options.SilenceLimitSeconds);
+
             _metrics.AddFleetSilence();
         }
 

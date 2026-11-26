@@ -14,7 +14,7 @@
 #   ".claude/commands/spec.md" is exempt;
 # - a step whose Files: line names a test file, without "TDD", "Proof required", or "No proof: <reason>" in its block;
 # - a step whose Verify: bullet asks for a full run ("full", at most 2 words, then run, suite, area, or commands): the
-#   executor runs the full run of each area once per cycle (run-area.ps1);
+#   last cycle holds the full run (run-area.ps1) and each cycle before it ends with the affected run (run-tests.ps1);
 # - the cycle has no "#### Deviations" heading (the cycle keeps its own Deviations, so one range read holds them);
 # - an AC number with more than one "*   **AC<n>:**" line in spec.md (a number is never reused);
 # - the Commit lines of the cycle ("Commit <tooling|docs|code>: <subject>"): none, an unknown group, 2 lines for one

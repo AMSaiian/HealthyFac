@@ -2,11 +2,13 @@ using HealthyFac.Auth.Infrastructure.Revocation;
 using HealthyFac.Auth.IntegrationTests.Revocation.Data;
 using HealthyFac.Shared.Infrastructure.Caching;
 using HealthyFac.Testing.Caching;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.Options;
 using Polly.CircuitBreaker;
 
 namespace HealthyFac.Auth.IntegrationTests.Revocation;
 
+[Feature(TestFeatures.Identity)]
 public sealed class RedisSessionRevokerTests
 {
     private readonly CountingTokenRevocationStore _store = new();

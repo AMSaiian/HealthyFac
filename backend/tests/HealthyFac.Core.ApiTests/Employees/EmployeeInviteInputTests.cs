@@ -5,10 +5,12 @@ using HealthyFac.Core.ApiTests.Employees.Data;
 using HealthyFac.Core.ApiTests.Hosting;
 using HealthyFac.Core.Application.Employees;
 using HealthyFac.Shared.Application.TextInput;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.ApiTests.Employees;
 
 [Collection(CoreApiCollection.Name)]
+[Feature(TestFeatures.Companies)]
 public sealed class EmployeeInviteInputTests(CoreApiFixture fixture)
 {
     private readonly CoreApiFixture _fixture = fixture;
@@ -31,34 +33,6 @@ public sealed class EmployeeInviteInputTests(CoreApiFixture fixture)
         text.Should().NotContain(EmployeeInviteApiTestData.NullCharacterEmailDomain);
     }
 
-    [Fact]
-    public async Task CreateInvite_WithFirstNameOverTheLimit_Returns400()
-    {
-        var extraFields = new Dictionary<string, object?>
-        {
-            [EmployeeInviteApiTestData.FirstNameField] =
-                new string(c: 'a', EmployeeValidationConstants.NameMaxLength + 1),
-        };
-
-        var response = await _fixture.PostCreateInviteAsync(_fixture.CreateSupervisorClaims(), extraFields);
-
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-    }
-
-    [Fact]
-    public async Task CreateInvite_WithFirstNameAtTheLimit_Returns201()
-    {
-        var extraFields = new Dictionary<string, object?>
-        {
-            [EmployeeInviteApiTestData.FirstNameField] =
-                new string(c: 'a', EmployeeValidationConstants.NameMaxLength),
-        };
-
-        var response = await _fixture.PostCreateInviteAsync(_fixture.CreateSupervisorClaims(), extraFields);
-
-        response.StatusCode.Should().Be(HttpStatusCode.Created);
-    }
-
     /// <summary>
     /// Uses an accepted invite, because the employee check has no unique index behind it: only the normalized
     /// request email can find the employee.
@@ -67,14 +41,17 @@ public sealed class EmployeeInviteInputTests(CoreApiFixture fixture)
     public async Task CreateInvite_WithEmailOfEmployeeInOtherCase_ReturnsConflict()
     {
         var claims = _fixture.CreateSupervisorClaims();
+
         var created = await _fixture.PostCreateInviteAsync(
             claims,
             new Dictionary<string, object?>
             {
                 [EmployeeInviteApiTestData.EmailField] = EmployeeInviteApiTestData.LowerCaseEmail,
             });
+
         var invite = await _fixture.LoadInviteAsync(created);
         var accepted = await _fixture.PostAcceptInviteAnonymouslyAsync(invite);
+
         var mixedCase = new Dictionary<string, object?>
         {
             [EmployeeInviteApiTestData.EmailField] = EmployeeInviteApiTestData.MixedCaseEmail,

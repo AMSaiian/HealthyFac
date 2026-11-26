@@ -60,12 +60,12 @@ public sealed class KeycloakTestServer : IAsyncDisposable
 
     private static readonly IReadOnlyDictionary<string, string> ConfigJobOptions = new Dictionary<string, string>
     {
-        [key: "IMPORT_VARSUBSTITUTION_ENABLED"] = "true",
-        [key: "IMPORT_VARSUBSTITUTION_PREFIX"] = "${",
-        [key: "IMPORT_VARSUBSTITUTION_SUFFIX"] = "}",
-        [key: "IMPORT_VARSUBSTITUTION_UNDEFINEDISERROR"] = "false",
-        [key: "IMPORT_MANAGED_ORGANIZATION"] = "no-delete",
-        [key: "IMPORT_USERS_MERGEROLES"] = "true",
+        ["IMPORT_VARSUBSTITUTION_ENABLED"] = "true",
+        ["IMPORT_VARSUBSTITUTION_PREFIX"] = "${",
+        ["IMPORT_VARSUBSTITUTION_SUFFIX"] = "}",
+        ["IMPORT_VARSUBSTITUTION_UNDEFINEDISERROR"] = "false",
+        ["IMPORT_MANAGED_ORGANIZATION"] = "no-delete",
+        ["IMPORT_USERS_MERGEROLES"] = "true",
     };
 
     private readonly HttpClient _client = new();
@@ -132,6 +132,7 @@ public sealed class KeycloakTestServer : IAsyncDisposable
             .WithRealm(KeycloakFiles.FindTestFile(BootstrapFileName))
             .WithEnvironment(environment.Where(IsKeycloakVariable).ToDictionary())
             .Build();
+
         await _container.StartAsync();
 
         var jobBuilder = new ContainerBuilder(TestImages.KeycloakConfigCli)
@@ -184,16 +185,17 @@ public sealed class KeycloakTestServer : IAsyncDisposable
             new FormUrlEncodedContent(
                 new Dictionary<string, string>
                 {
-                    [key: "grant_type"] = "password",
-                    [key: "client_id"] = AdminClientId,
-                    [key: "username"] = AdminUsername,
-                    [key: "password"] = AdminPassword,
+                    ["grant_type"] = "password",
+                    ["client_id"] = AdminClientId,
+                    ["username"] = AdminUsername,
+                    ["password"] = AdminPassword,
                 }));
+
         await response.EnsureSuccessAsync(CancellationToken.None);
 
         var body = await response.Content.ReadFromJsonAsync<JsonObject>();
 
-        return body![propertyName: "access_token"]!.GetValue<string>();
+        return body!["access_token"]!.GetValue<string>();
     }
 
     /// <summary>
@@ -205,19 +207,20 @@ public sealed class KeycloakTestServer : IAsyncDisposable
     {
         var clientId = $"{PasswordGrantClientIdPrefix}{Guid.NewGuid():N}";
         var adminToken = await GetAdminTokenAsync();
+
         using var request = new HttpRequestMessage(HttpMethod.Post, ClientsPath)
         {
             Headers = { Authorization = new AuthenticationHeaderValue(scheme: "Bearer", adminToken) },
             Content = JsonContent.Create(
                 new JsonObject
                 {
-                    [propertyName: "clientId"] = clientId,
-                    [propertyName: "enabled"] = true,
-                    [propertyName: "publicClient"] = false,
-                    [propertyName: "secret"] = PasswordGrantClientSecret,
-                    [propertyName: "standardFlowEnabled"] = false,
-                    [propertyName: "directAccessGrantsEnabled"] = true,
-                    [propertyName: "defaultClientScopes"] = new JsonArray(
+                    ["clientId"] = clientId,
+                    ["enabled"] = true,
+                    ["publicClient"] = false,
+                    ["secret"] = PasswordGrantClientSecret,
+                    ["standardFlowEnabled"] = false,
+                    ["directAccessGrantsEnabled"] = true,
+                    ["defaultClientScopes"] = new JsonArray(
                         PasswordGrantClientScopes.Select(scope => (JsonNode)JsonValue.Create(scope)).ToArray()),
                 }),
         };
@@ -238,12 +241,14 @@ public sealed class KeycloakTestServer : IAsyncDisposable
     public async Task DeleteTestIdentitiesAsync()
     {
         var testUserIds = (await ListUserIdsAsync()).Where(id => !_baseUserIds.Contains(id)).ToArray();
+
         if (_createdClientIds.IsEmpty && testUserIds.Length == 0)
         {
             return;
         }
 
         var adminToken = await GetAdminTokenAsync();
+
         while (_createdClientIds.TryDequeue(out var id))
         {
             await DeleteAsync($"{ClientsPath}/{id}", adminToken);
@@ -286,6 +291,7 @@ public sealed class KeycloakTestServer : IAsyncDisposable
     private async Task<IReadOnlyList<string>> ListUserIdsAsync()
     {
         var adminToken = await GetAdminTokenAsync();
+
         using var request = new HttpRequestMessage(HttpMethod.Get, $"{UsersPath}?max={MaxListedUsers}")
         {
             Headers = { Authorization = new AuthenticationHeaderValue(scheme: "Bearer", adminToken) },
@@ -296,7 +302,7 @@ public sealed class KeycloakTestServer : IAsyncDisposable
 
         var users = await response.Content.ReadFromJsonAsync<JsonArray>();
 
-        return users!.Select(user => user![propertyName: "id"]!.GetValue<string>()).ToArray();
+        return [.. users!.Select(user => user!["id"]!.GetValue<string>())];
     }
 
     private async Task DeleteAsync(string path, string adminToken)

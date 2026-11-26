@@ -16,7 +16,8 @@ public static class ShiftTestData
     public static readonly DateOnly Monday = new(year: 2027, month: 4, day: 12);
     public static readonly DateOnly Tuesday = new(year: 2027, month: 4, day: 13);
 
-    private static readonly DateTime BaseDay = new(year: 2027, month: 4, day: 12, hour: 0, minute: 0, second: 0);
+    private static readonly DateTime BaseDay = new(
+        year: 2027, month: 4, day: 12, hour: 0, minute: 0, second: 0, DateTimeKind.Unspecified);
 
     public static TimeZoneInfo Zone => TimeZoneInfo.FindSystemTimeZoneById(ZoneId);
 
@@ -37,7 +38,8 @@ public static class ShiftTestData
         new(EmployeeId, date, blocks);
 
     public static IReadOnlyCollection<DayBlock> Blocks(string blocks) =>
-        blocks.Split(separator: ',', StringSplitOptions.RemoveEmptyEntries)
+    [
+        .. blocks.Split(separator: ',', StringSplitOptions.RemoveEmptyEntries)
             .Select(block =>
             {
                 var parts = block.Split(separator: '-');
@@ -51,8 +53,8 @@ public static class ShiftTestData
                     EndUtc =
                         BaseDay.Add(TimeSpan.ParseExact(parts[1], format: "hh\\:mm", CultureInfo.InvariantCulture)),
                 };
-            })
-            .ToList();
+            }),
+    ];
 
     public static DateTime Now(string time) =>
         BaseDay.Add(TimeSpan.ParseExact(time, format: "hh\\:mm", CultureInfo.InvariantCulture));

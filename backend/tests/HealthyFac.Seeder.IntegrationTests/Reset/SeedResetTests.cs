@@ -4,11 +4,14 @@ using HealthyFac.Seeder.IntegrationTests.People.Data;
 using HealthyFac.Seeder.IntegrationTests.Reset.Data;
 using HealthyFac.Seeder.IntegrationTests.Timeline.Data;
 using HealthyFac.Seeder.Moments;
+using HealthyFac.Testing.Features;
 using Npgsql;
 
 namespace HealthyFac.Seeder.IntegrationTests.Reset;
 
 [Collection(SeederCollection.Name)]
+[Feature(TestFeatures.Seeding)]
+[Feature(TestFeatures.Persistence)]
 public sealed class SeedResetTests(SeederFixture fixture)
 {
     private readonly SeederFixture _fixture = fixture;
@@ -32,10 +35,12 @@ public sealed class SeedResetTests(SeederFixture fixture)
         var blobCount = await _fixture.CountBlobsAsync();
         var employees = await _fixture.LoadEmployeesAsync();
         var company = await _fixture.LoadCompanyAsync();
+
         var expectedCreatedAt = SeedCalendar.ToUtc(
             RelativeMoment.Parse(SeedResetTestData.CompanyCreatedAt),
             laterAnchor,
             TimeZoneInfo.FindSystemTimeZoneById(PeopleTestData.ZoneId));
+
         reset.ExitCode.Should().Be(expected: 0);
         rolesAfter.Should().Equal(rolesBefore);
         unitsAfter.Should().Equal(unitsBefore);
@@ -50,10 +55,12 @@ public sealed class SeedResetTests(SeederFixture fixture)
     {
         await _fixture.RunJobAsync([], TestContext.Current.CancellationToken);
         var before = await _fixture.TakeSnapshotAsync();
+
         var connectionString = new NpgsqlConnectionStringBuilder(_fixture.ConnectionStringOf(service: "core"))
         {
             Pooling = false,
         }.ConnectionString;
+
         await using var extra = new NpgsqlConnection(connectionString);
         await extra.OpenAsync(TestContext.Current.CancellationToken);
 
@@ -95,6 +102,7 @@ public sealed class SeedResetTests(SeederFixture fixture)
         var next = await _fixture.RunJobAsync([], TestContext.Current.CancellationToken);
 
         next.ExitCode.Should().Be(expected: 1);
+
         next.Output.Should()
             .Contain(SeedCompletionTestData.IncompleteText)
             .And.Contain(SeedCompletionTestData.ResetHint);

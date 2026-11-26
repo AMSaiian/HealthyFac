@@ -2,10 +2,13 @@ using System.Security.Cryptography;
 using HealthyFac.Document.Domain.Files;
 using HealthyFac.Seeder.IntegrationTests.Hosting;
 using HealthyFac.Seeder.IntegrationTests.Ingest.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Seeder.IntegrationTests.Ingest;
 
 [Collection(SeederCollection.Name)]
+[Feature(TestFeatures.Seeding)]
+[Feature(TestFeatures.Ingest)]
 public sealed class IngestSeedTests(SeederFixture fixture)
 {
     private readonly SeederFixture _fixture = fixture;
@@ -18,6 +21,7 @@ public sealed class IngestSeedTests(SeederFixture fixture)
         var files = await _fixture.LoadFileRefsAsync();
         files.Should().HaveCount(IngestTestData.FileCount);
         files.Should().OnlyContain(file => file.IngestState == FileIngestState.Completed);
+
         foreach (var file in files)
         {
             var committed = await File.ReadAllBytesAsync(
@@ -25,6 +29,7 @@ public sealed class IngestSeedTests(SeederFixture fixture)
                     AppContext.BaseDirectory,
                     IngestTestData.DocumentPaths.Single(path => path.Contains(file.FileName))),
                 TestContext.Current.CancellationToken);
+
             var blob = await _fixture.ReadBlobAsync(file.Id);
             SHA256.HashData(blob).Should().Equal(SHA256.HashData(committed));
             file.Sha256.Should().Equal(SHA256.HashData(committed));

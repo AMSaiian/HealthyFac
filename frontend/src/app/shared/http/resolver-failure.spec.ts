@@ -33,7 +33,7 @@ function redirectOf(result: unknown): { target: string; browserUrl: UrlTree | un
   };
 }
 
-describe('catchResolverFailure', () => {
+describe('catchResolverFailure', { tags: ['Platform'] }, () => {
   beforeEach(() => {
     messages.add.mockClear();
   });

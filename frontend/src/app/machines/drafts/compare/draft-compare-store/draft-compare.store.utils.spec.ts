@@ -22,7 +22,7 @@ const DRAFT: MachineDraftDetail = {
   rowVersion: 1,
 };
 
-describe('draft compare utils', () => {
+describe('draft compare utils', { tags: ['Drafts'] }, () => {
   it('toCompareRows_WithNullProposal_CannotBeTaken', () => {
     const rows = toCompareRows(DRAFT, CURRENT, { taken: { serialNumber: true }, edited: {} });
 

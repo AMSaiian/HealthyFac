@@ -116,6 +116,7 @@ public sealed class CreateWorkOrderRequestHandler(
                 IsolationLevel.Serializable,
                 cancellationToken)
             : await CreateAndSaveAsync(request, cancellationToken);
+
         _notifier.PushWorkOrdersHint(request.CompanyId, workOrderId);
 
         return new CreateWorkOrderResponse { Id = workOrderId };

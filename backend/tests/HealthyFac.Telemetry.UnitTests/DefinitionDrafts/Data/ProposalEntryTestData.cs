@@ -61,15 +61,16 @@ public static class ProposalEntryTestData
 
             foreach (var start in States)
             {
-                foreach (var move in Moves)
+                foreach (var (name, move, allowed, target) in Moves)
                 {
-                    var isAllowed = move.Allowed.Contains(start);
+                    var isAllowed = allowed.Contains(start);
+
                     data.Add(
-                        $"{move.Name} from {start.Value}",
+                        $"{name} from {start.Value}",
                         start,
-                        move.Move,
+                        move,
                         isAllowed,
-                        isAllowed ? move.Target : start);
+                        isAllowed ? target : start);
                 }
             }
 

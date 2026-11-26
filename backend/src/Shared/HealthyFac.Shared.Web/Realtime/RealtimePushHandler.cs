@@ -52,6 +52,7 @@ public sealed class RealtimePushHandler(
             ObservabilityConstants.Spans.RealtimePush,
             ActivityKind.Internal,
             parentContext);
+
         activity.WithTag(Tags.Target, item.MetricTarget);
 
         var startedAt = _timeProvider.GetTimestamp();

@@ -1,11 +1,13 @@
 using HealthyFac.Shared.UnitTests.Realtime.Data;
 using HealthyFac.Shared.Web.Realtime;
+using HealthyFac.Testing.Features;
 using Microsoft.AspNetCore.Connections;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace HealthyFac.Shared.UnitTests.Realtime;
 
+[Feature(TestFeatures.Realtime)]
 public sealed class SubjectUserIdProviderTests
 {
     [Fact]
@@ -24,6 +26,7 @@ public sealed class SubjectUserIdProviderTests
     {
         var connection = CreateConnection(
             RealtimeHubTestData.CreateUser(RealtimeHubTestData.WorkerPermissions, RealtimeHubTestData.CompanyText));
+
         new SubjectUserIdProvider().GetUserId(connection);
 
         var actor = ConnectionActor.Of(connection.Items, new System.Security.Claims.ClaimsPrincipal());

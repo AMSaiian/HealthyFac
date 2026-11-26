@@ -33,6 +33,7 @@ public sealed class PlantedLambdaTransactionStart(DbContext dbContext)
             await using var transaction = await _dbContext.Database.BeginTransactionAsync(
                 IsolationLevel.Serializable,
                 token);
+
             await transaction.CommitAsync(token);
         };
 }

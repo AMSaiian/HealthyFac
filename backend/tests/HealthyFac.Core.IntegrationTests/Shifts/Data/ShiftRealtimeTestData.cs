@@ -32,6 +32,7 @@ public static class ShiftRealtimeTestData
                         tenant.EmployeeId,
                         ShiftTestData.InTwoDays,
                         ShiftTestData.Morning);
+
                     var rowVersion = await fixture.LoadRowVersionAsync(versionId);
 
                     await fixture.UpdateVersionAsync(
@@ -51,6 +52,7 @@ public static class ShiftRealtimeTestData
                         tenant.EmployeeId,
                         ShiftTestData.InTwoDays,
                         ShiftTestData.Morning);
+
                     var rowVersion = await fixture.LoadRowVersionAsync(versionId);
 
                     await fixture.DeleteVersionAsync(tenant, versionId, rowVersion);
@@ -73,6 +75,7 @@ public static class ShiftRealtimeTestData
                 async (fixture, tenant) =>
                 {
                     await fixture.SeedOverrideAsync(tenant.EmployeeId, ShiftTestData.Tomorrow, ShiftTestData.Morning);
+
                     var rowVersion = await fixture.LoadOverrideRowVersionAsync(
                         tenant.EmployeeId, ShiftTestData.Tomorrow);
 
@@ -102,6 +105,7 @@ public static class ShiftRealtimeTestData
                         tenant.EmployeeId,
                         ShiftTestData.Today,
                         ShiftTestData.Morning);
+
                     var rowVersion = await fixture.LoadRowVersionAsync(versionId);
 
                     await fixture.UpdateVersionAsync(
@@ -120,6 +124,7 @@ public static class ShiftRealtimeTestData
                         tenant.EmployeeId,
                         ShiftTestData.Today,
                         ShiftTestData.Morning);
+
                     var rowVersion = await fixture.LoadRowVersionAsync(versionId);
 
                     await fixture.DeleteVersionAsync(tenant, versionId, rowVersion);

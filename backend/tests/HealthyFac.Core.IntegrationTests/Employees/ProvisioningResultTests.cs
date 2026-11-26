@@ -1,10 +1,13 @@
 using HealthyFac.Core.Domain.Employees;
 using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Employees.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.IntegrationTests.Employees;
 
 [Collection(CoreEmployeesCollection.Name)]
+[Feature(TestFeatures.Companies)]
+[Feature(TestFeatures.Identity)]
 public sealed class ProvisioningResultTests(CoreDatabaseFixture fixture)
 {
     private readonly CoreDatabaseFixture _fixture = fixture;
@@ -124,6 +127,7 @@ public sealed class ProvisioningResultTests(CoreDatabaseFixture fixture)
     {
         var arranged = await _fixture.ArrangeProvisioningEmployeeAsync(
             ProvisioningTestData.CompleteDeactivatedTwiceEmail);
+
         await _fixture.DeactivateEmployeeAsync(arranged.CompanyId, arranged.EmployeeId, Guid.CreateVersion7());
         var identityUserId = Guid.CreateVersion7();
         await _fixture.CompleteProvisioningAsync(arranged.EmployeeId, identityUserId);

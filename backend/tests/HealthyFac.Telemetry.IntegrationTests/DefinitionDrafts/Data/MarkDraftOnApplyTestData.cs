@@ -48,6 +48,7 @@ public static class MarkDraftOnApplyTestData
             async (fixture, companyId, machineId) =>
             {
                 var draftId = await fixture.StoreAwaitingStatusDraftOnMachineAsync(companyId, machineId);
+
                 await fixture.ApplyStatusChangesAsync(
                     companyId,
                     machineId,
@@ -59,6 +60,7 @@ public static class MarkDraftOnApplyTestData
             async (fixture, companyId, machineId) =>
             {
                 var draftId = await fixture.StoreMetricDraftOnMachineAsync(companyId, machineId, isApplied: true);
+
                 await fixture.ApplyMetricChangesAsync(
                     new MachineTenant(companyId),
                     machineId,
@@ -72,6 +74,7 @@ public static class MarkDraftOnApplyTestData
             {
                 var draftId = await fixture.StoreMetricDraftOnMachineAsync(companyId, machineId, isApplied: false);
                 await fixture.DismissMetricDraftAsync(draftId);
+
                 await fixture.ApplyMetricChangesAsync(
                     new MachineTenant(companyId),
                     machineId,

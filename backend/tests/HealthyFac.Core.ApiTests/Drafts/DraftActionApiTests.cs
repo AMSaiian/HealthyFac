@@ -3,10 +3,12 @@ using HealthyFac.Core.ApiTests.Drafts.Data;
 using HealthyFac.Core.ApiTests.Hosting;
 using HealthyFac.Core.ApiTests.Machines.Data;
 using HealthyFac.Core.Domain.Drafts;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.ApiTests.Drafts;
 
 [Collection(CoreApiCollection.Name)]
+[Feature(TestFeatures.Drafts)]
 public sealed class DraftActionApiTests(CoreApiFixture fixture)
 {
     private readonly CoreApiFixture _fixture = fixture;
@@ -28,6 +30,7 @@ public sealed class DraftActionApiTests(CoreApiFixture fixture)
     {
         var machineId =
             _fixture.IdEncryptor.Decrypt(await _fixture.ArrangeMachineAsync(serialNumber: "DISMISS-UPDATE"));
+
         var draft = await _fixture.ArrangeMachineDraftAsync(machineId);
         await _fixture.ArrangeMachineDraftAsync(machineId);
 
@@ -102,6 +105,7 @@ public sealed class DraftActionApiTests(CoreApiFixture fixture)
             HttpMethod.Post,
             DraftApiTestData.DismissMachineDraftsPath(encryptedMachineId),
             _fixture.CreateMachineClaims(DraftApiTestData.DraftWritePermission));
+
         var content = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
         var machineDrafts = await _fixture.LoadMachineDraftsAsync();
 

@@ -37,11 +37,13 @@ public static class ReceiveMachineMessageFixtureExtensions
                         MetricDefinitionTestData.NewBoolean(ReceiveMachineMessageTestData.DoorKey),
                         MetricDefinitionTestData.NewStateSet(ReceiveMachineMessageTestData.ModeKey),
                     ]);
+
                 await fixture.CreateStatusDefinitionAsync(
                     tenant.CompanyId,
                     machineId,
                     ReceiveMachineMessageTestData.ErrorStatus,
                     severity: StatusSeverity.Error);
+
                 await fixture.CreateStatusDefinitionAsync(
                     tenant.CompanyId,
                     machineId,
@@ -59,6 +61,7 @@ public static class ReceiveMachineMessageFixtureExtensions
         )
         {
             using var scope = fixture.ScopeFactory.CreateScope();
+
             var handler = scope.ServiceProvider
                 .GetRequiredService<IRequestHandler<ReceiveMachineMessageRequest, ReceiveMachineMessageResponse>>();
 

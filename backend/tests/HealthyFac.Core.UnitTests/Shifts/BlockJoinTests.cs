@@ -1,9 +1,11 @@
 using HealthyFac.Core.Domain.Shifts;
 using HealthyFac.Core.Domain.Shifts.DaySchedules;
 using HealthyFac.Core.UnitTests.Shifts.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.UnitTests.Shifts;
 
+[Feature(TestFeatures.Shifts)]
 public sealed class BlockJoinTests
 {
     [Theory]
@@ -32,11 +34,12 @@ public sealed class BlockJoinTests
     }
 
     private static List<BlockTimes> Parse(string blocks) =>
-        ShiftTestData.Blocks(blocks)
+    [
+        .. ShiftTestData.Blocks(blocks)
             .Select(block => new BlockTimes
             {
                 Start = block.Start,
                 End = block.End,
-            })
-            .ToList();
+            }),
+    ];
 }

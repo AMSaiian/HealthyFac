@@ -145,16 +145,18 @@ public sealed class GetMetricHistoryRequestHandler(ITelemetryDbContext dbContext
 
         return new MetricHistoryResponse
         {
-            Buckets = rows
-                .Select(row => new MetricBucketResponse
-                {
-                    Start = from.AddSeconds(row.Index * sizeSeconds),
-                    Avg = row.Avg,
-                    Min = row.Min,
-                    Max = row.Max,
-                    Count = row.Count,
-                })
-                .ToList(),
+            Buckets =
+            [
+                .. rows
+                    .Select(row => new MetricBucketResponse
+                    {
+                        Start = from.AddSeconds(row.Index * sizeSeconds),
+                        Avg = row.Avg,
+                        Min = row.Min,
+                        Max = row.Max,
+                        Count = row.Count,
+                    }),
+            ],
         };
     }
 }

@@ -28,6 +28,7 @@ public static class FileFixtureExtensions
         )
         {
             using var scope = fixture.CreateUserScope(companyId);
+
             var handler = scope.ServiceProvider
                 .GetRequiredService<IRequestHandler<UploadFileRequest, UploadFileResponse>>();
 
@@ -43,6 +44,7 @@ public static class FileFixtureExtensions
         )
         {
             using var scope = fixture.CreateUserScope(companyId);
+
             var handler = scope.ServiceProvider
                 .GetRequiredService<IRequestHandler<UploadFileRequest, UploadFileResponse>>();
 
@@ -56,6 +58,7 @@ public static class FileFixtureExtensions
         )
         {
             using var scope = fixture.CreateUserScope(companyId);
+
             var handler = scope.ServiceProvider
                 .GetRequiredService<IRequestHandler<UploadEmbeddedImageRequest, UploadFileResponse>>();
 
@@ -66,6 +69,7 @@ public static class FileFixtureExtensions
         {
             using var scope = fixture.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<IDocumentDbContext>();
+
             var files = seeds
                 .Select(seed => new FileRef(
                     seed.CompanyId ?? companyId,
@@ -89,7 +93,7 @@ public static class FileFixtureExtensions
                     .ExecuteUpdateAsync(update => update.SetProperty(candidate => candidate.CreatedAt, seed.CreatedAt));
             }
 
-            return files.Select(file => file.Id).ToList();
+            return [.. files.Select(file => file.Id)];
         }
 
         public async Task<GridResponse<FileGridItem>> SearchCompanyFilesAsync(
@@ -98,23 +102,15 @@ public static class FileFixtureExtensions
         )
         {
             using var scope = fixture.CreateUserScope(companyId);
+
             var handler = scope.ServiceProvider
                 .GetRequiredService<IRequestHandler<SearchFilesRequest, GridResponse<FileGridItem>>>();
 
             return await handler.HandleAsync(request);
         }
 
-        public async Task<GridResponse<FileGridItem>> SearchMachineFilesAsync(
-            Guid companyId,
-            SearchFilesRequest request
-        )
-        {
-            using var scope = fixture.CreateUserScope(companyId);
-            var handler = scope.ServiceProvider
-                .GetRequiredService<IRequestHandler<SearchFilesRequest, GridResponse<FileGridItem>>>();
-
-            return await handler.HandleAsync(request);
-        }
+        public Task<GridResponse<FileGridItem>> SearchMachineFilesAsync(Guid companyId, SearchFilesRequest request) =>
+            fixture.SearchCompanyFilesAsync(companyId, request);
 
         public async Task<FileGridItem> GetCompanyFileAsync(Guid companyId, Guid id)
         {
@@ -144,16 +140,8 @@ public static class FileFixtureExtensions
                 .HandleAsync(request);
         }
 
-        public async Task UpdateMachineFileAsync(
-            Guid companyId,
-            UpdateFileRequest request
-        )
-        {
-            using var scope = fixture.CreateUserScope(companyId);
-
-            await scope.ServiceProvider.GetRequiredService<IRequestHandler<UpdateFileRequest>>()
-                .HandleAsync(request);
-        }
+        public Task UpdateMachineFileAsync(Guid companyId, UpdateFileRequest request) =>
+            fixture.UpdateCompanyFileAsync(companyId, request);
 
         public async Task DeleteCompanyFileAsync(
             Guid companyId,
@@ -166,16 +154,8 @@ public static class FileFixtureExtensions
                 .HandleAsync(request);
         }
 
-        public async Task DeleteMachineFileAsync(
-            Guid companyId,
-            DeleteFileRequest request
-        )
-        {
-            using var scope = fixture.CreateUserScope(companyId);
-
-            await scope.ServiceProvider.GetRequiredService<IRequestHandler<DeleteFileRequest>>()
-                .HandleAsync(request);
-        }
+        public Task DeleteMachineFileAsync(Guid companyId, DeleteFileRequest request) =>
+            fixture.DeleteCompanyFileAsync(companyId, request);
 
         public async Task<uint> LoadRowVersionAsync(Guid id)
         {
@@ -238,6 +218,7 @@ public static class FileFixtureExtensions
         {
             var blob = fixture.BlobService.GetBlobContainerClient(DatabaseTestData.ContainerName)
                 .GetBlobClient(id.ToString());
+
             var download = await blob.DownloadContentAsync();
 
             return download.Value.Content.ToArray();

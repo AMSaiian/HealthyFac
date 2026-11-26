@@ -70,7 +70,7 @@ function activeComponent(router: Router): unknown {
   return route.component;
 }
 
-describe('fallback routes', () => {
+describe('fallback routes', { tags: ['Platform'] }, () => {
   beforeEach(() => {
     vi.stubGlobal(
       'ResizeObserver',

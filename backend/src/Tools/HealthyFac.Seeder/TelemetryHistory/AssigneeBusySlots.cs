@@ -23,7 +23,8 @@ internal static class AssigneeBusySlots
         DateTimeOffset anchor,
         TimeZoneInfo zone
     ) =>
-        orders.Where(order => order.Assignment?.Assignee == assignee)
+    [
+        .. orders.Where(order => order.Assignment?.Assignee == assignee)
             .Select(order =>
             {
                 var completion = order.StatusChanges.LastOrDefault();
@@ -35,6 +36,6 @@ internal static class AssigneeBusySlots
                     completion?.Status == WorkOrderStatus.Completed
                         ? SeedCalendar.ToUtc(completion.At, anchor, zone).UtcDateTime
                         : null);
-            })
-            .ToList();
+            }),
+    ];
 }

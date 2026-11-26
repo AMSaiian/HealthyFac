@@ -3,6 +3,7 @@ using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Employees.Data;
 using HealthyFac.Core.Messaging.Employees;
 using HealthyFac.Shared.Application.UseCases;
+using HealthyFac.Testing.Features;
 using HealthyFac.Testing.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -10,6 +11,7 @@ using Microsoft.Extensions.Logging;
 namespace HealthyFac.Core.IntegrationTests.Employees;
 
 [Collection(CoreEmployeesCollection.Name)]
+[Feature(TestFeatures.Companies)]
 public sealed class SendEmployeeInviteEmailTests(CoreDatabaseFixture fixture)
 {
     private readonly CoreDatabaseFixture _fixture = fixture;
@@ -27,8 +29,8 @@ public sealed class SendEmployeeInviteEmailTests(CoreDatabaseFixture fixture)
         var invite = await _fixture.LoadInviteAsync(arranged.InviteId);
 
         emails.Should().ContainSingle();
-        emails[index: 0].TextBody.Should().Contain($"{InviteEmailTestData.ConfiguredSpaBaseUrl}/invite#token=");
-        _fixture.IsTokenValid(emails[index: 0].ReadLinkToken(), invite.TokenSalt).Should().BeTrue();
+        emails[0].TextBody.Should().Contain($"{InviteEmailTestData.ConfiguredSpaBaseUrl}/invite#token=");
+        _fixture.IsTokenValid(emails[0].ReadLinkToken(), invite.TokenSalt).Should().BeTrue();
     }
 
     [Fact]
@@ -46,7 +48,7 @@ public sealed class SendEmployeeInviteEmailTests(CoreDatabaseFixture fixture)
         var invite = await _fixture.LoadInviteAsync(arranged.InviteId);
 
         emails.Should().ContainSingle();
-        _fixture.IsTokenValid(emails[index: 0].ReadLinkToken(), invite.TokenSalt).Should().BeTrue();
+        _fixture.IsTokenValid(emails[0].ReadLinkToken(), invite.TokenSalt).Should().BeTrue();
     }
 
     [Fact]
@@ -70,6 +72,7 @@ public sealed class SendEmployeeInviteEmailTests(CoreDatabaseFixture fixture)
     {
         using var scope = _fixture.ScopeFactory.CreateScope();
         var handler = _fixture.CreateInviteEmailHandler(scope);
+
         var message = Guid.CreateVersion7()
             .ToInvitedMessage(Guid.CreateVersion7(), InviteEmailTestData.UnknownInviteEmail);
 
@@ -85,6 +88,7 @@ public sealed class SendEmployeeInviteEmailTests(CoreDatabaseFixture fixture)
         var arranged = await _fixture.ArrangeInviteAsync(
             InviteEmailTestData.ExpiredInviteEmail,
             DateTime.UtcNow.AddHours(value: -1));
+
         var logger = new CapturingLogger<SendEmployeeInviteEmailRequestHandler>();
         using var scope = _fixture.ScopeFactory.CreateScope();
         var handler = _fixture.CreateInviteEmailHandler(scope, logger: logger);
@@ -103,6 +107,7 @@ public sealed class SendEmployeeInviteEmailTests(CoreDatabaseFixture fixture)
     {
         var arranged = await ArrangeOpenInviteAsync(InviteEmailTestData.SenderFailureEmail);
         using var scope = _fixture.ScopeFactory.CreateScope();
+
         var handler = _fixture.CreateInviteEmailHandler(
             scope,
             new ThrowingEmailSender(new InvalidOperationException(InviteEmailTestData.SenderFailureMessage)));
@@ -121,6 +126,7 @@ public sealed class SendEmployeeInviteEmailTests(CoreDatabaseFixture fixture)
     {
         var arranged = await ArrangeOpenInviteAsync(InviteEmailTestData.TrailingSlashEmail);
         using var scope = _fixture.ScopeFactory.CreateScope();
+
         var handler = _fixture.CreateInviteEmailHandler(
             scope,
             spaBaseUrl: InviteEmailTestData.TrailingSlashSpaBaseUrl);
@@ -132,8 +138,8 @@ public sealed class SendEmployeeInviteEmailTests(CoreDatabaseFixture fixture)
         var emails = _fixture.ReadSentEmails(InviteEmailTestData.TrailingSlashEmail);
 
         emails.Should().ContainSingle();
-        emails[index: 0].TextBody.Should().Contain(InviteEmailTestData.TrailingSlashExpectedPrefix);
-        emails[index: 0].TextBody.Should().NotContain(unexpected: "//invite");
+        emails[0].TextBody.Should().Contain(InviteEmailTestData.TrailingSlashExpectedPrefix);
+        emails[0].TextBody.Should().NotContain(unexpected: "//invite");
     }
 
     private Task<ArrangedInvite> ArrangeOpenInviteAsync(string email) => _fixture.ArrangeInviteAsync(

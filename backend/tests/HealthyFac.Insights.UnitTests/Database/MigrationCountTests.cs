@@ -1,9 +1,11 @@
 using System.Reflection;
 using HealthyFac.Insights.Infrastructure;
+using HealthyFac.Testing.Features;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace HealthyFac.Insights.UnitTests.Database;
 
+[Feature(TestFeatures.Persistence)]
 public sealed class MigrationCountTests
 {
     private const string InitialCreateSuffix = "_InitialCreate";

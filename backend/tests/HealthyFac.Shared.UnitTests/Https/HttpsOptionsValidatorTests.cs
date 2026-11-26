@@ -1,8 +1,10 @@
 using HealthyFac.Shared.UnitTests.Https.Data;
 using HealthyFac.Shared.Web.Https;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.UnitTests.Https;
 
+[Feature(TestFeatures.Platform)]
 public sealed class HttpsOptionsValidatorTests
 {
     private readonly HttpsOptionsValidator _validator = new();

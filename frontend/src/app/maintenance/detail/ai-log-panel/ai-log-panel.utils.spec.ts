@@ -21,7 +21,7 @@ const LABELS: Record<string, string> = {
   'MAINTENANCE.RUN_ERRORS.NO_DECISION': 'No decision',
 };
 
-describe('ai log panel', () => {
+describe('ai log panel', { tags: ['Cases'] }, () => {
   it.each(Object.values(AgentRunVerdict))('labelOf_Verdict%s_GivesItsTranslatedLabel', (verdict) => {
     expect(labelOf(verdict, VERDICT_LABEL_KEYS, LABELS)).toBe(LABELS[VERDICT_LABEL_KEYS[verdict]]);
   });
@@ -30,20 +30,18 @@ describe('ai log panel', () => {
     expect(labelOf(code, RUN_ERROR_LABEL_KEYS, LABELS)).toBe(LABELS[RUN_ERROR_LABEL_KEYS[code]]);
   });
 
-  it('labelOf_UnknownValue_GivesTheRawText', () => {
-    expect(labelOf('somethingNew', VERDICT_LABEL_KEYS, LABELS)).toBe('somethingNew');
+  it.each([
+    ['UnknownValue_GivesTheRawText', 'somethingNew', LABELS, 'somethingNew'],
+    ['KnownValueBeforeTheTranslationLoads_GivesTheKey', 'watch', {}, 'MAINTENANCE.VERDICTS.WATCH'],
+  ])('labelOf_%s', (_name, value, labels, expected) => {
+    expect(labelOf(value, VERDICT_LABEL_KEYS, labels)).toBe(expected);
   });
 
-  it('labelOf_KnownValueBeforeTheTranslationLoads_GivesTheKey', () => {
-    expect(labelOf('watch', VERDICT_LABEL_KEYS, {})).toBe('MAINTENANCE.VERDICTS.WATCH');
-  });
-
-  it('formatPayload_JsonText_GivesIndentedJson', () => {
-    expect(formatPayload('{"a":1}')).toBe('{\n  "a": 1\n}');
-  });
-
-  it('formatPayload_TextThatIsNotJson_StaysAsItIs', () => {
-    expect(formatPayload('plain text')).toBe('plain text');
+  it.each([
+    ['JsonText_GivesIndentedJson', '{"a":1}', '{\n  "a": 1\n}'],
+    ['TextThatIsNotJson_StaysAsItIs', 'plain text', 'plain text'],
+  ])('formatPayload_%s', (_name, text, expected) => {
+    expect(formatPayload(text)).toBe(expected);
   });
 
   describe('summarizeToolCall', () => {
@@ -198,17 +196,16 @@ describe('ai log panel', () => {
       expect(summarizeToolCall(broken, CONTEXT)).toEqual([]);
     });
 
-    it('summarizeToolCall_UnknownTool_GivesNoSummary', () => {
-      expect(summarizeToolCall(call('new_tool', {}, { ok: true }), CONTEXT)).toEqual([]);
-    });
-
-    it('summarizeToolCall_ResultOfAnotherShape_GivesNoSummary', () => {
-      expect(summarizeToolCall(call('search_manual', {}, { passages: 'none' }), CONTEXT)).toEqual([]);
+    it.each([
+      ['UnknownTool', 'new_tool', { ok: true }],
+      ['ResultOfAnotherShape', 'search_manual', { passages: 'none' }],
+    ])('summarizeToolCall_%s_GivesNoSummary', (_name, tool, result) => {
+      expect(summarizeToolCall(call(tool, {}, result), CONTEXT)).toEqual([]);
     });
   });
 });
 
-describe('finalTextClasses', () => {
+describe('finalTextClasses', { tags: ['Cases'] }, () => {
   it('FINAL_TEXT_CLASSES_AreTheClassesOfTheTextOfARun_KeepTheLineBreaksOfTheText', () => {
     expect(FINAL_TEXT_CLASSES.split(' ')).toContain('whitespace-pre-line');
   });

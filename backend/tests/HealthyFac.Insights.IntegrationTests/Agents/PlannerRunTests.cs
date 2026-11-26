@@ -13,12 +13,14 @@ using HealthyFac.Insights.IntegrationTests.Agents.Data;
 using HealthyFac.Insights.IntegrationTests.Cases;
 using HealthyFac.Insights.IntegrationTests.Cases.Data;
 using HealthyFac.Insights.Messaging.WorkOrders;
+using HealthyFac.Testing.Features;
 using HealthyFac.Testing.Tracing;
 using Microsoft.Extensions.AI;
 
 namespace HealthyFac.Insights.IntegrationTests.Agents;
 
 [Collection(SignalCaseCollection.Name)]
+[Feature(TestFeatures.Cases)]
 public sealed class PlannerRunTests(SignalCaseFixture fixture)
 {
     private const int InputTokens = 100;
@@ -45,9 +47,11 @@ public sealed class PlannerRunTests(SignalCaseFixture fixture)
         run.PromptVersion.Should().Be(expected: "planner-v4");
         run.InputTokens.Should().BeGreaterThanOrEqualTo(InputTokens * ModelCallCount);
         run.OutputTokens.Should().BeGreaterThanOrEqualTo(OutputTokens * ModelCallCount);
+
         calls.Select(call => call.ToolName)
             .Should()
             .Equal(ListOpenWorkOrdersToolRequest.ToolName, ProposeWorkOrderToolRequest.ToolName);
+
         calls.Should().OnlyContain(call => call.Outcome == ToolCallOutcome.Succeeded);
         signal.Coverage.Should().Be(SignalCoverage.Drafted);
         messages.Should().ContainSingle().Which.DraftId.Should().Be(signal.WorkOrderDraftId!.Value);
@@ -79,9 +83,11 @@ public sealed class PlannerRunTests(SignalCaseFixture fixture)
         await _fixture.RunAgentWorkerOnceAsync();
 
         var spans = capture.Spans;
+
         var text = string.Join(
             separator: " ",
             spans.SelectMany(span => span.TagObjects.Select(tag => $"{tag.Key}={tag.Value}")));
+
         spans.Should().NotBeEmpty();
         text.Should().NotContain(PromptMarker).And.NotContain(ToolResultMarker);
     }
@@ -90,6 +96,7 @@ public sealed class PlannerRunTests(SignalCaseFixture fixture)
     public async Task Run_WhenTheProviderStaysUnavailable_FailsTheRunAndCommitsNothing()
     {
         await ArrangeAsync();
+
         _fixture.Inner.Ingest.Chat.Failure = new HttpRequestException(
             message: "unavailable", inner: null, System.Net.HttpStatusCode.ServiceUnavailable);
 
@@ -110,6 +117,7 @@ public sealed class PlannerRunTests(SignalCaseFixture fixture)
         await ArrangeAsync();
         var chat = _fixture.Inner.Ingest.Chat;
         chat.OnceFailureCall = 2;
+
         chat.OnceFailure = new HttpRequestException(
             message: "unavailable", inner: null, System.Net.HttpStatusCode.ServiceUnavailable);
 
@@ -121,12 +129,14 @@ public sealed class PlannerRunTests(SignalCaseFixture fixture)
         var calls = await _fixture.LoadToolCallsAsync();
         var actions = await _fixture.LoadActionsAsync();
         run.State.Should().Be(AgentRunState.Completed);
+
         calls.Select(call => call.ToolName)
             .Should()
             .Equal(ListOpenWorkOrdersToolRequest.ToolName, ProposeWorkOrderToolRequest.ToolName);
+
         actions.Should().ContainSingle().Which.State.Should().Be(AgentActionState.Committed);
         chat.CallCount.Should().Be(expected: 4);
-        chat.SentMessageCounts[index: 2].Should().Be(chat.SentMessageCounts[index: 1]);
+        chat.SentMessageCounts[2].Should().Be(chat.SentMessageCounts[1]);
     }
 
     [Fact]
@@ -206,19 +216,21 @@ public sealed class PlannerRunTests(SignalCaseFixture fixture)
 
         var run = (await _fixture.LoadRunsAsync()).Single(candidate => candidate.Role == AgentRole.Planner);
         var messages = await _fixture.ReadOutboxAsync<WorkOrderDraftProposed>();
-        var decision = chat.SentOptions[index: 2]!;
+        var decision = chat.SentOptions[2]!;
         run.State.Should().Be(AgentRunState.Completed);
         run.VerdictReason.Should().Be(expected: "I proposed an inspection.");
         messages.Should().ContainSingle();
         chat.CallCount.Should().Be(expected: 4);
         decision.ToolMode.Should().BeOfType<RequiredChatToolMode>();
+
         decision.Tools!.Select(tool => tool.Name)
             .Should()
             .BeEquivalentTo(
                 ProposeWorkOrderToolRequest.ToolName,
                 LinkWorkOrderToolRequest.ToolName,
                 CloseCaseToolRequest.ToolName);
-        chat.SentTexts[index: 2].Should().Contain(AgentMessages.PlannerDecisionMessage);
+
+        chat.SentTexts[2].Should().Contain(AgentMessages.PlannerDecisionMessage);
     }
 
     [Fact]
@@ -274,6 +286,7 @@ public sealed class PlannerRunTests(SignalCaseFixture fixture)
         await _fixture.HandleSignalAsync(CaseTestData.Message(CaseTestData.FirstEpisodeId, sequence: 1));
         await _fixture.ClearRunsAsync();
         await _fixture.AddQueuedRunAsync(AgentRole.Planner, (await _fixture.LoadCasesAsync()).Single().Id);
+
         _fixture.Agents.WorkOrders.Answer.Add(
             new Application.WorkOrders.OpenWorkOrderInfo
             {
@@ -283,14 +296,17 @@ public sealed class PlannerRunTests(SignalCaseFixture fixture)
                 Priority = "high",
                 Category = "repair",
             });
+
         var chat = _fixture.Inner.Ingest.Chat;
         chat.Usage = new UsageDetails { InputTokenCount = InputTokens, OutputTokenCount = OutputTokens };
+
         if (!script)
         {
             return;
         }
 
         chat.ScriptToolCall(callId: "call-1", ListOpenWorkOrdersToolRequest.ToolName, CaseTestData.EmptyJson);
+
         chat.ScriptToolCall(
             callId: "call-2",
             ProposeWorkOrderToolRequest.ToolName,
@@ -299,6 +315,7 @@ public sealed class PlannerRunTests(SignalCaseFixture fixture)
                "priority":"high",
               "category":"inspection","estimateMinutes":60}
               """);
+
         chat.ScriptText(text: "I proposed an inspection.");
     }
 

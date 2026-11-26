@@ -1,8 +1,11 @@
 using HealthyFac.Shared.Infrastructure.Messaging.Receiving;
 using HealthyFac.Shared.IntegrationTests.Messaging.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.IntegrationTests.Messaging;
 
+[Feature(TestFeatures.Messaging)]
+[Feature(TestFeatures.Realtime)]
 public sealed class InboxRealtimeRetryTests(InboxRealtimeRetryFixture fixture)
     : IClassFixture<InboxRealtimeRetryFixture>
 {
@@ -18,6 +21,7 @@ public sealed class InboxRealtimeRetryTests(InboxRealtimeRetryFixture fixture)
             InboxProcessorTestData.UserActorId,
             InboxProcessorTestData.UserCompanyId,
             InboxTestData.Now);
+
         var processor = _fixture.Create<InboxProcessor>();
 
         await processor.RunAsync(CancellationToken.None);
@@ -29,9 +33,11 @@ public sealed class InboxRealtimeRetryTests(InboxRealtimeRetryFixture fixture)
         _fixture.InjectedFailureCount.Should().BeGreaterThanOrEqualTo(expected: 1);
         calls.Should().HaveCount(expected: 2);
         _fixture.RealtimeQueue.Items.Should().ContainSingle();
+
         _fixture.InboxObserver.Calls.Count(call => call == InboxRealtimeTestData.StartingCall)
             .Should()
             .BeGreaterThanOrEqualTo(expected: 2);
+
         _fixture.InboxObserver.Calls.Count(call => call == InboxRealtimeTestData.CommittedCall)
             .Should()
             .Be(expected: 1);

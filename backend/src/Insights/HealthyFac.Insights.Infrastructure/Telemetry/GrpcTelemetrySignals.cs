@@ -50,7 +50,7 @@ public sealed class GrpcTelemetrySignals(GrpcClientFactory clientFactory, IDowns
                 },
                 cancellationToken: cancellationToken);
 
-            return reply.Buckets.Select(ToBucket).ToList();
+            return [.. reply.Buckets.Select(ToBucket)];
         }
         catch (RpcException exception) when (exception.StatusCode == StatusCode.NotFound)
         {
@@ -84,7 +84,7 @@ public sealed class GrpcTelemetrySignals(GrpcClientFactory clientFactory, IDowns
                 },
                 cancellationToken: cancellationToken);
 
-            return reply.Episodes.Select(ToEpisode).ToList();
+            return [.. reply.Episodes.Select(ToEpisode)];
         }
         catch (RpcException exception) when (exception.StatusCode == StatusCode.NotFound)
         {
@@ -137,7 +137,7 @@ public sealed class GrpcTelemetrySignals(GrpcClientFactory clientFactory, IDowns
             Z = episode.HasZ ? episode.Z : null,
             ForecastSeconds = episode.HasForecastSeconds ? episode.ForecastSeconds : null,
             OpenedAt = episode.OpenedAt.ToDateTime(),
-            ResolvedAt = episode.ResolvedAt is null ? null : episode.ResolvedAt.ToDateTime(),
+            ResolvedAt = episode.ResolvedAt?.ToDateTime(),
             Sequence = episode.Sequence,
         };
 }

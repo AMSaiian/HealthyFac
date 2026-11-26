@@ -30,8 +30,8 @@ public static class DraftSourceStub
     private static string Answer(string requestBody, IReadOnlyList<StubDraftRow> rows)
     {
         var request = JsonNode.Parse(requestBody)!.AsObject();
-        var limit = request[propertyName: "limit"]!.GetValue<int>();
-        var after = request[propertyName: "after"] as JsonObject;
+        var limit = request["limit"]!.GetValue<int>();
+        var after = request["after"] as JsonObject;
         var afterRank = after?[SortValueProperty]?.GetValue<int>();
         var afterId = after?[IdProperty]?.GetValue<string>();
 
@@ -42,14 +42,15 @@ public static class DraftSourceStub
                 || row.StateRank > afterRank
                 || (row.StateRank == afterRank && string.CompareOrdinal(row.Id, afterId) > 0))
             .ToList();
+
         var page = remaining.Take(limit).Select(ToItem).ToList();
         var hasMore = remaining.Count > page.Count;
 
         return new JsonObject
         {
-            [propertyName: "items"] = new JsonArray([.. page]),
-            [propertyName: "totalCount"] = rows.Count,
-            [propertyName: "nextPosition"] = hasMore ? page[^1][PositionProperty]!.DeepClone() : null,
+            ["items"] = new JsonArray([.. page]),
+            ["totalCount"] = rows.Count,
+            ["nextPosition"] = hasMore ? page[^1][PositionProperty]!.DeepClone() : null,
         }.ToJsonString();
     }
 
@@ -57,7 +58,7 @@ public static class DraftSourceStub
     {
         var item = (JsonObject)row.Extra.DeepClone();
         item[IdProperty] = row.Id;
-        item[propertyName: "kind"] = row.Kind;
+        item["kind"] = row.Kind;
         item[PositionProperty] = new JsonObject { [SortValueProperty] = row.StateRank, [IdProperty] = row.Id };
 
         return item;

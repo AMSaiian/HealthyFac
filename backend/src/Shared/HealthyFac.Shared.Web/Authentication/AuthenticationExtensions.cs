@@ -28,6 +28,7 @@ public static class AuthenticationExtensions
         public IServiceCollection AddSharedJwtAuthentication(IConfiguration configuration)
         {
             services.AddValidatedOptions<JwtOptions, JwtOptionsValidator>(JwtOptions.SectionName, configuration);
+
             services.AddValidatedOptions<ServiceActorOptions, ServiceActorOptionsValidator>(
                 ServiceActorOptions.SectionName,
                 configuration);
@@ -41,6 +42,7 @@ public static class AuthenticationExtensions
                     bearer.MapInboundClaims = false;
                     bearer.MetadataAddress = jwt.Value.MetadataAddress;
                     bearer.RequireHttpsMetadata = jwt.Value.IsHttpsMetadataRequired;
+
                     bearer.TokenValidationParameters = new TokenValidationParameters
                     {
                         ValidIssuer = jwt.Value.Issuer,

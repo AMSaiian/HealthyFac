@@ -28,11 +28,15 @@ public static class CaseEndpoints
             var group = app.MapGroup(CaseRoutes.BaseRoute);
             group.MapPost(CaseRoutes.Search, SearchAsync).RequireAuthorization(InsightsPermissions.Cases.Read);
             group.MapGet(CaseRoutes.ById, GetAsync).RequireAuthorization(InsightsPermissions.Cases.Read);
+
             group.MapPost(CaseRoutes.SignalsSearch, SearchSignalsAsync)
                 .RequireAuthorization(InsightsPermissions.Cases.Read);
+
             group.MapPost(CaseRoutes.RunsSearch, SearchRunsAsync).RequireAuthorization(InsightsPermissions.Cases.Read);
+
             group.MapGet(CaseRoutes.RunToolCalls, GetToolCallsAsync)
                 .RequireAuthorization(InsightsPermissions.Cases.Read);
+
             group.MapPost(CaseRoutes.Runs, RunAgainAsync).RequireAuthorization(InsightsPermissions.Cases.Write);
             group.MapPost(CaseRoutes.Close, CloseAsync).RequireAuthorization(InsightsPermissions.Cases.Write);
 

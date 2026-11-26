@@ -28,6 +28,7 @@ public class WorkOrderDraftDismissedValidator : AbstractValidator<WorkOrderDraft
         RuleFor(message => message.DraftId).NotEmpty().WithMessage(WorkOrderDraftMessageErrors.Validation.IdRequired);
         RuleFor(message => message.CaseId).NotEmpty().WithMessage(WorkOrderDraftMessageErrors.Validation.IdRequired);
         RuleFor(message => message.CompanyId).NotEmpty().WithMessage(WorkOrderDraftMessageErrors.Validation.IdRequired);
+
         RuleFor(message => message.DismissedAt)
             .NotEmpty()
             .WithMessage(WorkOrderDraftMessageErrors.Validation.TimeRequired);

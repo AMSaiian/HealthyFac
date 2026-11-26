@@ -33,12 +33,15 @@ public static class ServiceTokenHostFactory
                 {
                     services.AddRouting();
                     services.AddSharedJwtAuthentication(context.Configuration);
+
                     services.PostConfigure<JwtBearerOptions>(
                         JwtBearerDefaults.AuthenticationScheme,
                         tokens.TrustTestKey);
+
                     services.AddAuthorizationBuilder()
                         .SetAuthenticatedFallbackPolicy()
                         .AddPermissionPolicies(new HashSet<string> { InvitePermission });
+
                     services.AddActorContextMiddleware();
                 })
                 .Configure(app =>
@@ -47,6 +50,7 @@ public static class ServiceTokenHostFactory
                     app.UseAuthentication();
                     app.UseAuthorization();
                     app.UseActorContext();
+
                     app.UseEndpoints(endpoints => endpoints
                         .MapGet(InviteRoute, (ICurrentUserProvider provider) => provider.GetUserId().ToString())
                         .RequireAuthorization(InvitePermission));

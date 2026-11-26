@@ -40,9 +40,11 @@ public static class CommittedSeedTestData
     public static string FindCommittedPath()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
+
         while (directory is not null)
         {
             var candidate = Path.Combine(directory.FullName, path2: "seed", path3: "demo");
+
             if (File.Exists(Path.Combine(candidate, path2: "company.json")))
             {
                 return candidate;
@@ -60,6 +62,7 @@ public static class CommittedSeedTestData
     {
         var source = FindCommittedPath();
         var target = Directory.CreateTempSubdirectory().FullName;
+
         foreach (var directory in Directory.GetDirectories(source, searchPattern: "*", SearchOption.AllDirectories))
         {
             Directory.CreateDirectory(directory.Replace(source, target));
@@ -85,6 +88,6 @@ public static class CommittedSeedTestData
     }
 
     public static JsonNode FindOrder(JsonNode root, string key) =>
-        root[propertyName: "workOrders"]!.AsArray()
-            .Single(order => order![propertyName: "key"]!.GetValue<string>() == key)!;
+        root["workOrders"]!.AsArray()
+            .Single(order => order!["key"]!.GetValue<string>() == key)!;
 }

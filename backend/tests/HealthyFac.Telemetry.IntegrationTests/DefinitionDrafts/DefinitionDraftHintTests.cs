@@ -4,11 +4,14 @@ using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Telemetry.IntegrationTests.Database.Data;
 using HealthyFac.Telemetry.IntegrationTests.DefinitionDrafts.Data;
 using HealthyFac.Telemetry.IntegrationTests.MachineRegistrations.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Telemetry.IntegrationTests.DefinitionDrafts;
 
 [Collection(TelemetryDefinitionDraftsCollection.Name)]
+[Feature(TestFeatures.Drafts)]
+[Feature(TestFeatures.SignalModel)]
 public sealed class DefinitionDraftHintTests(TelemetryDatabaseFixture fixture)
 {
     private readonly TelemetryDatabaseFixture _fixture = fixture;
@@ -17,6 +20,7 @@ public sealed class DefinitionDraftHintTests(TelemetryDatabaseFixture fixture)
     public async Task ResolveDrafts_WithAMachineEntry_RecordsTheHintWithTheAttemptAndTheMachine()
     {
         var machineId = Guid.CreateVersion7();
+
         var message = new DraftsResolved
         {
             AttemptId = DefinitionDraftTestData.AttemptId,
@@ -34,6 +38,7 @@ public sealed class DefinitionDraftHintTests(TelemetryDatabaseFixture fixture)
     public async Task ApplyMachineDraft_WithAMachine_RecordsTheHintWithTheMachine()
     {
         var machineId = Guid.CreateVersion7();
+
         var message = new MachineDraftApplied
         {
             DraftId = Guid.CreateVersion7(),

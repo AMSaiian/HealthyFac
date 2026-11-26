@@ -1,9 +1,12 @@
 using HealthyFac.Seeder.People;
 using HealthyFac.Seeder.SeedFiles;
 using HealthyFac.Seeder.UnitTests.People.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Seeder.UnitTests.People;
 
+[Feature(TestFeatures.Seeding)]
+[Feature(TestFeatures.Companies)]
 public sealed class PeoplePartTests
 {
     [Theory(Explicit = true)]
@@ -36,6 +39,7 @@ public sealed class PeoplePartTests
     private static SeedFolder CreateFolder(string acceptedAt)
     {
         var directory = Directory.CreateTempSubdirectory().FullName;
+
         File.WriteAllText(
             Path.Combine(directory, PeoplePartTestData.FileName), PeoplePartTestData.CompanyJson(acceptedAt));
 

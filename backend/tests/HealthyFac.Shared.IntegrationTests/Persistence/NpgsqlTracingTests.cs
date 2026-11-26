@@ -2,12 +2,14 @@ using System.Diagnostics;
 using HealthyFac.Shared.IntegrationTests.Messaging;
 using HealthyFac.Shared.IntegrationTests.Messaging.Data;
 using HealthyFac.Shared.IntegrationTests.Persistence.Data;
+using HealthyFac.Testing.Features;
 using HealthyFac.Testing.Tracing;
 using Microsoft.EntityFrameworkCore;
 
 namespace HealthyFac.Shared.IntegrationTests.Persistence;
 
 [Collection(MessagingStorageCollection.Name)]
+[Feature(TestFeatures.Persistence)]
 public sealed class NpgsqlTracingTests(PostgreSqlFixture fixture)
 {
     private readonly PostgreSqlFixture _fixture = fixture;

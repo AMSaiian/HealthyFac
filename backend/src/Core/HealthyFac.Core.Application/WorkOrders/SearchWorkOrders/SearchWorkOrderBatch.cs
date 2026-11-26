@@ -92,6 +92,7 @@ public sealed class SearchWorkOrderBatchRequestHandler(WorkOrderSearchQuery quer
         var ownEmployeeId = request.Scope == AccessScope.Own
             ? await _ownEmployee.FindIdAsync(cancellationToken)
             : null;
+
         var pages = new List<GridResponse<WorkOrderRowResponse>>(request.Searches.Count);
 
         foreach (var search in request.Searches)

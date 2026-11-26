@@ -19,7 +19,7 @@ function file(name: string, size: number): File {
   return new File([new Uint8Array(size)], name);
 }
 
-describe('FileUploadStore', () => {
+describe('FileUploadStore', { tags: ['Files'] }, () => {
   function setup(): {
     store: InstanceType<typeof FileUploadStore>;
     http: HttpTestingController;

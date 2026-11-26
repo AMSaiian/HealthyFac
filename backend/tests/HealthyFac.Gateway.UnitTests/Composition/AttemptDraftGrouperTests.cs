@@ -1,8 +1,11 @@
 using HealthyFac.Gateway.Web.Composition.Drafts.AttemptDrafts;
+using HealthyFac.Testing.Features;
 using static HealthyFac.Gateway.UnitTests.Composition.Data.AttemptDraftGrouperTestData;
 
 namespace HealthyFac.Gateway.UnitTests.Composition;
 
+[Feature(TestFeatures.Gateway)]
+[Feature(TestFeatures.Drafts)]
 public sealed class AttemptDraftGrouperTests
 {
     [Fact]
@@ -14,9 +17,9 @@ public sealed class AttemptDraftGrouperTests
         var groups = AttemptDraftGrouper.Group([MachineGroup, CreateGroup], metrics, statuses, []);
 
         groups.Should().HaveCount(expected: 2);
-        Ids(groups[index: 0], list: "metrics").Should().Equal("t1");
-        Ids(groups[index: 0], list: "statuses").Should().BeEmpty();
-        Ids(groups[index: 1], list: "statuses").Should().Equal("t2");
+        Ids(groups[0], list: "metrics").Should().Equal("t1");
+        Ids(groups[0], list: "statuses").Should().BeEmpty();
+        Ids(groups[1], list: "statuses").Should().Equal("t2");
     }
 
     [Fact]
@@ -27,15 +30,16 @@ public sealed class AttemptDraftGrouperTests
         var groups = AttemptDraftGrouper.Group([MachineGroup], metrics, [], []);
 
         groups.Should().HaveCount(expected: 2);
-        groups[index: 1].LookupMachineId.Should().Be(expected: "m9");
-        groups[index: 1].Group[propertyName: "machineId"]!.GetValue<string>().Should().Be(expected: "m9");
-        groups[index: 1].Group[propertyName: "machineDraft"].Should().BeNull();
+        groups[1].LookupMachineId.Should().Be(expected: "m9");
+        groups[1].Group["machineId"]!.GetValue<string>().Should().Be(expected: "m9");
+        groups[1].Group["machineDraft"].Should().BeNull();
     }
 
     [Fact]
     public void Group_WithDraftsThatWaitForATargetOfOneEntry_PutsThemInOneGroupWithoutAMachine()
     {
         var metrics = new[] { Draft(id: "t1", targetMachineId: null, targetMachineDraftId: null, entryId: "e5") };
+
         var statuses = new[]
         {
             Draft(id: "t2", targetMachineId: null, targetMachineDraftId: null, entryId: "e5"),
@@ -45,9 +49,9 @@ public sealed class AttemptDraftGrouperTests
         var groups = AttemptDraftGrouper.Group([], metrics, statuses, []);
 
         groups.Should().HaveCount(expected: 2);
-        Ids(groups[index: 0], list: "metrics").Should().Equal("t1");
-        Ids(groups[index: 0], list: "statuses").Should().Equal("t2");
-        Ids(groups[index: 1], list: "statuses").Should().Equal("t3");
+        Ids(groups[0], list: "metrics").Should().Equal("t1");
+        Ids(groups[0], list: "statuses").Should().Equal("t2");
+        Ids(groups[1], list: "statuses").Should().Equal("t3");
         groups.Should().OnlyContain(group => group.LookupMachineId == null);
         groups.Select(group => group.LookupDraftId).Should().Equal("e5", "e6");
     }
@@ -60,7 +64,7 @@ public sealed class AttemptDraftGrouperTests
         var groups = AttemptDraftGrouper.Group([CreateGroup], metrics, [], []);
 
         groups.Should().ContainSingle();
-        Ids(groups[index: 0], list: "metrics").Should().Equal("t1");
+        Ids(groups[0], list: "metrics").Should().Equal("t1");
     }
 
     [Fact]
@@ -71,10 +75,10 @@ public sealed class AttemptDraftGrouperTests
         var groups = AttemptDraftGrouper.Group([MachineGroup], [], [], phases);
 
         groups.Should().ContainSingle();
-        Ids(groups[index: 0], list: "phases").Should().Equal("p1");
-        Ids(groups[index: 0], list: "metrics").Should().BeEmpty();
+        Ids(groups[0], list: "phases").Should().Equal("p1");
+        Ids(groups[0], list: "metrics").Should().BeEmpty();
     }
 
     private static string[] Ids(AttemptGroup group, string list) =>
-        [.. group.Group[list]!.AsArray().Select(item => item![propertyName: "id"]!.GetValue<string>())];
+        [.. group.Group[list]!.AsArray().Select(item => item!["id"]!.GetValue<string>())];
 }

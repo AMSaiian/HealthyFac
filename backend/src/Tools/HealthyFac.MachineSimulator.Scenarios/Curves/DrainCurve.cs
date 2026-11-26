@@ -59,6 +59,7 @@ public sealed class DrainCurve
         for (var index = 1; index < _points.Length; index++)
         {
             var (endProgress, endValue) = _points[index];
+
             if (clamped <= endProgress)
             {
                 var (startProgress, startValue) = _points[index - 1];

@@ -6,11 +6,13 @@ using HealthyFac.Insights.Domain.Cases.Signals;
 using HealthyFac.Insights.IntegrationTests.Agents.Data;
 using HealthyFac.Insights.IntegrationTests.Cases;
 using HealthyFac.Insights.IntegrationTests.Cases.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.Logging;
 
 namespace HealthyFac.Insights.IntegrationTests.Agents;
 
 [Collection(SignalCaseCollection.Name)]
+[Feature(TestFeatures.Cases)]
 public sealed class AgentWorkerTests(SignalCaseFixture fixture)
 {
     private readonly SignalCaseFixture _fixture = fixture;
@@ -61,6 +63,7 @@ public sealed class AgentWorkerTests(SignalCaseFixture fixture)
         await _fixture.HandleSignalAsync(CaseTestData.Message(CaseTestData.FirstEpisodeId, sequence: 1));
         _fixture.Agents.TriageChat.Script(TriageTestData.Answer(verdict: "dismiss"));
         _fixture.Time.Advance(TimeSpan.FromSeconds(CaseTestData.DebounceSeconds));
+
         _fixture.Agents.TriageChat.Before = async () =>
         {
             _fixture.Time.Advance(TimeSpan.FromSeconds(AgentTestData.PastLeaseSeconds));

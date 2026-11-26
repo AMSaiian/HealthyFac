@@ -29,6 +29,7 @@ public static class TestRedisPipeline
                     [$"{RedisOptions.SectionName}:ConnectionString"] = UnusedConnectionString,
                 })
             .Build();
+
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddSingleton(timeProvider);

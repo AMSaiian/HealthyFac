@@ -1,7 +1,9 @@
 using HealthyFac.Testing.Conventions;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Gateway.IntegrationTests.Conventions;
 
+[Feature(TestFeatures.Conventions)]
 public sealed class FixtureConventionTests
 {
     [Fact]

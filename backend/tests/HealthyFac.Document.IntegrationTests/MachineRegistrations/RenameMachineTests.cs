@@ -1,10 +1,12 @@
 using HealthyFac.Document.IntegrationTests.Database;
 using HealthyFac.Document.IntegrationTests.Database.Data;
 using HealthyFac.Document.IntegrationTests.MachineRegistrations.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Document.IntegrationTests.MachineRegistrations;
 
 [Collection(DocumentDatabaseCollection.Name)]
+[Feature(TestFeatures.Machines)]
 public sealed class RenameMachineTests(DocumentDatabaseFixture fixture)
 {
     private const string NewName = "Renamed Pump";
@@ -33,6 +35,7 @@ public sealed class RenameMachineTests(DocumentDatabaseFixture fixture)
     {
         var created = MachineRegistrationTestData.CreateMessage();
         await _fixture.RegisterMachineAsync(created);
+
         await _fixture.RenameMachineAsync(
             MachineRegistrationTestData.CreateRenamedMessage(
                 created.MachineId, NewName, MachineRegistrationTestData.RenamedAt));

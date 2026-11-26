@@ -15,11 +15,12 @@ public sealed class TextInputPropertyValidator<T>(TextInputKind kind) : Property
 {
     private readonly TextInputKind _kind = kind;
 
-    public override string Name => nameof(TextInputPropertyValidator<T>);
+    public override string Name => nameof(TextInputPropertyValidator<>);
 
     public override bool IsValid(ValidationContext<T> context, string? value)
     {
         var violation = value is null ? null : TextInputPolicy.FindViolation(value, _kind);
+
         if (violation is not null)
         {
             context.AddFailure(new ValidationFailure(context.PropertyPath, violation));

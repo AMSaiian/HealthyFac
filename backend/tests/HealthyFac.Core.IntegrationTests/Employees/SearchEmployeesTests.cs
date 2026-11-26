@@ -5,10 +5,12 @@ using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Employees.Data;
 using HealthyFac.Shared.Application.Filters;
 using HealthyFac.Shared.Application.Grids;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.IntegrationTests.Employees;
 
 [Collection(CoreEmployeesCollection.Name)]
+[Feature(TestFeatures.Companies)]
 public sealed class SearchEmployeesTests(CoreDatabaseFixture fixture)
 {
     private readonly CoreDatabaseFixture _fixture = fixture;
@@ -23,6 +25,7 @@ public sealed class SearchEmployeesTests(CoreDatabaseFixture fixture)
             EmployeeSearchTestData.EmployeeRequest(tenant.CompanyId));
 
         response.TotalCount.Should().Be(expected: 3);
+
         response.Items.Select(item => item.Email)
             .Should()
             .BeEquivalentTo(
@@ -35,6 +38,7 @@ public sealed class SearchEmployeesTests(CoreDatabaseFixture fixture)
     public async Task SearchEmployees_WithNameFilter_MatchesFirstAndLastNameFromTheStart()
     {
         var tenant = await ArrangeTenantAsync();
+
         var filter = new EmployeeGridFilter
         {
             Name = EmployeeSearchTestData.Text(
@@ -52,6 +56,7 @@ public sealed class SearchEmployeesTests(CoreDatabaseFixture fixture)
     public async Task SearchEmployees_WithRoleAndStatusFilters_ReturnsMatchingRows()
     {
         var tenant = await ArrangeTenantAsync();
+
         var filter = new EmployeeGridFilter
         {
             Roles = new SetFilter<RoleCode> { Values = [RoleCode.Supervisor] },
@@ -63,7 +68,7 @@ public sealed class SearchEmployeesTests(CoreDatabaseFixture fixture)
             EmployeeSearchTestData.EmployeeRequest(tenant.CompanyId, filter));
 
         response.Items.Should().ContainSingle().Which.Email.Should().Be(EmployeeSearchTestData.AnnEmail);
-        response.Items[index: 0].RoleCode.Should().Be(RoleCode.Supervisor);
+        response.Items[0].RoleCode.Should().Be(RoleCode.Supervisor);
     }
 
     [Fact]
@@ -71,6 +76,7 @@ public sealed class SearchEmployeesTests(CoreDatabaseFixture fixture)
     {
         var tenant = await ArrangeTenantAsync();
         var filter = new EmployeeGridFilter { Email = EmployeeSearchTestData.Text(value: "ANN.") };
+
         var allSort = new GridSort<EmployeeSortColumn>
         {
             Column = EmployeeSortColumn.Name,
@@ -80,11 +86,13 @@ public sealed class SearchEmployeesTests(CoreDatabaseFixture fixture)
         var filtered = await _fixture.SearchEmployeesAsync(
             tenant.CompanyId,
             EmployeeSearchTestData.EmployeeRequest(tenant.CompanyId, filter));
+
         var sorted = await _fixture.SearchEmployeesAsync(
             tenant.CompanyId,
             EmployeeSearchTestData.EmployeeRequest(tenant.CompanyId, sort: allSort));
 
         filtered.Items.Should().ContainSingle().Which.Email.Should().Be(EmployeeSearchTestData.AnnEmail);
+
         sorted.Items.Select(item => item.FirstName)
             .Should()
             .Equal(
@@ -97,6 +105,7 @@ public sealed class SearchEmployeesTests(CoreDatabaseFixture fixture)
     {
         var companyId = await _fixture.CreateCompanyAsync(InviteTestData.CompanyName);
         var otherCompanyId = await _fixture.CreateCompanyAsync(EmployeeSearchTestData.OtherCompanyName);
+
         await _fixture.ArrangeEmployeeAsync(
             companyId,
             new EmployeeSeedOptions
@@ -106,6 +115,7 @@ public sealed class SearchEmployeesTests(CoreDatabaseFixture fixture)
                 LastName = EmployeeSearchTestData.LastName,
                 RoleCode = RoleCode.Supervisor,
             });
+
         await _fixture.ArrangeEmployeeAsync(
             companyId,
             new EmployeeSeedOptions
@@ -114,6 +124,7 @@ public sealed class SearchEmployeesTests(CoreDatabaseFixture fixture)
                 FirstName = EmployeeSearchTestData.BobFirstName,
                 LastName = EmployeeSearchTestData.LastName,
             });
+
         await _fixture.ArrangeEmployeeAsync(
             companyId,
             new EmployeeSeedOptions
@@ -124,6 +135,7 @@ public sealed class SearchEmployeesTests(CoreDatabaseFixture fixture)
                 RoleCode = RoleCode.Supervisor,
                 IsDeactivated = true,
             });
+
         await _fixture.ArrangeEmployeeAsync(
             otherCompanyId,
             new EmployeeSeedOptions

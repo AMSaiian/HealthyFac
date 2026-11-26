@@ -24,9 +24,11 @@ public static class RevocationExtensions
         {
             services.AddSharedRedis(configuration);
             services.AddTokenRevocationStore();
+
             services.AddValidatedOptions<RevocationOptions, RevocationOptionsValidator>(
                 RevocationOptions.SectionName,
                 configuration);
+
             services.AddSingleton<ISessionRevoker, RedisSessionRevoker>();
 
             return services;

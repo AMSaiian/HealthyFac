@@ -4,10 +4,13 @@ using HealthyFac.Telemetry.Domain.DefinitionDrafts;
 using HealthyFac.Telemetry.IntegrationTests.Database.Data;
 using HealthyFac.Telemetry.IntegrationTests.DefinitionDrafts.Data;
 using HealthyFac.Telemetry.IntegrationTests.MachineRegistrations.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.IntegrationTests.DefinitionDrafts;
 
 [Collection(TelemetryDefinitionDraftsCollection.Name)]
+[Feature(TestFeatures.Drafts)]
+[Feature(TestFeatures.SignalModel)]
 public sealed class DismissDefinitionDraftsTests(TelemetryDatabaseFixture fixture)
 {
     private const int OpenDraftsOfAMachine = 3;
@@ -29,14 +32,17 @@ public sealed class DismissDefinitionDraftsTests(TelemetryDatabaseFixture fixtur
         var statuses = await _fixture.LoadStatusDraftsAsync();
 
         response.DismissedCount.Should().Be(OpenDraftsOfAMachine);
+
         metrics.Where(draft => draft.TargetMachineId == machineId)
             .Select(draft => draft.State)
             .Should()
             .BeEquivalentTo([DefinitionDraftState.Dismissed, DefinitionDraftState.Applied]);
+
         statuses.Where(draft => draft.TargetMachineId == machineId)
             .Select(draft => draft.State)
             .Should()
             .OnlyContain(state => state == DefinitionDraftState.Dismissed);
+
         metrics.Where(draft => draft.TargetMachineId == otherMachineId)
             .Select(draft => draft.State)
             .Should()
@@ -59,6 +65,7 @@ public sealed class DismissDefinitionDraftsTests(TelemetryDatabaseFixture fixtur
         var statuses = await _fixture.LoadStatusDraftsAsync();
 
         response.DismissedCount.Should().Be(OpenDraftsOfAMachine * 2);
+
         metrics.Concat<IDefinitionDraft>(statuses)
             .Should()
             .NotContain(draft => draft.State == DefinitionDraftState.Pending
@@ -95,6 +102,7 @@ public sealed class DismissDefinitionDraftsTests(TelemetryDatabaseFixture fixtur
 
         race.SaveCounts.Should().Equal(1, 1);
         responses.Should().ContainSingle().Which.DismissedCount.Should().Be(OpenDraftsOfAMachine);
+
         failures.Single(failure => failure is not null)
             .Should()
             .BeOfType<ConflictException>()

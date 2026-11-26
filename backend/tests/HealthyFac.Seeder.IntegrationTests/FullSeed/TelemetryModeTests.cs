@@ -2,10 +2,12 @@ using HealthyFac.Seeder.IntegrationTests.FullSeed.Data;
 using HealthyFac.Seeder.IntegrationTests.Hosting;
 using HealthyFac.Seeder.IntegrationTests.TelemetryHistory.Data;
 using HealthyFac.Seeder.IntegrationTests.Timeline.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Seeder.IntegrationTests.FullSeed;
 
 [Collection(SeederCollection.Name)]
+[Feature(TestFeatures.Seeding)]
 public sealed class TelemetryModeTests(SeederFixture fixture)
 {
     private readonly SeederFixture _fixture = fixture;
@@ -14,11 +16,13 @@ public sealed class TelemetryModeTests(SeederFixture fixture)
     public async Task RunAsync_WithResetAndTelemetryOnAModeOneSeed_SeedsModeTwoWithTheMarker()
     {
         var baseDirectory = TelemetryHistorySeedTestData.CreateBaseDirectory(TelemetryHistorySeedTestData.TestScript);
+
         var first = await _fixture.RunJobAsync(
             [],
             TestContext.Current.CancellationToken,
             baseDirectory,
             anchor: TelemetryHistorySeedTestData.ThursdayAnchor);
+
         var hasHistoryBefore = await _fixture.HasReceivedMessageAsync(TelemetryHistorySeedTestData.MarkerMessageId);
 
         var reset = await _fixture.RunJobAsync(
@@ -68,6 +72,7 @@ public sealed class TelemetryModeTests(SeederFixture fixture)
     private async Task<string> SeedModeTwoAsync()
     {
         var baseDirectory = TelemetryHistorySeedTestData.CreateBaseDirectory(TelemetryHistorySeedTestData.TestScript);
+
         await _fixture.RunJobAsync(
             [TelemetryHistorySeedTestData.TelemetryArgument],
             TestContext.Current.CancellationToken,

@@ -58,6 +58,7 @@ public sealed class StoreProposedDefinitionDraftsRequestHandler(
         {
             var found = await _proposalEntries.FindOrCreateAsync(
                 machine.DraftId, request.CompanyId, cancellationToken);
+
             _proposalEntries.EnsureRowVersionChecked(found);
             proposals.Add((machine, found));
         }
@@ -77,6 +78,7 @@ public sealed class StoreProposedDefinitionDraftsRequestHandler(
                     entry.Id,
                     proposed.TargetMachineId,
                     ToValues(metric));
+
                 var isRemovalRequired = ProposalEntries.FollowNewDraft(draft, entry, isTargetRegistrationDeleted);
 
                 if (!isRemovalRequired)
@@ -95,6 +97,7 @@ public sealed class StoreProposedDefinitionDraftsRequestHandler(
                     entry.Id,
                     proposed.TargetMachineId,
                     ToValues(status));
+
                 var isRemovalRequired = ProposalEntries.FollowNewDraft(draft, entry, isTargetRegistrationDeleted);
 
                 if (!isRemovalRequired)
@@ -115,6 +118,7 @@ public sealed class StoreProposedDefinitionDraftsRequestHandler(
                     ToValues(phase),
                     [.. phase.Conditions.Select(ToValues)],
                     [.. phase.Limits.Select(ToValues)]);
+
                 var isRemovalRequired = ProposalEntries.FollowNewDraft(draft, entry, isTargetRegistrationDeleted);
 
                 if (!isRemovalRequired)
@@ -133,6 +137,7 @@ public sealed class StoreProposedDefinitionDraftsRequestHandler(
             .SelectMany(machine => machine.Metrics)
             .Select(metric => metric.DraftId)
             .ToList();
+
         var statusIds = request.Machines
             .SelectMany(machine => machine.Statuses)
             .Select(status => status.DraftId)
@@ -144,18 +149,21 @@ public sealed class StoreProposedDefinitionDraftsRequestHandler(
             .ToList();
 
         var existing = new HashSet<Guid>();
+
         existing.UnionWith(
             await _dbContext.OperatingPhaseDrafts
                 .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
                 .Where(draft => phaseIds.Contains(draft.Id))
                 .Select(draft => draft.Id)
                 .ToListAsync(cancellationToken));
+
         existing.UnionWith(
             await _dbContext.MetricDefinitionDrafts
                 .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
                 .Where(draft => metricIds.Contains(draft.Id))
                 .Select(draft => draft.Id)
                 .ToListAsync(cancellationToken));
+
         existing.UnionWith(
             await _dbContext.StatusDefinitionDrafts
                 .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])

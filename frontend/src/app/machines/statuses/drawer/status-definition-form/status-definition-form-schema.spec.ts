@@ -9,7 +9,7 @@ import { statusDefinitionFormSchema, type StatusDefinitionFormValue } from './st
 
 const VALID: StatusDefinitionFormValue = { code: 'E-101', severity: StatusSeverity.Info, description: '<p>text</p>' };
 
-describe('statusDefinitionFormSchema', () => {
+describe('statusDefinitionFormSchema', { tags: ['SignalModel'] }, () => {
   it('statusDefinitionFormSchema_WithVisibleTextAtLimitInsideFormatting_Passes', () => {
     const description = `<p>${'<strong>aaaaaaaaaa</strong>'.repeat(DESCRIPTION_MAX_LENGTH / 10)}</p>`;
 

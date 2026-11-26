@@ -48,22 +48,28 @@ public static class EvaluationResets
                 .Where(metric => metric.MachineRegistrationId == registration.Id)
                 .Select(metric => new { metric.Id, metric.Key })
                 .ToListAsync(cancellationToken);
+
             var metricIds = metrics.Select(metric => metric.Id).ToList();
+
             var statistics = await dbContext.MetricStatistics
                 .Where(row => metricIds.Contains(row.MetricDefinitionId))
                 .ToListAsync(cancellationToken);
+
             var streaks = await dbContext.RuleStreaks
                 .Where(streak => streak.MachineRegistrationId == registration.Id)
                 .ToListAsync(cancellationToken);
+
             var openEpisodes = await dbContext.SignalEpisodes
                 .Where(episode => episode.MachineRegistrationId == registration.Id
                     && episode.State == SignalEpisodeState.Open)
                 .ToListAsync(cancellationToken);
+
             var statuses = await dbContext.StatusDefinitions
                 .AsNoTracking()
                 .Where(status => status.MachineRegistrationId == registration.Id)
                 .Select(status => new { status.Id, status.Code })
                 .ToListAsync(cancellationToken);
+
             var phases = await dbContext.OperatingPhases
                 .AsNoTracking()
                 .Where(phase => phase.MachineRegistrationId == registration.Id)
@@ -72,6 +78,7 @@ public static class EvaluationResets
 
             dbContext.MetricStatistics.RemoveRange(statistics);
             dbContext.RuleStreaks.RemoveRange(streaks);
+
             new EpisodeChanges(
                     dbContext,
                     outbox,

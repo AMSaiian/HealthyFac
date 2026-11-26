@@ -48,7 +48,7 @@ interface Setup {
   messages: { add: ReturnType<typeof vi.fn> };
 }
 
-describe('StatusDefinitionsGridStore', () => {
+describe('StatusDefinitionsGridStore', { tags: ['SignalModel'] }, () => {
   async function setup(
     options: { hasPermission?: boolean; isConfirmed?: boolean; isMachineSet?: boolean } = {},
   ): Promise<Setup> {

@@ -78,6 +78,6 @@ public class ListOperatingPhasesRequestHandler(ITelemetryDbContext dbContext)
             .OrderBy(phase => phase.Priority)
             .ToListAsync(cancellationToken);
 
-        return new ListOperatingPhasesResponse { Items = phases.Select(OperatingPhaseResponse.From).ToList() };
+        return new ListOperatingPhasesResponse { Items = [.. phases.Select(OperatingPhaseResponse.From)] };
     }
 }

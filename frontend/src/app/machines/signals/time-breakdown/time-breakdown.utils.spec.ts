@@ -21,7 +21,7 @@ const PHASES: PhaseTimesResponse = {
   noDataSeconds: 300,
 };
 
-describe('time breakdown utils', () => {
+describe('time breakdown utils', { tags: ['Evaluation'] }, () => {
   it.each([
     ['three equal parts', [1, 1, 1], [34, 33, 33]],
     ['an uneven split', [1800, 900, 300, 300, 300], [50, 25, 9, 8, 8]],

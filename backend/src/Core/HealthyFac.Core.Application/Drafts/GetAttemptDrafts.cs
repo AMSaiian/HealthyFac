@@ -90,6 +90,7 @@ public sealed class GetAttemptDraftsRequestHandler(ICoreDbContext dbContext)
             .OfType<Guid>()
             .Distinct()
             .ToList();
+
         var machineNames = await _dbContext.Machines
             .AsNoTracking()
             .Where(machine => machineIds.Contains(machine.Id) && machine.CompanyId == request.CompanyId)

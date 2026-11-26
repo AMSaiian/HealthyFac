@@ -1,8 +1,11 @@
 using HealthyFac.Telemetry.Domain.DefinitionDrafts.ProposalEntries;
 using HealthyFac.Telemetry.UnitTests.DefinitionDrafts.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.UnitTests.DefinitionDrafts;
 
+[Feature(TestFeatures.Drafts)]
+[Feature(TestFeatures.SignalModel)]
 public sealed class ProposalEntryTests
 {
     [Theory]
@@ -22,6 +25,7 @@ public sealed class ProposalEntryTests
 
         isChanged.Should().Be(expectedIsChanged, caseName);
         entry.State.Should().Be(expectedState, caseName);
+
         entry.MachineId.Should()
             .Be(
                 expectedState == ProposalEntryState.OnMachine && expectedIsChanged

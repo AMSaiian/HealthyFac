@@ -27,11 +27,13 @@ public static class MachinePayloadBuilder
         using (var writer = new Utf8JsonWriter(stream))
         {
             writer.WriteStartObject();
+
             writer.WriteString(
                 MetricSchemaConstants.Fields.SampledAt,
                 sampledAt.ToUniversalTime().ToString(format: "O", CultureInfo.InvariantCulture));
 
             writer.WriteStartObject(MetricSchemaConstants.Fields.Metrics);
+
             foreach (var metric in definitions.Metrics)
             {
                 if (sample.Values.TryGetValue(metric.Key, out var value) && !TryWrite(writer, metric, value))
@@ -43,6 +45,7 @@ public static class MachinePayloadBuilder
             writer.WriteEndObject();
 
             writer.WriteStartArray(MetricSchemaConstants.Fields.Statuses);
+
             foreach (var code in sample.StatusCodes.Where(definitions.StatusCodes.Contains).Distinct())
             {
                 writer.WriteStringValue(code);

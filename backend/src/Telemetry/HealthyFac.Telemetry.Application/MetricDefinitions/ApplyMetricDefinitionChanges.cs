@@ -382,6 +382,7 @@ public sealed class ApplyMetricDefinitionChangesRequestHandler(
                 updated,
                 index))
             .ToList();
+
         var isSchemaChanged = created.Count > 0 || request.Deleted.Count > 0 || updateResults.Contains(item: true);
 
         var deleted = definitions.Where(metric => request.Deleted.Contains(metric.Id)).ToList();
@@ -406,19 +407,20 @@ public sealed class ApplyMetricDefinitionChangesRequestHandler(
         await _draftMarker.MarkMetricDraftsAsync(
             request.CompanyId,
             request.MachineId,
-            request.Created
-                .Select((metric, index) => (metric.DraftId, Path: $"created[{index}].draftId", created[index].Id))
-                .Concat(
-                    request.Updated.Select((metric, index) =>
-                        (metric.DraftId, Path: $"updated[{index}].draftId", metric.Id)))
-                .Where(reference => reference.DraftId is not null)
-                .Select(reference => new DraftReference
-                {
-                    Path = reference.Path,
-                    DraftId = reference.DraftId!.Value,
-                    DefinitionId = reference.Id,
-                })
-                .ToList(),
+            [
+                .. request.Created
+                    .Select((metric, index) => (metric.DraftId, Path: $"created[{index}].draftId", created[index].Id))
+                    .Concat(
+                        request.Updated.Select((metric, index) =>
+                            (metric.DraftId, Path: $"updated[{index}].draftId", metric.Id)))
+                    .Where(reference => reference.DraftId is not null)
+                    .Select(reference => new DraftReference
+                    {
+                        Path = reference.Path,
+                        DraftId = reference.DraftId!.Value,
+                        DefinitionId = reference.Id,
+                    }),
+            ],
             cancellationToken);
 
         try
@@ -441,6 +443,7 @@ public sealed class ApplyMetricDefinitionChangesRequestHandler(
     )
     {
         var unit = ResolveUnit(metric, index, units);
+
         var definition = new MetricDefinition(
             registrationId,
             metric.Key,
@@ -451,6 +454,7 @@ public sealed class ApplyMetricDefinitionChangesRequestHandler(
             metric.Min,
             metric.Max,
             metric.States);
+
         definition.ChangeLimits(metric.ToLimits(), metric.Behavior ?? MetricBehavior.Level);
 
         return definition;
@@ -472,6 +476,7 @@ public sealed class ApplyMetricDefinitionChangesRequestHandler(
         }
 
         var reference = metric.Unit!;
+
         var found = units.FirstOrDefault(unit =>
                 unit.QuantityKind.Name == reference.QuantityKind
                 && unit.Name == reference.Name)

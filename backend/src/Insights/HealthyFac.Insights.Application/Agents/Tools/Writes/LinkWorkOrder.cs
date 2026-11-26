@@ -146,6 +146,7 @@ public sealed class LinkWorkOrderToolRequestHandler(
             request.RunId,
             request.EpisodeIds,
             cancellationToken);
+
         var actionId = await ActionBuffering.AddAsync(
             _dbContext,
             request.RunId,
@@ -154,7 +155,7 @@ public sealed class LinkWorkOrderToolRequestHandler(
             ActionBuffering.Serialize(
                 new LinkWorkOrderPayload
                 {
-                    SignalIds = request.EpisodeIds.Distinct().ToList(),
+                    SignalIds = [.. request.EpisodeIds.Distinct()],
                     WorkOrderId = request.WorkOrderId,
                 }),
             cancellationToken);

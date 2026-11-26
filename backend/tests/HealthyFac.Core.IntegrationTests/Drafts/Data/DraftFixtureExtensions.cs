@@ -54,6 +54,7 @@ public static class DraftFixtureExtensions
                     DraftTestData.MachineName,
                     serialNumber: null,
                     description: null));
+
             await dbContext.SaveChangesAsync();
         }
 
@@ -61,6 +62,7 @@ public static class DraftFixtureExtensions
         {
             using var scope = fixture.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
+
             var draft = new MachineDraft(
                 Guid.CreateVersion7(),
                 companyId,

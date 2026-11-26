@@ -74,6 +74,7 @@ public sealed class GetPendingDefinitionDraftCountsRequestHandler(ITelemetryDbCo
                 && draft.State == DefinitionDraftState.Pending
                 && draft.TargetMachineId != null)
             .Select(draft => draft.TargetMachineId!.Value);
+
         var statusMachineIds = _dbContext.StatusDefinitionDrafts
             .Where(draft => draft.CompanyId == request.CompanyId
                 && draft.State == DefinitionDraftState.Pending

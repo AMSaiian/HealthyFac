@@ -33,6 +33,7 @@ public static class ForwardedPrefixHostFactory
 
                         return next();
                     });
+
                     app.UseSharedForwardedHeaders();
                     app.Run(context => context.Response.WriteAsync(context.Request.PathBase.Value ?? string.Empty));
                 }))

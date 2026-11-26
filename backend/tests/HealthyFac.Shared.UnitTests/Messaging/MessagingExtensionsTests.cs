@@ -1,10 +1,12 @@
 using HealthyFac.Shared.Application.Messaging;
 using HealthyFac.Shared.Infrastructure.Messaging.Sending;
 using HealthyFac.Shared.UnitTests.Messaging.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Shared.UnitTests.Messaging;
 
+[Feature(TestFeatures.Messaging)]
 public sealed class MessagingExtensionsTests
 {
     [Theory]

@@ -72,7 +72,7 @@ function lookedUp(id: string): LookedUpFile {
   return { id, fileName: id, extension: 'pdf', contentType: 'application/pdf', sizeBytes: 10, machineId: null };
 }
 
-describe('toUpdateBody', () => {
+describe('toUpdateBody', { tags: ['WorkOrders'] }, () => {
   it('toUpdateBody_WithoutManagePermission_KeepsTheStoredEstimate', () => {
     const body = toUpdateBody(FORM_VALUE, WORK_ORDER, false);
 
@@ -87,7 +87,7 @@ describe('toUpdateBody', () => {
   });
 });
 
-describe('toUpdateBody schedule', () => {
+describe('toUpdateBody schedule', { tags: ['WorkOrders'] }, () => {
   it.each([
     { name: 'NoChange', value: FORM_VALUE, assigneeId: 'e1', plannedStartLocal: '2027-03-28T09:00:00' },
     {
@@ -134,7 +134,7 @@ describe('toUpdateBody schedule', () => {
   });
 });
 
-describe('toCreateBody schedule', () => {
+describe('toCreateBody schedule', { tags: ['WorkOrders'] }, () => {
   it('toCreateBody_WithAssigneeAndStart_SendsBoth', () => {
     const body = toCreateBody(FORM_VALUE);
 
@@ -150,7 +150,7 @@ describe('toCreateBody schedule', () => {
   });
 });
 
-describe('fileEntries', () => {
+describe('fileEntries', { tags: ['WorkOrders'] }, () => {
   it('fileEntries_WithFileMissingInLookup_KeepsItAsUnavailable', () => {
     const entries = fileEntries(['f1', 'f2'], [lookedUp('f1')]);
 
@@ -161,7 +161,7 @@ describe('fileEntries', () => {
   });
 });
 
-describe('WorkOrderDrawerStore', () => {
+describe('WorkOrderDrawerStore', { tags: ['WorkOrders'] }, () => {
   const get = vi.fn();
   const update = vi.fn();
   const create = vi.fn();

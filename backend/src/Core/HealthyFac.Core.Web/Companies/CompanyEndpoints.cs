@@ -27,6 +27,7 @@ public static class CompanyEndpoints
         {
             var group = app.MapGroup(CompanyRoutes.BaseRoute);
             group.MapGet(CompanyRoutes.Root, GetCurrentAsync);
+
             group.MapGet(CompanyRoutes.Schedule, GetScheduleAsync)
                 .RequireAuthorization(CorePermissions.Shifts.Manage, CorePermissions.Employees.Read);
 

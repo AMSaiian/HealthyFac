@@ -35,18 +35,23 @@ public sealed class IngestProcessingOptionsValidator : AbstractValidator<IngestP
         RuleFor(options => options.TimeoutSeconds)
             .GreaterThan(valueToCompare: 0)
             .WithMessage(IngestProcessingMessages.TimeoutInvalid);
+
         RuleFor(options => options.LeaseMarginSeconds)
             .GreaterThan(valueToCompare: 0)
             .WithMessage(IngestProcessingMessages.LeaseMarginInvalid);
+
         RuleFor(options => options.PollSeconds)
             .GreaterThan(valueToCompare: 0)
             .WithMessage(IngestProcessingMessages.PollInvalid);
+
         RuleFor(options => options.WorkerCount)
             .InclusiveBetween(from: 1, to: 1)
             .WithMessage(IngestProcessingMessages.WorkerCountInvalid);
+
         RuleFor(options => options.MaxPages)
             .GreaterThan(valueToCompare: 0)
             .WithMessage(IngestProcessingMessages.MaxPagesInvalid);
+
         RuleFor(options => options.RetryDelayMilliseconds)
             .GreaterThan(valueToCompare: 0)
             .WithMessage(IngestProcessingMessages.RetryDelayInvalid);

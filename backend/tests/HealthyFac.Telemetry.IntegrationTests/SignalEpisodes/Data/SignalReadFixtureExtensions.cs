@@ -19,6 +19,7 @@ public static class SignalReadFixtureExtensions
         public async Task<MetricHistoryResponse> GetMetricHistoryUseCaseAsync(GetMetricHistoryRequest request)
         {
             using var scope = fixture.Database.CreateUserScope(request.CompanyId);
+
             var handler = scope.ServiceProvider
                 .GetRequiredService<IRequestHandler<GetMetricHistoryRequest, MetricHistoryResponse>>();
 
@@ -28,6 +29,7 @@ public static class SignalReadFixtureExtensions
         public async Task<PhaseTimesResponse> GetPhaseTimesUseCaseAsync(GetPhaseTimesRequest request)
         {
             using var scope = fixture.Database.CreateUserScope(request.CompanyId);
+
             var handler = scope.ServiceProvider
                 .GetRequiredService<IRequestHandler<GetPhaseTimesRequest, PhaseTimesResponse>>();
 
@@ -47,6 +49,7 @@ public static class SignalReadFixtureExtensions
         public async Task<SignalEpisodesResponse> GetSignalEpisodesUseCaseAsync(GetSignalEpisodesRequest request)
         {
             using var scope = fixture.Database.CreateUserScope(request.CompanyId);
+
             var handler = scope.ServiceProvider
                 .GetRequiredService<IRequestHandler<GetSignalEpisodesRequest, SignalEpisodesResponse>>();
 

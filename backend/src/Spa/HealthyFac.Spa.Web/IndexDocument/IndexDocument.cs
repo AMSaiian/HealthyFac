@@ -22,6 +22,7 @@ public sealed class IndexDocument
     public static IndexDocument Load(string contentRoot)
     {
         var path = Path.Combine(contentRoot, SpaConstants.IndexFileName);
+
         if (!File.Exists(path))
         {
             throw IndexDocumentErrors.IndexFileMissing(path);

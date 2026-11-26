@@ -320,7 +320,9 @@ export function compareColumnsWithoutDivider(source: string, path = 'inline.html
   ]);
 }
 
-describe('field separators', () => {
+const LABEL_GROUP = '<div><i class="hf-field-label"></i></div>';
+
+describe('field separators', { tags: ['Conventions'] }, () => {
   const templates = import.meta.glob('./**/*.html', { query: '?raw', import: 'default', eager: true }) as Record<
     string,
     string
@@ -372,16 +374,20 @@ describe('field separators', () => {
     expect(groupsWithoutDivider(source)).toEqual([]);
   });
 
-  it('dividersWithWrongLayout_WithAVerticalDividerOutsideAGrid_ReportsIt', () => {
-    const source =
-      '<section class="gap-4"><div><i class="hf-field-label"></i></div><p-divider layout="vertical" /><div><i class="hf-field-label"></i></div></section>';
+  it.each([
+    ['AVerticalDividerOutsideAGrid', '<section class="gap-4">', '<p-divider layout="vertical" />', '</section>'],
+    ['AHorizontalDividerInAFlexRow', '<div class="flex gap-4">', '<p-divider />', '</div>'],
+  ])('dividersWithWrongLayout_With%s_ReportsIt', (_name, open, divider, close) => {
+    const source = `${open}${LABEL_GROUP}${divider}${LABEL_GROUP}${close}`;
 
     expect(dividersWithWrongLayout(source)).toEqual([1]);
   });
 
-  it('dividersWithWrongLayout_WithAVerticalDividerInAGrid_ReportsNothing', () => {
-    const source =
-      '<section class="grid gap-4"><div><i class="hf-field-label"></i></div><p-divider layout="vertical" /><div><i class="hf-field-label"></i></div></section>';
+  it.each([
+    ['AVerticalDividerInAGrid', '<section class="grid gap-4">', '</section>'],
+    ['AVerticalDividerInAFlexRow', '<div class="flex gap-4">', '</div>'],
+  ])('dividersWithWrongLayout_With%s_ReportsNothing', (_name, open, close) => {
+    const source = `${open}${LABEL_GROUP}<p-divider layout="vertical" />${LABEL_GROUP}${close}`;
 
     expect(dividersWithWrongLayout(source)).toEqual([]);
   });
@@ -438,19 +444,5 @@ describe('field separators', () => {
       '@for (d of days; track d) {\n@if (!$first) {\n<p-divider />\n}\n<div><i class="hf-field-label"></i></div>\n}';
 
     expect(repeatedGroupsWithoutDivider(source)).toEqual([]);
-  });
-
-  it('dividersWithWrongLayout_WithAHorizontalDividerInAFlexRow_ReportsIt', () => {
-    const source =
-      '<div class="flex gap-4"><div><i class="hf-field-label"></i></div><p-divider /><div><i class="hf-field-label"></i></div></div>';
-
-    expect(dividersWithWrongLayout(source)).toEqual([1]);
-  });
-
-  it('dividersWithWrongLayout_WithAVerticalDividerInAFlexRow_ReportsNothing', () => {
-    const source =
-      '<div class="flex gap-4"><div><i class="hf-field-label"></i></div><p-divider layout="vertical" /><div><i class="hf-field-label"></i></div></div>';
-
-    expect(dividersWithWrongLayout(source)).toEqual([]);
   });
 });

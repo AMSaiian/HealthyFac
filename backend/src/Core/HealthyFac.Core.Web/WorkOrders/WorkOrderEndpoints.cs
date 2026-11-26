@@ -44,28 +44,40 @@ public static class WorkOrderEndpoints
         public IEndpointRouteBuilder MapWorkOrderEndpoints()
         {
             var group = app.MapGroup(WorkOrderRoutes.BaseRoute);
+
             group.MapPost(WorkOrderRoutes.Root, CreateAsync)
                 .RequireAuthorization(CorePermissions.WorkOrders.Write);
+
             group.MapPost(WorkOrderRoutes.Search, SearchAsync)
                 .RequireAuthorization(CorePermissions.WorkOrders.Read);
+
             group.MapPost(WorkOrderRoutes.SearchBatch, SearchBatchAsync)
                 .RequireAuthorization(CorePermissions.WorkOrders.Read);
+
             group.MapGet(WorkOrderRoutes.ById, GetAsync)
                 .RequireAuthorization(CorePermissions.WorkOrders.Read);
+
             group.MapPut(WorkOrderRoutes.ById, UpdateAsync)
                 .RequireAuthorization(CorePermissions.WorkOrders.Write);
+
             group.MapPost(WorkOrderRoutes.Status, ChangeStatusAsync)
                 .RequireAuthorization(CorePermissions.WorkOrders.Write);
+
             group.MapGet(WorkOrderRoutes.History, GetHistoryAsync)
                 .RequireAuthorization(CorePermissions.WorkOrders.Read);
+
             group.MapPut(WorkOrderRoutes.Assignee, AssignAsync)
                 .RequireAuthorization(CorePermissions.WorkOrders.Manage);
+
             group.MapPost(WorkOrderRoutes.Move, MoveAsync)
                 .RequireAuthorization(CorePermissions.WorkOrders.Manage);
+
             group.MapPost(WorkOrderRoutes.ApplySchedule, ApplyScheduleAsync)
                 .RequireAuthorization(CorePermissions.WorkOrders.Manage);
+
             group.MapDelete(WorkOrderRoutes.Assignee, UnassignAsync)
                 .RequireAuthorization(CorePermissions.WorkOrders.Manage);
+
             group.MapDelete(WorkOrderRoutes.ById, DeleteAsync)
                 .RequireAuthorization(CorePermissions.WorkOrders.Manage);
 

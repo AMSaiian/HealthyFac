@@ -1,10 +1,12 @@
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.UnitTests.UseCases.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Shared.UnitTests.UseCases;
 
+[Feature(TestFeatures.Platform)]
 public sealed class UseCaseRegistrationTests
 {
     [Fact]

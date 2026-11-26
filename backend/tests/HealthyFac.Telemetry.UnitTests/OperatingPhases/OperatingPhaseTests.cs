@@ -1,9 +1,11 @@
 using HealthyFac.Telemetry.Domain.MetricDefinitions;
 using HealthyFac.Telemetry.Domain.OperatingPhases;
 using HealthyFac.Telemetry.UnitTests.OperatingPhases.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.UnitTests.OperatingPhases;
 
+[Feature(TestFeatures.SignalModel)]
 public sealed class OperatingPhaseTests
 {
     [Theory]
@@ -148,7 +150,9 @@ public sealed class OperatingPhaseTests
         var phase = OperatingPhaseTestData.CreatePhase(
             [OperatingPhaseTestData.CreateStatusCondition()],
             [OperatingPhaseTestData.CreateLimit(OperatingPhaseTestData.NumericMetricId)]);
+
         var storedRow = phase.Limits.Single();
+
         var newRow = OperatingPhaseLimit.Create(
             OperatingPhaseTestData.NumericMetricId,
             MetricValueKind.Numeric,

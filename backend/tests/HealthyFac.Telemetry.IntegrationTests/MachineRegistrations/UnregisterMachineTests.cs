@@ -8,10 +8,12 @@ using HealthyFac.Telemetry.IntegrationTests.Intake;
 using HealthyFac.Telemetry.IntegrationTests.MachineRegistrations.Data;
 using HealthyFac.Telemetry.IntegrationTests.OperatingPhases.Data;
 using HealthyFac.Telemetry.IntegrationTests.StatusDefinitions.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.IntegrationTests.MachineRegistrations;
 
 [Collection(TelemetryIntakeCollection.Name)]
+[Feature(TestFeatures.Machines)]
 public sealed class UnregisterMachineTests(TelemetryDatabaseFixture fixture)
 {
     private readonly TelemetryDatabaseFixture _fixture = fixture;
@@ -36,8 +38,10 @@ public sealed class UnregisterMachineTests(TelemetryDatabaseFixture fixture)
         var tenant = _fixture.ArrangeMachineTenant();
         var machineId = await _fixture.CreateStatusDefinitionMachineAsync(tenant);
         var otherMachineId = await _fixture.CreateStatusDefinitionMachineAsync(tenant);
+
         var statusId = await _fixture.CreateStatusDefinitionAsync(
             tenant.CompanyId, machineId, StatusDefinitionTestData.Code);
+
         var otherStatusId = await _fixture.CreateStatusDefinitionAsync(
             tenant.CompanyId, otherMachineId, StatusDefinitionTestData.Code);
 

@@ -75,6 +75,7 @@ public sealed class GetEmployeeScheduleDaysPreHandlerCheck(
     public async Task CheckAsync(GetEmployeeScheduleDaysRequest request, CancellationToken cancellationToken)
     {
         _currentUser.GetActor().EnsureCompany(request.CompanyId);
+
         await request.Scope.EnsureEmployeeReadableAsync(
             _dbContext,
             _ownEmployee,
@@ -107,6 +108,7 @@ public sealed class GetEmployeeScheduleDaysRequestHandler(
     )
     {
         var zone = await _reader.GetZoneAsync(request.CompanyId, cancellationToken);
+
         var shifts = await _reader.LoadAsync(
             request.EmployeeId,
             zone,
@@ -114,6 +116,7 @@ public sealed class GetEmployeeScheduleDaysRequestHandler(
             request.To,
             isTracked: false,
             cancellationToken);
+
         var occupancies = await _occupancyReader.ReadAsync(
             request.CompanyId,
             request.EmployeeId,
@@ -123,6 +126,7 @@ public sealed class GetEmployeeScheduleDaysRequestHandler(
             cancellationToken);
 
         var nowUtc = _timeProvider.GetUtcNow().UtcDateTime;
+
         var days = shifts.Resolve(request.From, request.To)
             .Select(day => new ScheduleDayResponse
             {

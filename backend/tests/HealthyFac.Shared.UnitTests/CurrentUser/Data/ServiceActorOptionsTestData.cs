@@ -4,15 +4,15 @@ namespace HealthyFac.Shared.UnitTests.CurrentUser.Data;
 
 public static class ServiceActorOptionsTestData
 {
-    public static TheoryData<ServiceActorOptions> ValidOptions => new()
-    {
+    public static TheoryData<ServiceActorOptions> ValidOptions =>
+    [
         new ServiceActorOptions(),
         new ServiceActorOptions { AllowedClients = [IncomingTokenTestData.ServiceClientId] },
         new ServiceActorOptions
         {
             AllowedClients = [IncomingTokenTestData.ServiceClientId, ActorClaimsTestData.OtherServiceClientId],
         },
-    };
+    ];
 
     public static TheoryData<ServiceActorOptions, string> InvalidOptionsWithExpectedError => new()
     {

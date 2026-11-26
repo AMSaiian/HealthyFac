@@ -1,11 +1,13 @@
 using HealthyFac.Shared.Application.Filters;
 using HealthyFac.Shared.Application.Grids;
 using HealthyFac.Shared.IntegrationTests.Grids.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.EntityFrameworkCore;
 
 namespace HealthyFac.Shared.IntegrationTests.Grids;
 
 [Collection(GridDatabaseCollection.Name)]
+[Feature(TestFeatures.Persistence)]
 public sealed class GridQueryTests(GridDatabaseFixture fixture)
 {
     private readonly GridDatabaseFixture _fixture = fixture;
@@ -19,6 +21,7 @@ public sealed class GridQueryTests(GridDatabaseFixture fixture)
             Column = GridSortColumn.FromValue(columnName),
             Direction = isDescending ? SortDirection.Descending : SortDirection.Ascending,
         };
+
         var expectedIds = ExpectedOrder(GridTestData.SortGroup, columnName, isDescending);
         await using var dbContext = _fixture.CreateDbContext();
 
@@ -36,11 +39,13 @@ public sealed class GridQueryTests(GridDatabaseFixture fixture)
     {
         var sort = new GridSort<GridSortColumn> { Column = GridSortColumn.At, Direction = SortDirection.Ascending };
         await using var dbContext = _fixture.CreateDbContext();
+
         var query = dbContext.Rows
             .Where(row => row.Group == GridTestData.PagingGroup)
             .ApplySort(sort, GridTestSortMap.Instance);
 
         var pages = new List<GridResponse<Guid>>();
+
         for (var offset = 0; offset < GridTestData.PagedRowCount; offset += GridTestData.PageSize)
         {
             pages.Add(
@@ -62,6 +67,7 @@ public sealed class GridQueryTests(GridDatabaseFixture fixture)
             .Select(row => row.Id)
             .Order(GridTestData.GuidBytewise)
             .ToList();
+
         await using var dbContext = _fixture.CreateDbContext();
 
         var actualIds = await dbContext.Rows
@@ -108,12 +114,14 @@ public sealed class GridQueryTests(GridDatabaseFixture fixture)
     public async Task DateRangeFilter_WithOpenBounds_FiltersInclusiveFromExclusiveTo(int? fromIndex, int? toIndex)
     {
         var range = new DateRangeFilter { From = AtIndex(fromIndex), To = AtIndex(toIndex) };
+
         var expectedIds = _fixture.Rows
             .Where(row => row.Group == GridTestData.DatesGroup)
             .Where(row => (range.From is null || row.At >= range.From) && (range.To is null || row.At < range.To))
             .Select(row => row.Id)
             .Order(GridTestData.GuidBytewise)
             .ToList();
+
         await using var dbContext = _fixture.CreateDbContext();
 
         var actualIds = await dbContext.Rows
@@ -171,7 +179,7 @@ public sealed class GridQueryTests(GridDatabaseFixture fixture)
             return byKey != 0 ? byKey : GridTestData.GuidBytewise.Compare(left.Id, right.Id);
         });
 
-        return rows.Select(row => row.Id).ToList();
+        return [.. rows.Select(row => row.Id)];
     }
 
     private static int CompareKey(string columnName, GridTestEntity left, GridTestEntity right) =>

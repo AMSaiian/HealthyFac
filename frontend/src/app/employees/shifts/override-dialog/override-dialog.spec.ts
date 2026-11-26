@@ -13,7 +13,7 @@ interface DialogInternals {
   setBlocks(blocks: readonly ShiftBlock[]): void;
 }
 
-describe('OverrideDialog', () => {
+describe('OverrideDialog', { tags: ['Shifts'] }, () => {
   const TEMPLATE_DAY: readonly ShiftBlock[] = [{ start: '08:00', end: '17:00' }];
   const OTHER_DAY: readonly ShiftBlock[] = [{ start: '10:00', end: '14:00' }];
 

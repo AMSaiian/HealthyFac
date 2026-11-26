@@ -1,9 +1,11 @@
 using HealthyFac.Core.Application.Drafts;
 using HealthyFac.Core.Application.Drafts.SearchMachineDrafts;
 using HealthyFac.Core.UnitTests.Drafts.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.UnitTests.Drafts;
 
+[Feature(TestFeatures.Drafts)]
 public sealed class DraftScopeValidatorTests
 {
     private static readonly Guid CompanyId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000c01");

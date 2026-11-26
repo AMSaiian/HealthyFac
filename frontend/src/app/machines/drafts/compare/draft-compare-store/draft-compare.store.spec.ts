@@ -30,7 +30,7 @@ const RESPONSE = {
   current: { machineId: 'm1', name: 'Pump', serialNumber: 'SN-1', description: '<p>old</p>', rowVersion: 7 },
 };
 
-describe('DraftCompareStore', () => {
+describe('DraftCompareStore', { tags: ['Drafts'] }, () => {
   function setup(): {
     store: InstanceType<typeof DraftCompareStore>;
     http: HttpTestingController;

@@ -37,6 +37,7 @@ public static class MessagingTestData
     public static List<TimeSpan> ScheduleRetries(OutboxMessage message, int count)
     {
         var delays = new List<TimeSpan>();
+
         for (var attempt = 0; attempt < count; attempt++)
         {
             message.ScheduleRetry(Now, RetryError);
@@ -49,6 +50,7 @@ public static class MessagingTestData
     public static List<TimeSpan> RecordFailures(InboxMessage message, int count)
     {
         var delays = new List<TimeSpan>();
+
         for (var attempt = 0; attempt < count; attempt++)
         {
             message.RecordFailure(Now, RetryError, HighAttemptLimit);

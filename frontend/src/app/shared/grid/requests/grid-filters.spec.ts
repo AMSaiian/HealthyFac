@@ -5,7 +5,7 @@ import { dateRangeFilter, idSetFilter, plainDateRangeFilter, setFilter, textFilt
 const ZONE = 'Europe/Kyiv';
 const DAY = Temporal.PlainDate.from('2026-03-29');
 
-describe('grid filters', () => {
+describe('grid filters', { tags: ['Persistence'] }, () => {
   it('dateRangeFilter_WithDateRange_ConvertsLocalDaysToHalfOpenUtc', () => {
     const body = dateRangeFilter({ from: DAY, to: DAY }, ZONE);
 
@@ -36,22 +36,19 @@ describe('grid filters', () => {
     expect(body).toEqual({ from: '2026-03-29' });
   });
 
-  it('plainDateRangeFilter_WithOnlyTo_SendsTheNextDay', () => {
-    const body = plainDateRangeFilter({ from: null, to: Temporal.PlainDate.from('2026-03-11') });
+  it.each([
+    ['WithOnlyTo_SendsTheNextDay', '2026-03-11', '2026-03-12'],
+    ['WithMonthEnd_RollsToNextMonth', '2026-01-31', '2026-02-01'],
+  ])('plainDateRangeFilter_%s', (_name, to, expected) => {
+    const body = plainDateRangeFilter({ from: null, to: Temporal.PlainDate.from(to) });
 
-    expect(body).toEqual({ to: '2026-03-12' });
+    expect(body).toEqual({ to: expected });
   });
 
   it('plainDateRangeFilter_WithBothDays_SendsHalfOpenRange', () => {
     const body = plainDateRangeFilter({ from: DAY, to: DAY });
 
     expect(body).toEqual({ from: '2026-03-29', to: '2026-03-30' });
-  });
-
-  it('plainDateRangeFilter_WithMonthEnd_RollsToNextMonth', () => {
-    const body = plainDateRangeFilter({ from: null, to: Temporal.PlainDate.from('2026-01-31') });
-
-    expect(body).toEqual({ to: '2026-02-01' });
   });
 
   it('textFilter_WithEmptyText_ReturnsUndefined', () => {

@@ -42,13 +42,14 @@ public sealed class KeycloakAccounts
             string.Format(AccountConstants.OrganizationsPath, options.Realm),
             new JsonObject
             {
-                [propertyName: "name"] = organizationName,
-                [propertyName: "alias"] = organizationName,
-                [propertyName: "enabled"] = true,
-                [propertyName: "description"] = name,
-                [propertyName: "domains"] = new JsonArray(),
+                ["name"] = organizationName,
+                ["alias"] = organizationName,
+                ["enabled"] = true,
+                ["description"] = name,
+                ["domains"] = new JsonArray(),
             },
             cancellationToken);
+
         await response.EnsureSuccessAsync(cancellationToken);
 
         var lastSegment = response.Headers.Location?.Segments.LastOrDefault()?.Trim(trimChar: '/');
@@ -78,6 +79,7 @@ public sealed class KeycloakAccounts
     {
         using var scope = _auth.CreateScope(Actor(_auth));
         var options = scope.ServiceProvider.GetRequiredService<IOptions<KeycloakAdminOptions>>().Value;
+
         var userId = await scope.ServiceProvider.GetRequiredService<IIdentityAdmin>()
             .CreateUserAsync(
                 new NewIdentity
@@ -94,11 +96,12 @@ public sealed class KeycloakAccounts
                 $"{KeycloakAdminRoutes.User(options.Realm, userId)}/{AccountConstants.ResetPasswordSuffix}",
                 new JsonObject
                 {
-                    [propertyName: "type"] = AccountConstants.PasswordCredentialType,
-                    [propertyName: "value"] = password,
-                    [propertyName: "temporary"] = false,
+                    ["type"] = AccountConstants.PasswordCredentialType,
+                    ["value"] = password,
+                    ["temporary"] = false,
                 },
                 cancellationToken);
+
         await response.EnsureSuccessAsync(cancellationToken);
 
         return userId;
@@ -113,19 +116,24 @@ public sealed class KeycloakAccounts
     {
         using var scope = _auth.CreateScope(Actor(_auth));
         var options = scope.ServiceProvider.GetRequiredService<IOptions<KeycloakAdminOptions>>().Value;
+
         var organizationId = await scope.ServiceProvider.GetRequiredService<IIdentityAdmin>()
             .FindOrganizationIdAsync(companyId, cancellationToken);
+
         if (organizationId is null)
         {
             return;
         }
 
         var client = CreateClient(scope);
+
         var membersPath = $"{KeycloakAdminRoutes.OrganizationMembers(options.Realm, organizationId.Value)}"
             + $"?{AccountConstants.MaxQueryParameter}={AccountConstants.MemberPageSize}";
+
         while (true)
         {
             var members = await ReadMembersAsync(client, membersPath, cancellationToken);
+
             if (members.Count == 0)
             {
                 break;
@@ -134,8 +142,9 @@ public sealed class KeycloakAccounts
             foreach (var member in members)
             {
                 using var userResponse = await client.DeleteAsync(
-                    KeycloakAdminRoutes.User(options.Realm, Guid.Parse(member[propertyName: "id"]!.GetValue<string>())),
+                    KeycloakAdminRoutes.User(options.Realm, Guid.Parse(member["id"]!.GetValue<string>())),
                     cancellationToken);
+
                 await userResponse.EnsureSuccessAsync(cancellationToken);
             }
         }
@@ -143,6 +152,7 @@ public sealed class KeycloakAccounts
         using var response = await client.DeleteAsync(
             string.Format(AccountConstants.OrganizationPath, options.Realm, organizationId.Value),
             cancellationToken);
+
         await response.EnsureSuccessAsync(cancellationToken);
     }
 

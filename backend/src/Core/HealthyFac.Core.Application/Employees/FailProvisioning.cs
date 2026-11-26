@@ -49,6 +49,7 @@ public sealed class FailProvisioningRequestHandler(
         var isAlreadyHandled = employee.Status == EmployeeStatus.ProvisioningFailed
             || employee.Status == EmployeeStatus.Active
             || employee.Status == EmployeeStatus.Deactivated;
+
         if (isAlreadyHandled)
         {
             return;

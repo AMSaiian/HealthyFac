@@ -32,7 +32,7 @@ async function respond(
   });
 }
 
-describe('companyGuard', () => {
+describe('companyGuard', { tags: ['Platform'] }, () => {
   it('companyGuard_AfterSuccessfulResponse_ResolvesTrue', async () => {
     const { result, http } = runGuard();
 

@@ -4,9 +4,11 @@ using HealthyFac.Seeder.Machines;
 using HealthyFac.Seeder.People;
 using HealthyFac.Seeder.TelemetryHistory;
 using HealthyFac.Seeder.WorkOrders;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Seeder.UnitTests;
 
+[Feature(TestFeatures.Seeding)]
 public sealed class SeedProgramTests
 {
     [Fact(Explicit = true)]

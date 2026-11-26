@@ -35,6 +35,7 @@ public sealed class ChangeIngestedFileMachineRequestHandler(
     )
     {
         var attempt = await _attemptLock.LockActiveAttemptAsync(request.FileId, request.CompanyId, cancellationToken);
+
         var document = await _dbContext.IngestedDocuments.SingleOrDefaultAsync(
             candidate => candidate.Id == request.FileId && candidate.CompanyId == request.CompanyId,
             cancellationToken);

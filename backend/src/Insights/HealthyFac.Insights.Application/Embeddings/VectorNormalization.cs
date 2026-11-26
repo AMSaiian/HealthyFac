@@ -19,6 +19,7 @@ public static class VectorNormalization
     public static float[] ToUnitLength(ReadOnlySpan<float> vector)
     {
         double sumOfSquares = 0;
+
         foreach (var value in vector)
         {
             sumOfSquares += (double)value * value;
@@ -31,6 +32,7 @@ public static class VectorNormalization
 
         var length = Math.Sqrt(sumOfSquares);
         var scaled = new float[vector.Length];
+
         for (var index = 0; index < vector.Length; index++)
         {
             scaled[index] = (float)(vector[index] / length);

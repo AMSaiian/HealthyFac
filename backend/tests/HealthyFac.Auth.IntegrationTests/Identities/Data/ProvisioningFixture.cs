@@ -49,6 +49,7 @@ public sealed class ProvisioningFixture : IAsyncLifetime, IResetBeforeEachTest
 
         var builder = Host.CreateEmptyApplicationBuilder(new HostApplicationBuilderSettings());
         builder.Configuration.AddInMemoryCollection(Keycloak.Settings);
+
         builder.Configuration.AddInMemoryCollection(
             new Dictionary<string, string?>
             {
@@ -59,18 +60,21 @@ public sealed class ProvisioningFixture : IAsyncLifetime, IResetBeforeEachTest
                 [ProvisioningTestData.PollingIntervalKey] = ProvisioningTestData.PollingIntervalMilliseconds,
                 [ProvisioningTestData.ServiceNameKey] = ServiceName.Auth.Value,
             });
+
         builder.Services.AddApplicationServices();
         builder.Services.AddInfrastructureServices(builder.Configuration, builder.Environment);
 
         var outboxProcessors = builder.Services
             .Where(descriptor => descriptor.ImplementationType?.Name == ProvisioningTestData.OutboxProcessorTypeName)
             .ToList();
+
         foreach (var descriptor in outboxProcessors)
         {
             builder.Services.Remove(descriptor);
         }
 
         _host = builder.Build();
+
         using (var scope = _host.Services.CreateScope())
         {
             var dbContext = scope.ServiceProvider.GetRequiredService<AuthDbContext>();

@@ -1,9 +1,11 @@
 using System.Globalization;
 using HealthyFac.Shared.Domain.Time;
 using HealthyFac.Shared.UnitTests.Time.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.UnitTests.Time;
 
+[Feature(TestFeatures.Platform)]
 public sealed class LocalTimesTests
 {
     [Theory]
@@ -22,6 +24,7 @@ public sealed class LocalTimesTests
                     LocalTimesTestData.UtcFormat,
                     CultureInfo.InvariantCulture,
                     DateTimeStyles.AdjustToUniversal));
+
         result.Kind.Should().Be(DateTimeKind.Utc);
     }
 

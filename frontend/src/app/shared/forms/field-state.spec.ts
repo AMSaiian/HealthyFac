@@ -1,6 +1,6 @@
 import { isFieldInvalid } from './field-state';
 
-describe('isFieldInvalid', () => {
+describe('isFieldInvalid', { tags: ['Platform'] }, () => {
   it.each([
     ['before touch', { isInvalid: true, isTouched: false }, false],
     ['after touch', { isInvalid: true, isTouched: true }, true],

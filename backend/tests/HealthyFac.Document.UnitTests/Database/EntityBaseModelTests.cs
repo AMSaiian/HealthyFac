@@ -1,12 +1,14 @@
 using HealthyFac.Document.Infrastructure.Database;
 using HealthyFac.Document.UnitTests.Database.Data;
 using HealthyFac.Shared.Domain.Entities;
+using HealthyFac.Testing.Features;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace HealthyFac.Document.UnitTests.Database;
 
+[Feature(TestFeatures.Persistence)]
 public sealed class EntityBaseModelTests
 {
     private const string UnusedConnectionString = "Host=unused;Database=unused";

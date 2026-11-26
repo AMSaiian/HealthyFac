@@ -1,8 +1,11 @@
 using HealthyFac.Core.Messaging.Drafts;
 using HealthyFac.Core.UnitTests.Messaging.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.UnitTests.Messaging;
 
+[Feature(TestFeatures.Drafts)]
+[Feature(TestFeatures.Ingest)]
 public sealed class DraftsResolvedValidatorTests
 {
     private static readonly Guid Id = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000d02");

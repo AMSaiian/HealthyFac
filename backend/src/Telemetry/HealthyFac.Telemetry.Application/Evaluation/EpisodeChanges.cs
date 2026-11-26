@@ -49,7 +49,7 @@ public sealed class EpisodeChanges
         _outbox = outbox;
         _machineId = machineId;
         _companyId = companyId;
-        _openEpisodes = openEpisodes.ToList();
+        _openEpisodes = [.. openEpisodes];
         _metricKeys = metricKeys;
         _statusCodes = statusCodes;
         _phaseCodes = phaseCodes;
@@ -106,13 +106,16 @@ public sealed class EpisodeChanges
         {
             case RuleDecisionKind.Open when episode is null:
                 Open(rule, metricId, statusId, decision.Severity!, at, phaseId, snapshot);
+
                 break;
             case RuleDecisionKind.Escalate when episode is not null:
                 episode.Escalate(at, snapshot);
                 Queue(episode, at);
+
                 break;
             case RuleDecisionKind.Resolve when episode is not null:
                 Resolve(episode, at, snapshot);
+
                 break;
         }
     }

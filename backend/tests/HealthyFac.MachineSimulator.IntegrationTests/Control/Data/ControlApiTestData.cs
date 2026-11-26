@@ -15,6 +15,7 @@ public static class ControlApiTestData
         get
         {
             var data = new TheoryData<string>();
+
             foreach (var module in ModuleName.All)
             {
                 data.Add(module.Value);

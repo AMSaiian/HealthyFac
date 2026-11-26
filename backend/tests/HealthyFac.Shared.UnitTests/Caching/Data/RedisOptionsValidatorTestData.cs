@@ -6,8 +6,8 @@ public static class RedisOptionsValidatorTestData
 {
     private const string ValidConnectionString = "localhost:6379,password=x";
 
-    public static TheoryData<RedisOptions> ValidTimeouts => new()
-    {
+    public static TheoryData<RedisOptions> ValidTimeouts =>
+    [
         new RedisOptions { ConnectionString = ValidConnectionString },
         new RedisOptions
         {
@@ -15,7 +15,7 @@ public static class RedisOptionsValidatorTestData
             ConnectTimeoutMilliseconds = RedisConstants.MinTimeoutMilliseconds,
             OperationTimeoutMilliseconds = RedisConstants.MaxTimeoutMilliseconds,
         },
-    };
+    ];
 
     public static TheoryData<RedisOptions, string> InvalidTimeoutsWithExpectedError => new()
     {

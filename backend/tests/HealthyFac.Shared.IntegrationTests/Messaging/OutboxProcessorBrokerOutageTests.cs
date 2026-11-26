@@ -1,9 +1,11 @@
 using HealthyFac.Shared.Infrastructure.Messaging.Sending;
 using HealthyFac.Shared.IntegrationTests.Messaging.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.IntegrationTests.Messaging;
 
 [Collection(MessagingBrokerOutageCollection.Name)]
+[Feature(TestFeatures.Messaging)]
 public sealed class OutboxProcessorBrokerOutageTests(TransportCollectionFixture fixture)
 {
     private readonly TransportCollectionFixture _fixture = fixture;
@@ -14,6 +16,7 @@ public sealed class OutboxProcessorBrokerOutageTests(TransportCollectionFixture 
         await _fixture.AddPendingOutboxRowsAsync(
             OutboxProcessorTestData.OutageBatchMessageType,
             OutboxProcessorTestData.OutageBatchRowCount);
+
         await _fixture.StopBrokerAsync();
         var processor = _fixture.Create<OutboxProcessor>();
 
@@ -24,6 +27,7 @@ public sealed class OutboxProcessorBrokerOutageTests(TransportCollectionFixture 
         var failedRow = rows.Should()
             .ContainSingle(row => row.AttemptCount == OutboxProcessorTestData.FailedAttemptCount)
             .Which;
+
         failedRow.ProcessedOn.Should().BeNull();
         failedRow.Error.Should().NotBeNullOrWhiteSpace();
         failedRow.NextAttemptOn.Should().BeAfter(InboxTestData.Now);

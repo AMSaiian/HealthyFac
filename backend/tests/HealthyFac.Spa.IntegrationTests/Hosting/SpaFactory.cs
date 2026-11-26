@@ -35,6 +35,7 @@ public sealed class SpaFactory : WebApplicationFactory<Program>
         _settings = settings ?? new Dictionary<string, string>();
         _contentRoot = Path.Combine(Path.GetTempPath(), $"healthyfac-spa-{Guid.NewGuid():N}");
         Directory.CreateDirectory(Path.Combine(_contentRoot, path2: "i18n"));
+
         if (hasIndexFile)
         {
             File.WriteAllText(
@@ -47,6 +48,7 @@ public sealed class SpaFactory : WebApplicationFactory<Program>
         File.WriteAllText(Path.Combine(_contentRoot, LookalikeFileName), contents: "x");
         File.WriteAllText(Path.Combine(_contentRoot, UnhashedFileName), contents: "{}");
         File.WriteAllText(Path.Combine(_contentRoot, SilentSsoFileName), contents: "<html></html>");
+
         File.WriteAllText(
             Path.Combine(_contentRoot, path2: "config.json"),
             contents: "{\"apiBaseUrl\":\"https://file.example.com\"}");
@@ -73,10 +75,11 @@ public sealed class SpaFactory : WebApplicationFactory<Program>
         }
     }
 
-    protected override void Dispose(bool isDisposing)
+    protected override void Dispose(bool disposing)
     {
-        base.Dispose(isDisposing);
-        if (isDisposing && Directory.Exists(_contentRoot))
+        base.Dispose(disposing);
+
+        if (disposing && Directory.Exists(_contentRoot))
         {
             Directory.Delete(_contentRoot, recursive: true);
         }

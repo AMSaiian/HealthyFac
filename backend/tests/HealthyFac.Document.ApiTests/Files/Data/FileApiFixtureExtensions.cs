@@ -15,6 +15,7 @@ public static class FileApiFixtureExtensions
         {
             using var scope = fixture.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<IDocumentDbContext>();
+
             var registration = new MachineRegistration(
                 Guid.CreateVersion7(), companyId ?? fixture.CompanyId, name: "Test Machine");
 
@@ -29,6 +30,7 @@ public static class FileApiFixtureExtensions
             using var scope = fixture.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<IDocumentDbContext>();
             var machineId = encryptedMachineId is null ? (Guid?)null : fixture.IdEncryptor.Decrypt(encryptedMachineId);
+
             var file = new FileRef(
                 fixture.CompanyId,
                 machineId,

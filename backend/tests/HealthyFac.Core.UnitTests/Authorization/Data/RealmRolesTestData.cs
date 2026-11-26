@@ -18,12 +18,11 @@ public static class RealmRolesTestData
     private static readonly string[] ServiceRoleNames = ["insights-service"];
 
     public static IReadOnlyList<string> ReadCoreClientRoles() =>
-        ReadRoles()[ClientKey]![CoreClientId]!.AsArray()
-            .Select(role => role![NameKey]!.GetValue<string>())
-            .ToList();
+        [.. ReadRoles()[ClientKey]![CoreClientId]!.AsArray().Select(role => role![NameKey]!.GetValue<string>())];
 
     public static IReadOnlyList<JobRole> ReadJobRoles() =>
-        ReadRoles()[RealmKey]!.AsArray()
+    [
+        .. ReadRoles()[RealmKey]!.AsArray()
             .Where(role => !ServiceRoleNames.Contains(role![NameKey]!.GetValue<string>()))
             .Select(role => new JobRole
             {
@@ -33,8 +32,8 @@ public static class RealmRolesTestData
                         .Select(permission => permission!.GetValue<string>())
                         .ToList()
                     ?? [],
-            })
-            .ToList();
+            }),
+    ];
 
     private static JsonNode ReadRoles() =>
         JsonNode.Parse(File.ReadAllText(KeycloakFiles.Find(RealmFileDirectory, RealmFileName)))![RolesKey]!;

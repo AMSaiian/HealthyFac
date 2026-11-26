@@ -68,7 +68,7 @@ function setup(
   return { store, api, saved, messages };
 }
 
-describe('StatusDefinitionDrawerStore', () => {
+describe('StatusDefinitionDrawerStore', { tags: ['SignalModel'] }, () => {
   it('save_WithNewStatusDefinition_CreatesWithTrimmedBodyAndEmitsSaved', () => {
     const { store, api, saved, messages } = setup();
     store.start(MACHINE_ID, null);

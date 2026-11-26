@@ -178,7 +178,7 @@ function readSources(): Sources {
   return Object.fromEntries(Object.entries(raw).map(([path, text]) => [relativePath(path), text]));
 }
 
-describe('store slices', () => {
+describe('store slices', { tags: ['Conventions'] }, () => {
   const sources = readSources();
   const paths = Object.keys(sources);
 
@@ -211,7 +211,7 @@ describe('store slices', () => {
   });
 });
 
-describe('store slices checks', () => {
+describe('store slices checks', { tags: ['Conventions'] }, () => {
   it('storeSlices_SlicesWithoutOwnState_FlagsASliceWithoutWithState', () => {
     const sources = {
       'board/board.filter.slice.ts': `export function withBoardFilter() { return signalStoreFeature(); }`,
@@ -275,25 +275,13 @@ describe('store slices checks', () => {
     expect(slicesOwningOnlyStatusFlags(sources)).toEqual([]);
   });
 
-  it('everyStore_ComposesStoreDevtools_FlagsAStoreWithoutIt', () => {
+  it.each([
+    ['AStoreWithoutIt', 'signalStore(withToasts())'],
+    ['ACallThatIsNotLast', "signalStore(withStoreDevtools('machines-grid'), withToasts())"],
+    ['ACallWithAnotherName', "signalStore(withToasts(), withStoreDevtools('machines'))"],
+  ])('everyStore_ComposesStoreDevtools_Flags%s', (_name, call) => {
     const sources = {
-      'machines/list/machines-grid.store.ts': `export const MachinesGridStore = signalStore(withToasts());`,
-    };
-
-    expect(storesWithoutDevtools(sources)).toEqual(['machines/list/machines-grid.store.ts']);
-  });
-
-  it('everyStore_ComposesStoreDevtools_FlagsACallThatIsNotLast', () => {
-    const sources = {
-      'machines/list/machines-grid.store.ts': `export const MachinesGridStore = signalStore(withStoreDevtools('machines-grid'), withToasts());`,
-    };
-
-    expect(storesWithoutDevtools(sources)).toEqual(['machines/list/machines-grid.store.ts']);
-  });
-
-  it('everyStore_ComposesStoreDevtools_FlagsACallWithAnotherName', () => {
-    const sources = {
-      'machines/list/machines-grid.store.ts': `export const MachinesGridStore = signalStore(withToasts(), withStoreDevtools('machines'));`,
+      'machines/list/machines-grid.store.ts': `export const MachinesGridStore = ${call};`,
     };
 
     expect(storesWithoutDevtools(sources)).toEqual(['machines/list/machines-grid.store.ts']);

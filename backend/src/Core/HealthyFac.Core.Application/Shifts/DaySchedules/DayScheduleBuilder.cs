@@ -36,17 +36,20 @@ public sealed class DayScheduleBuilder(ICoreDbContext dbContext, DayScheduleRead
     )
     {
         var zone = await _reader.GetZoneAsync(companyId, cancellationToken);
+
         var versions = await _dbContext.ShiftTemplateVersions
             .Where(version => employeeIds.Contains(version.EmployeeId))
             .InForceBetween(date, date)
             .AsNoTracking()
             .Include(version => version.Blocks)
             .ToListAsync(cancellationToken);
+
         var overrides = await _dbContext.ShiftOverrides
             .AsNoTracking()
             .Include(shiftOverride => shiftOverride.Blocks)
             .Where(shiftOverride => employeeIds.Contains(shiftOverride.EmployeeId) && shiftOverride.Date == date)
             .ToListAsync(cancellationToken);
+
         var workOrders = await ReadWorkOrdersAsync(companyId, employeeIds, date, zone, cancellationToken);
 
         return employeeIds.ToDictionary(
@@ -59,7 +62,7 @@ public sealed class DayScheduleBuilder(ICoreDbContext dbContext, DayScheduleRead
                     zone,
                     versions.Where(version => version.EmployeeId == employeeId),
                     overrides.SingleOrDefault(shiftOverride => shiftOverride.EmployeeId == employeeId)),
-                workOrders.Where(order => order.AssigneeId == employeeId).Select(order => order.Response).ToList()));
+                [.. workOrders.Where(order => order.AssigneeId == employeeId).Select(order => order.Response)]));
     }
 
     private static DayScheduleResponse ToResponse(
@@ -73,15 +76,17 @@ public sealed class DayScheduleBuilder(ICoreDbContext dbContext, DayScheduleRead
             Date = date,
             TimeZoneId = zone.Id,
             Source = day.Source,
-            Blocks = day.Blocks
-                .Select(block => new DayScheduleBlockResponse
-                {
-                    StartLocal = block.Start,
-                    EndLocal = block.End,
-                    StartUtc = block.StartUtc,
-                    EndUtc = block.EndUtc,
-                })
-                .ToList(),
+            Blocks =
+            [
+                .. day.Blocks
+                    .Select(block => new DayScheduleBlockResponse
+                    {
+                        StartLocal = block.Start,
+                        EndLocal = block.End,
+                        StartUtc = block.StartUtc,
+                        EndUtc = block.EndUtc,
+                    }),
+            ],
             WorkOrders = workOrders,
         };
 
@@ -123,7 +128,9 @@ public sealed class DayScheduleBuilder(ICoreDbContext dbContext, DayScheduleRead
                 })
             .ToListAsync(cancellationToken);
 
-        return rows.Select(row =>
+        return
+        [
+            .. rows.Select(row =>
             {
                 var plannedEndUtc = row.PlannedStartUtc!.Value + row.Estimate;
                 var isLateCompletion = row.Status == WorkOrderStatus.Completed && row.ChangedAt > plannedEndUtc;
@@ -146,8 +153,8 @@ public sealed class DayScheduleBuilder(ICoreDbContext dbContext, DayScheduleRead
                         RowVersion = row.RowVersion,
                     },
                 };
-            })
-            .ToList();
+            }),
+        ];
     }
 
     private sealed class AssignedWorkOrder

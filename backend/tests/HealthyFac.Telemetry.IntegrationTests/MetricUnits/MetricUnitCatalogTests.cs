@@ -1,10 +1,12 @@
 using HealthyFac.Telemetry.IntegrationTests.Database.Data;
 using HealthyFac.Telemetry.IntegrationTests.MetricUnits.Data;
 using HealthyFac.Telemetry.IntegrationTests.StatusDefinitions;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.IntegrationTests.MetricUnits;
 
 [Collection(TelemetryDefinitionsCollection.Name)]
+[Feature(TestFeatures.SignalModel)]
 public sealed class MetricUnitCatalogTests(TelemetryDatabaseFixture fixture)
 {
     private readonly TelemetryDatabaseFixture _fixture = fixture;
@@ -61,6 +63,6 @@ public sealed class MetricUnitCatalogTests(TelemetryDatabaseFixture fixture)
 
         response.Kinds.Select(kind => kind.Name).Should().BeInAscendingOrder(StringComparer.Ordinal);
         temperature.Units.Select(unit => unit.Name).Should().Equal("DegreeCelsius", "DegreeFahrenheit", "Kelvin");
-        temperature.Units[index: 0].Abbreviation.Should().Be(MetricUnitTestData.CelsiusAbbreviation);
+        temperature.Units[0].Abbreviation.Should().Be(MetricUnitTestData.CelsiusAbbreviation);
     }
 }

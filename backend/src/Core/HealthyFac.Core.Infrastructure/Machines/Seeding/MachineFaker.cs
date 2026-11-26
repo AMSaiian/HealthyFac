@@ -48,6 +48,7 @@ internal sealed class MachineFaker : Faker<Machine>
     {
         UseSeed(seed);
         var zone = timeZoneId is null ? TimeZoneInfo.Utc : TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
+
         CustomInstantiator(faker =>
         {
             var firstStartedAt = now
@@ -55,6 +56,7 @@ internal sealed class MachineFaker : Faker<Machine>
                     faker.Random.Double(
                         MinStartDaysBeforeNow,
                         MaxStartDaysBeforeNow));
+
             var machine = new Machine(
                 companyId,
                 GatewayIds.Create(),
@@ -69,6 +71,7 @@ internal sealed class MachineFaker : Faker<Machine>
 
             var changedStates =
                 ChangedStatesByCycleIndex[faker.IndexFaker % ChangedStatesByCycleIndex.Count];
+
             var previousStartedAt = firstStartedAt;
 
             foreach (var state in changedStates)
@@ -77,6 +80,7 @@ internal sealed class MachineFaker : Faker<Machine>
                     * faker.Random.Double(
                         MinChangeShare,
                         MaxChangeShare);
+
                 machine.ChangeState(state, previousStartedAt);
             }
 

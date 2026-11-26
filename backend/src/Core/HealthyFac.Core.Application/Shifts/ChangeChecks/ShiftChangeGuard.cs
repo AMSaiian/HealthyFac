@@ -48,9 +48,10 @@ public sealed class ShiftChangeGuard(ICoreDbContext dbContext, TimeProvider time
         var today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(nowUtc, zone));
         var todayBefore = before.SingleOrDefault(day => day.Date == today);
         var todayAfter = after.SingleOrDefault(day => day.Date == today);
+
         if (todayBefore is not null
             && todayAfter is not null
-            && !PastBlocks.AreUnchanged(todayBefore.Blocks.ToList(), todayAfter.Blocks.ToList(), nowUtc))
+            && !PastBlocks.AreUnchanged([.. todayBefore.Blocks], [.. todayAfter.Blocks], nowUtc))
         {
             throw new UnprocessableException(ShiftErrors.Rejections.PastBlockChanged);
         }
@@ -61,6 +62,7 @@ public sealed class ShiftChangeGuard(ICoreDbContext dbContext, TimeProvider time
         }
 
         var affected = await FindAffectedAsync(companyId, employeeId, after, nowUtc, cancellationToken);
+
         if (affected.Count > 0)
         {
             throw new UnprocessableException(ShiftErrors.Rejections.WorkOrdersOutsideShift)
@@ -99,24 +101,26 @@ public sealed class ShiftChangeGuard(ICoreDbContext dbContext, TimeProvider time
                 })
             .ToListAsync(cancellationToken);
 
-        return scheduled
-            .Select(order => (Order: order, Date: DateOnly.FromDateTime(order.PlannedStartLocal!.Value)))
-            .Where(candidate => candidate.Date >= firstDate && candidate.Date <= lastDate)
-            .Where(candidate => !SlotRules.FitsOneBlock(
-                Occupancy.Of(
-                    candidate.Order.Id,
-                    candidate.Order.PlannedStartUtc!.Value,
-                    candidate.Order.Estimate,
-                    completedAtUtc: null),
-                after.Single(day => day.Date == candidate.Date)))
-            .OrderBy(candidate => candidate.Order.PlannedStartUtc)
-            .Take(ShiftValidationConstants.MaxAffectedWorkOrders)
-            .Select(candidate => new AffectedWorkOrder
-            {
-                Id = candidate.Order.Id,
-                Title = candidate.Order.Title,
-                PlannedStartLocal = candidate.Order.PlannedStartLocal!.Value,
-            })
-            .ToList();
+        return
+        [
+            .. scheduled
+                .Select(order => (Order: order, Date: DateOnly.FromDateTime(order.PlannedStartLocal!.Value)))
+                .Where(candidate => candidate.Date >= firstDate && candidate.Date <= lastDate)
+                .Where(candidate => !SlotRules.FitsOneBlock(
+                    Occupancy.Of(
+                        candidate.Order.Id,
+                        candidate.Order.PlannedStartUtc!.Value,
+                        candidate.Order.Estimate,
+                        completedAtUtc: null),
+                    after.Single(day => day.Date == candidate.Date)))
+                .OrderBy(candidate => candidate.Order.PlannedStartUtc)
+                .Take(ShiftValidationConstants.MaxAffectedWorkOrders)
+                .Select(candidate => new AffectedWorkOrder
+                {
+                    Id = candidate.Order.Id,
+                    Title = candidate.Order.Title,
+                    PlannedStartLocal = candidate.Order.PlannedStartLocal!.Value,
+                }),
+        ];
     }
 }

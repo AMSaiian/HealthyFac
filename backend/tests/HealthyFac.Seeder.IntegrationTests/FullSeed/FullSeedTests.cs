@@ -10,10 +10,12 @@ using HealthyFac.Seeder.IntegrationTests.Relay.Data;
 using HealthyFac.Seeder.IntegrationTests.TelemetryHistory.Data;
 using HealthyFac.Seeder.IntegrationTests.WorkOrders.Data;
 using HealthyFac.Seeder.Moments;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Seeder.IntegrationTests.FullSeed;
 
 [Collection(SeederCollection.Name)]
+[Feature(TestFeatures.Seeding)]
 public sealed class FullSeedTests(SeederFixture fixture)
 {
     private readonly SeederFixture _fixture = fixture;
@@ -42,35 +44,43 @@ public sealed class FullSeedTests(SeederFixture fixture)
         failures.Should().BeEmpty(name);
         messageCounts.Should().BeEmpty();
         company.Id.Should().Be(PeopleTestData.CompanyId);
+
         employees.Should()
             .HaveCount(FullSeedTestData.EmployeeCount)
             .And.OnlyContain(employee => employee.Status == EmployeeStatus.Active);
+
         invites.Count(invite => invite.AcceptedAt is not null).Should().Be(FullSeedTestData.EmployeeCount);
         invites.Count(invite => invite.AcceptedAt is null).Should().Be(FullSeedTestData.OpenInviteCount);
         templateCount.Should().Be(FullSeedTestData.TemplateCount);
         overrides.Should().HaveCount(FullSeedTestData.OverrideCount);
         machines.Should().HaveCount(FullSeedTestData.MachineCount);
         machineDrafts.Should().HaveCount(FullSeedTestData.MachineDraftCount);
+
         machineDrafts.Count(draft => draft.State == DraftState.Applied)
             .Should()
             .Be(FullSeedTestData.AppliedMachineDraftCount);
+
         workOrderDraft.Id.Should().Be(CasesTestData.DraftId);
         caseSignal.MetricKey.Should().Be(CasesTestData.SignalMetricKey);
         caseSignal.Value.Should().Be(CasesTestData.SignalValue);
         caseSignal.Limit.Should().Be(CasesTestData.SignalLimit);
         workOrders.Should().HaveCount(FullSeedTestData.WorkOrderCount);
         var coupling = workOrders.Single(order => order.Title == WorkOrdersTestData.PumpCouplingTitle);
+
         var completedAt = SeedCalendar.ToUtc(
             RelativeMoment.Parse(WorkOrdersTestData.PumpCouplingCompletedAt),
             anchor,
             TimeZoneInfo.FindSystemTimeZoneById(PeopleTestData.ZoneId));
+
         coupling.Current.Status.Should().Be(WorkOrderStatus.Completed);
         coupling.Current.CreatedAt.Should().BeCloseTo(completedAt.UtcDateTime, WorkOrdersTestData.MomentTolerance);
         completedAt.UtcDateTime.Should().BeBefore(coupling.Current.PlannedStartUtc!.Value + coupling.Current.Estimate);
+
         workOrders.Select(order => order.Title)
             .Should()
             .NotContain(
                 [TelemetryHistorySeedTestData.LatheWorkOrderTitle, TelemetryHistorySeedTestData.PumpWorkOrderTitle]);
+
         workOrders.GroupBy(order => order.Current.Status)
             .ToDictionary(group => group.Key, group => group.Count())
             .Should()

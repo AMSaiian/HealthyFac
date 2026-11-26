@@ -19,7 +19,7 @@ function item(id: string, kind: DraftKind): MachineDraftGridItem {
   };
 }
 
-describe('withSelected', () => {
+describe('withSelected', { tags: ['Drafts'] }, () => {
   it('withSelected_CheckedThenUnchecked_KeepsOtherChecksAndLeavesTheInputUntouched', () => {
     const first = item('d1', DraftKind.Metric);
     const second = item('d2', DraftKind.Status);
@@ -32,7 +32,7 @@ describe('withSelected', () => {
   });
 });
 
-describe('toApplyList', () => {
+describe('toApplyList', { tags: ['Drafts'] }, () => {
   it('toApplyList_WithMixedKinds_PutsMachineDraftsFirstThenMetricsThenStatuses', () => {
     const items = [item('s1', DraftKind.Status), item('m1', DraftKind.Metric), item('md', DraftKind.Machine)];
 

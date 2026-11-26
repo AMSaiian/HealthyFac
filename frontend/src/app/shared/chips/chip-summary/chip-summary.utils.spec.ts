@@ -9,11 +9,14 @@ import {
 const GAP = 4;
 const MORE = 30;
 
-describe('labelChipsOf', () => {
-  it('labelChipsOf_WithAKnownValue_ShowsTheOptionLabel', () => {
-    const chips = labelChipsOf(['repair'], [{ value: 'repair', label: 'Repair' }]);
+describe('labelChipsOf', { tags: ['Platform'] }, () => {
+  it.each([
+    ['AKnownValue_ShowsTheOptionLabel', 'repair', 'Repair'],
+    ['AValueWithoutOption_ShowsTheValue', 'unknown', 'unknown'],
+  ])('labelChipsOf_With%s', (_name, value, expected) => {
+    const chips = labelChipsOf([value], [{ value: 'repair', label: 'Repair' }]);
 
-    expect(chips.map((chip) => chip.label)).toEqual(['Repair']);
+    expect(chips.map((chip) => chip.label)).toEqual([expected]);
   });
 
   it('labelChipsOf_WithValuesInClickOrder_ReturnsThemInOptionOrder', () => {
@@ -34,41 +37,26 @@ describe('labelChipsOf', () => {
 
     expect(chips[0].severity).toBe('info');
   });
+});
 
-  it('labelChipsOf_WithAValueWithoutOption_ShowsTheValue', () => {
-    const chips = labelChipsOf(['unknown'], [{ value: 'repair', label: 'Repair' }]);
-
-    expect(chips.map((chip) => chip.label)).toEqual(['unknown']);
+describe('chipGapOf', { tags: ['Platform'] }, () => {
+  it.each([
+    ['TextAppearance_IsZeroBecauseTheSeparatorsAreInTheWidths', 'text', 0],
+    ['TagAppearance_IsTheColumnGap', 'tag', GAP],
+  ] as const)('chipGapOf_With%s', (_name, appearance, expected) => {
+    expect(chipGapOf(appearance, GAP)).toBe(expected);
   });
 });
 
-describe('chipGapOf', () => {
-  it('chipGapOf_WithTextAppearance_IsZeroBecauseTheSeparatorsAreInTheWidths', () => {
-    expect(chipGapOf('text', GAP)).toBe(0);
-  });
+describe('fitChipCount', { tags: ['Platform'] }, () => {
+  it.each([
+    ['WhenAllChipsFitWithoutTheMoreChip_ShowsAll', 100, [40, 40], 2],
+    ['WhenOneChipTooMany_ShowsTheMostThatFitNextToTheMoreChip', 100, [30, 30, 40], 2],
+    ['WhenNoChipFitsNextToTheMoreChip_ShowsNone', 50, [40, 40], 0],
+  ])('fitChipCount_%s', (_name, availableWidth, chipWidths, expected) => {
+    const count = fitChipCount({ availableWidth, chipWidths, gap: GAP, moreWidth: MORE });
 
-  it('chipGapOf_WithTagAppearance_IsTheColumnGap', () => {
-    expect(chipGapOf('tag', GAP)).toBe(GAP);
-  });
-});
-
-describe('fitChipCount', () => {
-  it('fitChipCount_WhenAllChipsFitWithoutTheMoreChip_ShowsAll', () => {
-    const count = fitChipCount({ availableWidth: 100, chipWidths: [40, 40], gap: GAP, moreWidth: MORE });
-
-    expect(count).toBe(2);
-  });
-
-  it('fitChipCount_WhenOneChipTooMany_ShowsTheMostThatFitNextToTheMoreChip', () => {
-    const count = fitChipCount({ availableWidth: 100, chipWidths: [30, 30, 40], gap: GAP, moreWidth: MORE });
-
-    expect(count).toBe(2);
-  });
-
-  it('fitChipCount_WhenNoChipFitsNextToTheMoreChip_ShowsNone', () => {
-    const count = fitChipCount({ availableWidth: 50, chipWidths: [40, 40], gap: GAP, moreWidth: MORE });
-
-    expect(count).toBe(0);
+    expect(count).toBe(expected);
   });
 
   it('fitChipCount_WhenTheChipsFillTheWidthExactly_ShowsAllAndOnePixelLessShowsFewer', () => {
@@ -80,7 +68,7 @@ describe('fitChipCount', () => {
   });
 });
 
-describe('toChips', () => {
+describe('toChips', { tags: ['Platform'] }, () => {
   it('toChips_WithValuesInClickOrder_ReturnsThemInOptionOrder', () => {
     const chips = toChips(['c', 'a'], 'x-', (value) => value.toUpperCase(), ['a', 'b', 'c']);
 
@@ -91,7 +79,7 @@ describe('toChips', () => {
   });
 });
 
-describe('summarizeChips', () => {
+describe('summarizeChips', { tags: ['Platform'] }, () => {
   it('summarizeChips_WithSomeChipsHidden_CountsTheRestAndListsAllInTheTooltip', () => {
     const chips = toChips(['a', 'b', 'c'], 'x-', (value) => value.toUpperCase(), ['a', 'b', 'c']);
 

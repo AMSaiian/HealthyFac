@@ -3,10 +3,13 @@ using HealthyFac.Seeder.IntegrationTests.Hosting;
 using HealthyFac.Seeder.IntegrationTests.Ingest.Data;
 using HealthyFac.Seeder.IntegrationTests.Machines.Data;
 using HealthyFac.Seeder.IntegrationTests.People.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Seeder.IntegrationTests.Machines;
 
 [Collection(SeederCollection.Name)]
+[Feature(TestFeatures.Seeding)]
+[Feature(TestFeatures.Machines)]
 public sealed class MachinesSeedTests(SeederFixture fixture)
 {
     private readonly SeederFixture _fixture = fixture;
@@ -18,15 +21,19 @@ public sealed class MachinesSeedTests(SeederFixture fixture)
 
         var machines = await _fixture.LoadMachinesAsync();
         var drafts = await _fixture.LoadMachineDraftsAsync();
+
         var goLiveOn = DateOnly.FromDateTime(
             PeopleTestData.Anchor.UtcDateTime.AddDays(-MachinesTestData.GoLiveDaysBefore));
+
         machines.Should().HaveCount(MachinesTestData.MachineCount);
         machines.Should().OnlyContain(machine => machine.ExpectedGoLiveOn == goLiveOn);
         var compressor = machines.Single(machine => machine.Name == MachinesTestData.CompressorName);
+
         compressor.StateHistory.OrderBy(history => history.StartedAt)
             .Select(history => history.State)
             .Should()
             .Equal(MachinesTestData.CompressorStates);
+
         drafts.Count(draft => draft.State == DraftState.Applied).Should().Be(MachinesTestData.MachineCount);
         drafts.Count(draft => draft.State == DraftState.Pending).Should().Be(MachinesTestData.MachineCount);
     }
@@ -56,10 +63,12 @@ public sealed class MachinesSeedTests(SeederFixture fixture)
         var files = await _fixture.LoadTiedFilesAsync();
         var machines = await _fixture.LoadMachinesAsync();
         files.Count(file => file.MachineId is not null).Should().Be(MachinesTestData.MachineCount);
+
         files.Where(file => file.MachineId is not null)
             .Select(file => file.MachineId!.Value)
             .Should()
             .BeEquivalentTo(machines.Select(machine => machine.Id));
+
         files.Count(file => file.MachineId is null).Should().Be(MachinesTestData.MachineCount);
     }
 

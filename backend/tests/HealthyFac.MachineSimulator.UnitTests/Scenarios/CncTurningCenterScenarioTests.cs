@@ -2,9 +2,11 @@ using HealthyFac.MachineSimulator.Scenarios.Curves;
 using HealthyFac.MachineSimulator.Scenarios.Modules;
 using HealthyFac.MachineSimulator.Scenarios.Presets;
 using HealthyFac.MachineSimulator.UnitTests.Scenarios.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.MachineSimulator.UnitTests.Scenarios;
 
+[Feature(TestFeatures.Simulation)]
 public sealed class CncTurningCenterScenarioTests
 {
     private readonly CncTurningCenterScenario _scenario = new();
@@ -18,11 +20,13 @@ public sealed class CncTurningCenterScenarioTests
 
         sample.IsRunning.Should().BeTrue();
         sample.StatusCodes.Should().Equal(CncTurningCenterScenarioTestData.CuttingCode);
-        sample.Values[key: "door.open"].Should().Be(expected: false);
-        sample.Values[key: "spindle.mode"].Should().Be(expected: "auto");
-        ((double)sample.Values[key: "spindle.speed"]).Should()
+        sample.Values["door.open"].Should().Be(expected: false);
+        sample.Values["spindle.mode"].Should().Be(expected: "auto");
+
+        ((double)sample.Values["spindle.speed"]).Should()
             .BeApproximately(expectedValue: 3000, 3000 * ValueNoise.MaxShare);
-        ((double)sample.Values[key: "spindle.vibration"]).Should()
+
+        ((double)sample.Values["spindle.vibration"]).Should()
             .BeApproximately(expectedValue: 1.1, 1.1 * ValueNoise.MaxShare);
     }
 
@@ -34,8 +38,8 @@ public sealed class CncTurningCenterScenarioTests
         var sample = _scenario.Sample(context);
 
         sample.StatusCodes.Should().Equal(CncTurningCenterScenarioTestData.PartChangeCode);
-        sample.Values[key: "door.open"].Should().Be(expected: true);
-        sample.Values[key: "spindle.speed"].Should().Be(expected: 0d);
+        sample.Values["door.open"].Should().Be(expected: true);
+        sample.Values["spindle.speed"].Should().Be(expected: 0d);
     }
 
     [Theory]
@@ -49,7 +53,7 @@ public sealed class CncTurningCenterScenarioTests
 
         var sample = _scenario.Sample(context);
 
-        ((double)sample.Values[key: "spindle.temperature"])
+        ((double)sample.Values["spindle.temperature"])
             .Should()
             .BeApproximately(expected, expected * CncTurningCenterScenarioTestData.Tolerance, caseName);
     }
@@ -83,8 +87,8 @@ public sealed class CncTurningCenterScenarioTests
 
         sample.IsRunning.Should().BeFalse();
         sample.StatusCodes.Should().BeEquivalentTo("A101", "A111");
-        sample.Values[key: "spindle.speed"].Should().Be(expected: 0d);
-        sample.Values[key: "spindle.mode"].Should().Be(expected: "off");
+        sample.Values["spindle.speed"].Should().Be(expected: 0d);
+        sample.Values["spindle.mode"].Should().Be(expected: "off");
     }
 
     [Fact]
@@ -97,7 +101,7 @@ public sealed class CncTurningCenterScenarioTests
 
         sample.IsRunning.Should().BeFalse();
         sample.StatusCodes.Should().BeEmpty();
-        sample.Values[key: "spindle.speed"].Should().Be(expected: 0d);
+        sample.Values["spindle.speed"].Should().Be(expected: 0d);
     }
 
     [Fact]
@@ -106,6 +110,7 @@ public sealed class CncTurningCenterScenarioTests
         var context = ScenarioContextFactory.Create(_scenario, runSeconds: 39);
         _scenario.Sample(context);
         var stopped = ScenarioContextFactory.Create(_scenario, runSeconds: 39, isStopped: true, elapsedSeconds: 10);
+
         foreach (var pair in context.Memory)
         {
             stopped.Memory[pair.Key] = pair.Value;
@@ -113,8 +118,9 @@ public sealed class CncTurningCenterScenarioTests
 
         var sample = _scenario.Sample(stopped);
 
-        var before = context.Memory[key: "spindle.temperature"];
-        ((double)sample.Values[key: "spindle.temperature"])
+        var before = context.Memory["spindle.temperature"];
+
+        ((double)sample.Values["spindle.temperature"])
             .Should()
             .BeApproximately(before - 0.5, (before - 0.5) * ValueNoise.MaxShare);
     }

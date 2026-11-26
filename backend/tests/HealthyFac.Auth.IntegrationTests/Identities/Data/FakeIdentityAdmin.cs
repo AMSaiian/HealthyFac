@@ -9,16 +9,16 @@ namespace HealthyFac.Auth.IntegrationTests.Identities.Data;
 /// </summary>
 public sealed class FakeIdentityAdmin : IIdentityAdmin
 {
-    private readonly Dictionary<Guid, Guid> _userIdsByEmployee = new();
-    private readonly HashSet<Guid> _userIdsWithPassword = new();
-    private readonly List<Guid> _passwordEmailUserIds = new();
-    private readonly Dictionary<Guid, string> _localesByUser = new();
+    private readonly Dictionary<Guid, Guid> _userIdsByEmployee = [];
+    private readonly HashSet<Guid> _userIdsWithPassword = [];
+    private readonly List<Guid> _passwordEmailUserIds = [];
+    private readonly Dictionary<Guid, string> _localesByUser = [];
 
     private bool _isCreateFailurePending;
     private bool _isCreateRacePending;
     private bool _isDisableFailurePending;
-    private readonly List<Guid> _disabledUserIds = new();
-    private readonly List<Guid> _loggedOutUserIds = new();
+    private readonly List<Guid> _disabledUserIds = [];
+    private readonly List<Guid> _loggedOutUserIds = [];
 
     public Guid OrganizationId { get; } = Guid.CreateVersion7();
 

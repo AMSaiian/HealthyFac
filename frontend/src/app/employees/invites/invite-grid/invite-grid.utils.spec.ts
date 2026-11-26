@@ -6,7 +6,7 @@ import { INVITE_MENU_KEYS, inviteMenuItems } from './invite-grid.utils';
 const labels = { [INVITE_MENU_KEYS.resend]: 'Resend', [INVITE_MENU_KEYS.revoke]: 'Revoke' };
 const INVITE = { id: 'invite-1' } as InviteRow;
 
-describe('inviteMenuItems', () => {
+describe('inviteMenuItems', { tags: ['Companies'] }, () => {
   it('inviteMenuItems_ForAnOpenInvite_GivesResendThenRevokeWithTheDangerStyleOnRevoke', () => {
     const items = inviteMenuItems(createRowMenu<InviteRow>(), labels, vi.fn(), vi.fn());
 

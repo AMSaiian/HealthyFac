@@ -3,10 +3,12 @@ using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Machines.Data;
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.IntegrationTests.Machines;
 
 [Collection(CoreMachinesCollection.Name)]
+[Feature(TestFeatures.Machines)]
 public sealed class GetMachineTests(CoreDatabaseFixture fixture)
 {
     private readonly CoreDatabaseFixture _fixture = fixture;
@@ -15,6 +17,7 @@ public sealed class GetMachineTests(CoreDatabaseFixture fixture)
     public async Task GetMachine_InOwnCompany_ReturnsMachine()
     {
         var tenant = await _fixture.ArrangeMachineTenantAsync();
+
         var machineId = await _fixture.CreateMachineAsync(
             tenant.CompanyId,
             MachineTestData.MachineName,
@@ -35,10 +38,12 @@ public sealed class GetMachineTests(CoreDatabaseFixture fixture)
     {
         var tenant = await _fixture.ArrangeMachineTenantAsync();
         var machineId = await ArrangeSeededMachineAsync(tenant);
+
         await _fixture.AddStateRowAsync(
             machineId,
             MachineState.InMaintenance,
             MachineTestData.FirstCreatedAt.AddDays(MachineTestData.LaterStateDays));
+
         await _fixture.AddStateRowAsync(
             machineId,
             MachineState.OutOfService,
@@ -68,6 +73,7 @@ public sealed class GetMachineTests(CoreDatabaseFixture fixture)
     {
         var tenant = await _fixture.ArrangeMachineTenantAsync();
         var otherTenant = await _fixture.ArrangeMachineTenantAsync(MachineTestData.OtherCompanyName);
+
         var otherMachineId = await _fixture.CreateMachineAsync(
             otherTenant.CompanyId,
             MachineTestData.MachineName,
@@ -84,6 +90,6 @@ public sealed class GetMachineTests(CoreDatabaseFixture fixture)
             tenant.CompanyId,
             MachineTestData.CreateSingleMachineSeed());
 
-        return ids[index: 0];
+        return ids[0];
     }
 }

@@ -58,6 +58,7 @@ public sealed class TelemetryApiFixture : IAsyncLifetime, IResetBeforeEachTest
 
         await using var dbContext = new TelemetryDbContext(
             new DbContextOptionsBuilder<TelemetryDbContext>().UseNpgsql(_database.ConnectionString).Options);
+
         _resetter = await DatabaseResetter.CreateAsync(_database.ConnectionString, dbContext);
     }
 

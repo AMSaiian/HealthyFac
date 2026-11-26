@@ -1,8 +1,11 @@
 using HealthyFac.Auth.IntegrationTests.Identities.Data;
 using HealthyFac.Core.Messaging.Employees;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Auth.IntegrationTests.Identities;
 
+[Feature(TestFeatures.Identity)]
+[Feature(TestFeatures.Companies)]
 public sealed class EmployeeDeactivatedValidatorTests
 {
     private readonly EmployeeDeactivatedValidator _validator = new();

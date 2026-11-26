@@ -1,8 +1,10 @@
 using HealthyFac.Shared.Infrastructure.Email;
 using HealthyFac.Shared.UnitTests.Email.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.UnitTests.Email;
 
+[Feature(TestFeatures.Companies)]
 public sealed class SmtpOptionsValidatorTests
 {
     private readonly SmtpOptionsValidator _validator = new();

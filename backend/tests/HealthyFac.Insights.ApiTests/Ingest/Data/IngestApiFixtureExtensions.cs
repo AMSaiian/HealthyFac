@@ -34,6 +34,7 @@ public static class IngestApiFixtureExtensions
         {
             using var client = fixture.CreateClient();
             using var request = new HttpRequestMessage(method, path);
+
             request.Headers.Authorization = new AuthenticationHeaderValue(
                 BearerScheme,
                 fixture.Tokens.CreateToken(claims));
@@ -54,6 +55,7 @@ public static class IngestApiFixtureExtensions
                 Extension = extension,
                 SizeBytes = 2048,
             };
+
             fixture.Files.Add(file);
 
             return file;
@@ -77,6 +79,7 @@ public static class IngestApiFixtureExtensions
                     sizeBytes: 2048,
                     now,
                     traceParent: null);
+
                 MoveTo(attempt, state, now);
                 dbContext.IngestAttempts.Add(attempt);
             }
@@ -93,6 +96,7 @@ public static class IngestApiFixtureExtensions
             using var scope = fixture.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<IInsightsDbContext>();
             var now = StartIngestAttemptTestData.ChangedAt;
+
             var attempt = new IngestAttempt(
                 companyId ?? fixture.CompanyId,
                 StartIngestAttemptTestData.FileId,
@@ -103,6 +107,7 @@ public static class IngestApiFixtureExtensions
                 sizeBytes: 2048,
                 queuedAt ?? now,
                 traceParent: null);
+
             MoveTo(attempt, state, now);
             dbContext.IngestAttempts.Add(attempt);
 
@@ -126,15 +131,18 @@ public static class IngestApiFixtureExtensions
         {
             using var scope = fixture.ScopeFactory.CreateScope();
             var messageType = TMessage.MessageType;
+
             var payloads = await scope.ServiceProvider.GetRequiredService<InsightsDbContext>()
                 .OutboxMessages
                 .Where(message => message.Type == messageType)
                 .Select(message => message.Payload)
                 .ToListAsync();
 
-            return payloads
-                .Select(payload => JsonSerializer.Deserialize<TMessage>(payload, JsonSerializerOptions.Web)!)
-                .ToList();
+            return
+            [
+                .. payloads.Select(payload =>
+                    JsonSerializer.Deserialize<TMessage>(payload, JsonSerializerOptions.Web)!),
+            ];
         }
     }
 

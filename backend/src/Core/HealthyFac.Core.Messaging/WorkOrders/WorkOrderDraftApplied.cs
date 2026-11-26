@@ -28,11 +28,14 @@ public class WorkOrderDraftAppliedValidator : AbstractValidator<WorkOrderDraftAp
     public WorkOrderDraftAppliedValidator()
     {
         RuleFor(message => message.DraftId).NotEmpty().WithMessage(WorkOrderDraftMessageErrors.Validation.IdRequired);
+
         RuleFor(message => message.WorkOrderId)
             .NotEmpty()
             .WithMessage(WorkOrderDraftMessageErrors.Validation.IdRequired);
+
         RuleFor(message => message.CaseId).NotEmpty().WithMessage(WorkOrderDraftMessageErrors.Validation.IdRequired);
         RuleFor(message => message.CompanyId).NotEmpty().WithMessage(WorkOrderDraftMessageErrors.Validation.IdRequired);
+
         RuleFor(message => message.AppliedAt)
             .NotEmpty()
             .WithMessage(WorkOrderDraftMessageErrors.Validation.TimeRequired);

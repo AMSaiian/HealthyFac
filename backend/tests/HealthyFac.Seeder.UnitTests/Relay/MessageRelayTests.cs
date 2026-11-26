@@ -1,8 +1,11 @@
 using HealthyFac.Seeder.Relay;
 using HealthyFac.Seeder.UnitTests.Relay.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Seeder.UnitTests.Relay;
 
+[Feature(TestFeatures.Seeding)]
+[Feature(TestFeatures.Messaging)]
 public sealed class MessageRelayTests
 {
     [Fact(Explicit = true)]
@@ -31,6 +34,7 @@ public sealed class MessageRelayTests
         var telemetry = new FakeRelayEndpoint(service: "telemetry", ["m1", "m2"], log);
         core.AddPending(RelayTestData.Row(type: "m1", minute: 1));
         core.AddPending(RelayTestData.Row(type: "m2", minute: 2));
+
         telemetry.OnHandle = (row, endpoint) =>
         {
             if (row.Type == "m1")
@@ -38,6 +42,7 @@ public sealed class MessageRelayTests
                 endpoint.AddPending(RelayTestData.Row(type: "m3", minute: 3));
             }
         };
+
         var relay = new MessageRelay([telemetry, core]);
 
         await relay.RunAsync(RelayTestData.Event, TestContext.Current.CancellationToken);
@@ -97,6 +102,7 @@ public sealed class MessageRelayTests
             .ThrowAsync<InvalidOperationException>()
             .WithMessage(
                 expectedWildcardPattern: "*telemetry*m1*orders.json#order-1*The company is required.*");
+
         sender.Pending.Should().ContainSingle(row => row.Type == "m2");
     }
 
@@ -117,6 +123,7 @@ public sealed class MessageRelayTests
         var telemetry = new FakeRelayEndpoint(service: "telemetry", ["m1", "m2"], log);
         core.AddPending(RelayTestData.Row(type: "m2", minute: 2));
         core.AddPending(RelayTestData.Row(type: "m1", minute: 1));
+
         telemetry.OnHandle = (row, endpoint) =>
         {
             if (row.Type == "m1")

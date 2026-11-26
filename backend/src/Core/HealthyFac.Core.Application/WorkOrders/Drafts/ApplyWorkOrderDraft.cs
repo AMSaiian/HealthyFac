@@ -133,6 +133,7 @@ public sealed class ApplyWorkOrderDraftRequestHandler(
                     IsolationLevel.Serializable,
                     cancellationToken)
                 : await ApplyAsync(request, cancellationToken);
+
             _notifier.PushWorkOrdersHint(request.CompanyId, workOrderId);
 
             return new ApplyWorkOrderDraftResponse { WorkOrderId = workOrderId };
@@ -174,10 +175,12 @@ public sealed class ApplyWorkOrderDraftRequestHandler(
             AssigneeId = request.AssigneeId,
             PlannedStartLocal = request.PlannedStartLocal,
         };
+
         await _creation.EnsureOwnCreateAsync(createRequest, cancellationToken);
         var workOrderId = await _creation.CreateAsync(createRequest, cancellationToken);
 
         draft.MarkApplied(workOrderId);
+
         _outbox.Add(
             new WorkOrderDraftApplied
             {
@@ -187,6 +190,7 @@ public sealed class ApplyWorkOrderDraftRequestHandler(
                 CompanyId = draft.CompanyId,
                 AppliedAt = _timeProvider.GetUtcNow().UtcDateTime,
             });
+
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return workOrderId;

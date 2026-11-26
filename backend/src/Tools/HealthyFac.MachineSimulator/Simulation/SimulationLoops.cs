@@ -53,6 +53,7 @@ public sealed class SimulationLoops(
         {
             var isPublished = await _publisher.TryPublishAsync(message.GatewayId, message.Payload, cancellationToken);
             _metrics.RecordMessage(message.Scenario, isPublished);
+
             _logger.LogDebug(
                 message: "{Outcome} a message of the gateway {GatewayId} with the keys {Keys} and the codes {Codes}",
                 isPublished ? "Published" : "Dropped",
@@ -93,11 +94,12 @@ public sealed class SimulationLoops(
         foreach (var snapshot in snapshots.Where(snapshot => !known.Contains(snapshot.MachineId)))
         {
             var keys = ScenarioBinding.Create(ScenarioBinding.KindOf(snapshot.SerialNumber)).CounterStartValues.Keys;
+
             if (keys.Any())
             {
                 counterStarts[snapshot.MachineId] = await counterReader.ReadLatestAsync(
                     snapshot.MachineId,
-                    keys.ToList(),
+                    [.. keys],
                     cancellationToken);
             }
         }
@@ -138,6 +140,7 @@ public sealed class SimulationLoops(
     )
     {
         using var timer = new PeriodicTimer(interval, _timeProvider);
+
         while (await timer.WaitForNextTickAsync(cancellationToken))
         {
             try
@@ -160,6 +163,7 @@ public sealed class SimulationLoops(
     )
     {
         using var timer = new PeriodicTimer(interval, _timeProvider);
+
         do
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -186,6 +190,7 @@ public sealed class SimulationLoops(
         {
             _logger.LogError(
                 exception, message: "The {Poll} poll failed; the machines keep their last state", pollName);
+
             activity?.SetStatus(ActivityStatusCode.Error);
         }
 

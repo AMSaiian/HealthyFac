@@ -14,7 +14,7 @@ const dateSchema = object({
   day: custom<Temporal.PlainDate | null>((value) => value instanceof Temporal.PlainDate),
 });
 
-describe('hasFormChanges', () => {
+describe('hasFormChanges', { tags: ['Platform'] }, () => {
   it('hasFormChanges_WithWhitespaceOnlyChange_ReturnsFalse', () => {
     const result = hasFormChanges(schema, { name: 'Lathe', note: 'a' }, { name: '  Lathe  ', note: 'a' });
 
@@ -40,21 +40,14 @@ describe('hasFormChanges', () => {
     expect(result).toBe(false);
   });
 
-  it('hasFormChanges_WithOnlyTheTemporalValueChanged_ReturnsTrue', () => {
+  it.each([
+    ['TheTemporalValue', { name: 'a', day: '2026-03-12' }],
+    ['TheNameBesideTemporalValue', { name: 'b', day: '2026-03-11' }],
+  ])('hasFormChanges_WithOnly%sChanged_ReturnsTrue', (_name, changed) => {
     const result = hasFormChanges(
       dateSchema,
       { name: 'a', day: Temporal.PlainDate.from('2026-03-11') },
-      { name: 'a', day: Temporal.PlainDate.from('2026-03-12') },
-    );
-
-    expect(result).toBe(true);
-  });
-
-  it('hasFormChanges_WithOnlyTheNameChangedBesideTemporalValue_ReturnsTrue', () => {
-    const result = hasFormChanges(
-      dateSchema,
-      { name: 'a', day: Temporal.PlainDate.from('2026-03-11') },
-      { name: 'b', day: Temporal.PlainDate.from('2026-03-11') },
+      { name: changed.name, day: Temporal.PlainDate.from(changed.day) },
     );
 
     expect(result).toBe(true);

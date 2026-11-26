@@ -8,11 +8,14 @@ using HealthyFac.Core.IntegrationTests.WorkOrders.Data;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.Realtime;
 using HealthyFac.Shared.Application.UseCases;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Core.IntegrationTests.WorkOrders;
 
 [Collection(CoreWorkOrdersCollection.Name)]
+[Feature(TestFeatures.WorkOrders)]
+[Feature(TestFeatures.Realtime)]
 public sealed class WorkOrderAssignmentRealtimeTests(CoreDatabaseFixture fixture)
 {
     private readonly CoreDatabaseFixture _fixture = fixture;
@@ -29,6 +32,7 @@ public sealed class WorkOrderAssignmentRealtimeTests(CoreDatabaseFixture fixture
         var pushes = PushesOf();
         var assigned = pushes.Should().ContainSingle(push => push.UserId == tenant.IdentityUserId).Subject;
         assigned.Notification!.Kind.Should().Be(RealtimeNotificationKind.WorkOrderAssigned);
+
         assigned.Notification.Data.Should()
             .BeEquivalentTo(
                 new WorkOrderAssignedData
@@ -38,6 +42,7 @@ public sealed class WorkOrderAssignmentRealtimeTests(CoreDatabaseFixture fixture
                     PlannedStartLocal = ShiftTestData.LocalStart(
                         ShiftTestData.Tomorrow, WorkOrderTestData.ScheduledTime),
                 });
+
         HintOf(pushes, tenant).Should().NotBeNull();
         pushes.Should().HaveCount(expected: 2);
     }
@@ -55,8 +60,10 @@ public sealed class WorkOrderAssignmentRealtimeTests(CoreDatabaseFixture fixture
         var pushes = PushesOf();
         var unassigned = pushes.Should().ContainSingle(push => push.UserId == tenant.IdentityUserId).Subject;
         unassigned.Notification!.Kind.Should().Be(RealtimeNotificationKind.WorkOrderUnassigned);
+
         unassigned.Notification.Data.Should()
             .BeEquivalentTo(new WorkOrderTitleData { Title = WorkOrderTestData.Title });
+
         HintOf(pushes, tenant).Should().NotBeNull();
         pushes.Should().HaveCount(expected: 2);
     }
@@ -90,6 +97,7 @@ public sealed class WorkOrderAssignmentRealtimeTests(CoreDatabaseFixture fixture
         var pushes = PushesOf();
         var rescheduled = pushes.Should().ContainSingle(push => push.UserId == tenant.IdentityUserId).Subject;
         rescheduled.Notification!.Kind.Should().Be(RealtimeNotificationKind.WorkOrderRescheduled);
+
         rescheduled.Notification.Data.Should()
             .BeEquivalentTo(
                 new WorkOrderRescheduledData
@@ -98,6 +106,7 @@ public sealed class WorkOrderAssignmentRealtimeTests(CoreDatabaseFixture fixture
                     Title = WorkOrderTestData.Title,
                     PlannedStartLocal = ShiftTestData.LocalStart(ShiftTestData.Tomorrow, WorkOrderTestData.NextTime),
                 });
+
         pushes.Should().HaveCount(expected: 2);
     }
 
@@ -136,7 +145,7 @@ public sealed class WorkOrderAssignmentRealtimeTests(CoreDatabaseFixture fixture
         KindFor(pushes, other.IdentityUserId).Should().Be(RealtimeNotificationKind.WorkOrderAssigned);
     }
 
-    private List<RealtimePush> PushesOf() => _fixture.RealtimeQueue.Items.Select(item => item.Push).ToList();
+    private List<RealtimePush> PushesOf() => [.. _fixture.RealtimeQueue.Items.Select(item => item.Push)];
 
     private static RealtimePush? HintOf(IEnumerable<RealtimePush> pushes, ShiftTenant tenant) =>
         pushes.SingleOrDefault(push =>
@@ -170,6 +179,7 @@ public sealed class WorkOrderAssignmentRealtimeTests(CoreDatabaseFixture fixture
             ShiftTestData.Today.AddDays(value: -30),
             ShiftTestData.Morning,
             ShiftTestData.Afternoon);
+
         _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "07:00"));
     }
 

@@ -71,13 +71,14 @@ public static class MachinesFixtureExtensions
         {
             var files = await fixture.LoadFileRefsAsync();
 
-            return files.OrderBy(file => file.CreatedAt).ToList();
+            return [.. files.OrderBy(file => file.CreatedAt)];
         }
 
         public async Task ApplyPendingMachineDraftsAsync(SeedContext context, CancellationToken cancellationToken)
         {
             var allDrafts = await fixture.LoadMachineDraftsAsync();
             fixture.Clock.Enter(PeopleTestData.Anchor, ApplyItem);
+
             foreach (var draft in allDrafts.Where(draft => draft.State == DraftState.Pending))
             {
                 await fixture.Hosts.Core.SendAsync<ApplyMachineDraftRequest, ApplyMachineDraftResponse>(

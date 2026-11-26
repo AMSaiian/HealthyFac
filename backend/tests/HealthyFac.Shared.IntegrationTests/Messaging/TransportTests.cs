@@ -1,10 +1,12 @@
 using System.Text.Json.Nodes;
 using HealthyFac.Shared.Infrastructure.Messaging.Receiving;
 using HealthyFac.Shared.IntegrationTests.Messaging.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.IntegrationTests.Messaging;
 
 [Collection(MessagingTransportCollection.Name)]
+[Feature(TestFeatures.Messaging)]
 public sealed class TransportTests(TransportCollectionFixture fixture)
 {
     private readonly TransportCollectionFixture _fixture = fixture;
@@ -21,9 +23,10 @@ public sealed class TransportTests(TransportCollectionFixture fixture)
         var stored = await _fixture.WaitForInboxMessageAsync(TransportTestData.DeliveredMessageId);
 
         stored.Should().NotBeNull();
-        stored!.Type.Should().Be(TransportTestData.PingMessageType);
+        stored.Type.Should().Be(TransportTestData.PingMessageType);
         stored.ActorId.Should().Be(TransportTestData.ActorId);
         stored.CompanyId.Should().Be(TransportTestData.CompanyId);
+
         JsonNode.DeepEquals(JsonNode.Parse(stored.Payload), JsonNode.Parse(TransportTestData.PingPayload))
             .Should()
             .BeTrue();
@@ -37,11 +40,13 @@ public sealed class TransportTests(TransportCollectionFixture fixture)
             TransportTestData.PingPayload,
             TransportTestData.DuplicatedMessageId,
             TransportTestData.ActorHeaders());
+
         await _fixture.PublishAsync(
             TransportTestData.PingMessageType,
             TransportTestData.PingPayload,
             TransportTestData.DuplicatedMessageId,
             TransportTestData.ActorHeaders());
+
         await _fixture.PublishAsync(
             TransportTestData.PingMessageType,
             TransportTestData.PingPayload,
@@ -64,16 +69,19 @@ public sealed class TransportTests(TransportCollectionFixture fixture)
             TransportTestData.BlankTextPayload,
             TransportTestData.InvalidPayloadMessageId,
             TransportTestData.ActorHeaders());
+
         await _fixture.PublishAsync(
             TransportTestData.PingMessageType,
             TransportTestData.BlankTextPayload,
             TransportTestData.InvalidPayloadMessageId,
             TransportTestData.ActorHeaders());
+
         await _fixture.PublishAsync(
             TransportTestData.PingMessageType,
             TransportTestData.PingPayload,
             TransportTestData.InvalidSentinelMessageId,
             TransportTestData.ActorHeaders());
+
         await _fixture.WaitForInboxMessageAsync(TransportTestData.InvalidSentinelMessageId);
         await _fixture.WaitForQueueToSettleAsync();
         var processor = _fixture.Create<InboxProcessor>();
@@ -100,7 +108,7 @@ public sealed class TransportTests(TransportCollectionFixture fixture)
             TransportTestData.PingMessageType,
             payload,
             messageId,
-            hasActorHeaders ? TransportTestData.ActorHeaders() : new Dictionary<string, string>());
+            hasActorHeaders ? TransportTestData.ActorHeaders() : []);
 
         var errorDetails = await RabbitMqQueueReader.ReadHeaderAsync(
             _fixture.BrokerConnectionString,

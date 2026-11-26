@@ -3,10 +3,13 @@ using HealthyFac.Insights.IntegrationTests.Cases;
 using HealthyFac.Insights.IntegrationTests.Cases.Data;
 using HealthyFac.Insights.IntegrationTests.Database.Data;
 using HealthyFac.Insights.IntegrationTests.Documents.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Insights.IntegrationTests.Documents;
 
 [Collection(SignalCaseCollection.Name)]
+[Feature(TestFeatures.Ingest)]
+[Feature(TestFeatures.Files)]
 public sealed class ChangeIngestedFileMachineInboxTests(SignalCaseFixture fixture)
 {
     private static readonly Guid MachineId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000101");
@@ -19,6 +22,7 @@ public sealed class ChangeIngestedFileMachineInboxTests(SignalCaseFixture fixtur
         var completed = IngestAttemptTestData.CreateCompleted();
         await _fixture.Inner.SaveAsync(completed, IngestAttemptTestData.CreateDocument(completed.Id));
         var changedAt = IngestAttemptTestData.Now.AddMinutes(value: 5);
+
         var message = new FileMachineChanged
         {
             FileId = IngestAttemptTestData.FileId,

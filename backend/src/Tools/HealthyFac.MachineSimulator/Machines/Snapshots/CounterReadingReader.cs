@@ -25,10 +25,12 @@ public sealed class CounterReadingReader(ITelemetryDbContext telemetryDbContext)
     )
     {
         var keys = counterKeys.ToArray();
+
         var definitions = await _telemetryDbContext.MetricDefinitions
             .Where(definition => definition.MachineRegistrationId == machineId && keys.Contains(definition.Key))
             .Select(definition => new { definition.Id, definition.Key })
             .ToListAsync(cancellationToken);
+
         Dictionary<string, double> latest = [];
 
         foreach (var definition in definitions)

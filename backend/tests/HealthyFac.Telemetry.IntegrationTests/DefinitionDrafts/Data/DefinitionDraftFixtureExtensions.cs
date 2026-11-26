@@ -159,6 +159,7 @@ public static class DefinitionDraftFixtureExtensions
         )
         {
             using var scope = fixture.CreateUserScope(companyId);
+
             var handler = scope.ServiceProvider
                 .GetRequiredService<
                     IRequestHandler<SearchDefinitionDraftsRequest, KeysetGridResponse<DefinitionDraftGridItem>>>();
@@ -189,6 +190,7 @@ public static class DefinitionDraftFixtureExtensions
             {
                 var page = await fixture.SearchDefinitionDraftsAsync(
                     companyId, machineId, attemptId: null, DefinitionDraftSearchTestData.PageLimit, sort, after);
+
                 seenIds.AddRange(page.Items.Select(item => item.Id));
                 after = page.NextPosition;
             }
@@ -203,6 +205,7 @@ public static class DefinitionDraftFixtureExtensions
         )
         {
             using var scope = fixture.CreateUserScope(companyId);
+
             var handler = scope.ServiceProvider
                 .GetRequiredService<
                     IRequestHandler<GetAttemptDefinitionDraftsRequest, AttemptDefinitionDraftsResponse>>();
@@ -214,6 +217,7 @@ public static class DefinitionDraftFixtureExtensions
         public async Task<PendingDefinitionDraftCountsResponse> GetPendingDefinitionDraftCountsAsync(Guid companyId)
         {
             using var scope = fixture.CreateUserScope(companyId);
+
             var handler = scope.ServiceProvider
                 .GetRequiredService<
                     IRequestHandler<GetPendingDefinitionDraftCountsRequest, PendingDefinitionDraftCountsResponse>>();
@@ -236,6 +240,7 @@ public static class DefinitionDraftFixtureExtensions
         )
         {
             using var scope = fixture.CreateUserScope(companyId);
+
             var handler = scope.ServiceProvider
                 .GetRequiredService<
                     IRequestHandler<DismissDefinitionDraftsRequest, DismissDefinitionDraftsResponse>>();

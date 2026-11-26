@@ -35,6 +35,7 @@ public sealed class RabbitMqTestBroker : IAsyncDisposable
     {
         await using var connection = await new ConnectionFactory { Uri = new Uri(ConnectionString) }
             .CreateConnectionAsync();
+
         await using var channel = await connection.CreateChannelAsync();
 
         foreach (var queueName in queueNames)

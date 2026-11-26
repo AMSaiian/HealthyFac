@@ -3,7 +3,7 @@ import { TestBed } from '@angular/core/testing';
 
 import { InviteLocation } from '@invite/invite-location';
 
-describe('InviteLocation', () => {
+describe('InviteLocation', { tags: ['Identity'] }, () => {
   const hash = { value: '' };
 
   function setup(): InviteLocation {

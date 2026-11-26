@@ -49,7 +49,7 @@ const ROW: WorkOrderRow = {
   rowVersion: 7,
 };
 
-describe('WorkOrdersGridStore', () => {
+describe('WorkOrdersGridStore', { tags: ['WorkOrders'] }, () => {
   const lastResult = signal<ActionResult | null>(null);
   let realtime: FakeRealtimeConnection;
   const dispatch = vi.fn();

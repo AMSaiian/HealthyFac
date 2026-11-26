@@ -92,6 +92,7 @@ public sealed class UpdateShiftTemplateVersionRequestHandler(
             token => UpdateAsync(request, token),
             IsolationLevel.Serializable,
             cancellationToken);
+
         _notifier.PushShiftChanged(request.CompanyId, change);
     }
 
@@ -102,6 +103,7 @@ public sealed class UpdateShiftTemplateVersionRequestHandler(
     {
         var zone = await _reader.GetZoneAsync(request.CompanyId, cancellationToken);
         var nowUtc = _timeProvider.GetUtcNow().UtcDateTime;
+
         var shifts = await _reader.LoadWithAllVersionsAsync(
             request.EmployeeId,
             zone,
@@ -109,13 +111,12 @@ public sealed class UpdateShiftTemplateVersionRequestHandler(
             DateOnly.FromDateTime(nowUtc).AddDays(ShiftValidationConstants.MaxDaysAhead + 2),
             isTracked: true,
             cancellationToken);
-        var version = shifts.Versions.SingleOrDefault(candidate => candidate.Id == request.VersionId);
-        if (version is null)
-        {
-            throw await ShiftVersionRejections.MissingAsync(_dbContext, request.VersionId, cancellationToken);
-        }
+
+        var version = shifts.Versions.SingleOrDefault(candidate => candidate.Id == request.VersionId)
+            ?? throw await ShiftVersionRejections.MissingAsync(_dbContext, request.VersionId, cancellationToken);
 
         var today = shifts.LocalDateOf(nowUtc);
+
         if (version.EffectiveFrom <= today)
         {
             throw new UnprocessableException(ShiftErrors.Rejections.VersionInEffect);

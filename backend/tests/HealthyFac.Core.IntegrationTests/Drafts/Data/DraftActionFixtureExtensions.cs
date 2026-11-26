@@ -24,6 +24,7 @@ public static class DraftActionFixtureExtensions
         )
         {
             using var scope = fixture.CreateUserScope(companyId);
+
             var handler = scope.ServiceProvider
                 .GetRequiredService<IRequestHandler<ApplyMachineDraftRequest, ApplyMachineDraftResponse>>();
 
@@ -50,6 +51,7 @@ public static class DraftActionFixtureExtensions
         public async Task<DismissMachineDraftsResponse> DismissMachineDraftsAsync(Guid companyId, Guid machineId)
         {
             using var scope = fixture.CreateUserScope(companyId);
+
             var handler = scope.ServiceProvider
                 .GetRequiredService<IRequestHandler<DismissMachineDraftsRequest, DismissMachineDraftsResponse>>();
 
@@ -60,6 +62,7 @@ public static class DraftActionFixtureExtensions
         public async Task<DismissMachineDraftsResponse> DismissAttemptDraftsAsync(Guid companyId, Guid attemptId)
         {
             using var scope = fixture.CreateUserScope(companyId);
+
             var handler = scope.ServiceProvider
                 .GetRequiredService<IRequestHandler<DismissMachineDraftsRequest, DismissMachineDraftsResponse>>();
 
@@ -79,9 +82,11 @@ public static class DraftActionFixtureExtensions
             do
             {
                 using var scope = fixture.CreateUserScope(companyId);
+
                 var handler = scope.ServiceProvider
                     .GetRequiredService<
                         IRequestHandler<SearchMachineDraftsRequest, KeysetGridResponse<MachineDraftGridItem>>>();
+
                 var page = await handler.HandleAsync(
                     new SearchMachineDraftsRequest
                     {
@@ -92,6 +97,7 @@ public static class DraftActionFixtureExtensions
                         Filter = new MachineDraftGridFilter(),
                         After = after,
                     });
+
                 seenIds.AddRange(page.Items.Select(item => item.Id));
                 after = page.NextPosition;
             }
@@ -103,6 +109,7 @@ public static class DraftActionFixtureExtensions
         public async Task<IReadOnlyList<Guid>> ReadFirstDraftPageWithoutFilterAsync(Guid companyId, Guid machineId)
         {
             using var scope = fixture.CreateUserScope(companyId);
+
             var handler = scope.ServiceProvider
                 .GetRequiredService<
                     IRequestHandler<SearchMachineDraftsRequest, KeysetGridResponse<MachineDraftGridItem>>>();
@@ -115,7 +122,7 @@ public static class DraftActionFixtureExtensions
                     Limit = DraftSearchTestData.NoFilterPageLimit,
                 });
 
-            return page.Items.Select(item => item.Id).ToList();
+            return [.. page.Items.Select(item => item.Id)];
         }
 
         public async Task DismissDraftAsync(Guid companyId, Guid draftId)

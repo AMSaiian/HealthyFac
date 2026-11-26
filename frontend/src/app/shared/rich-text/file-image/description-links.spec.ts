@@ -22,7 +22,7 @@ async function setup(description: string | null): Promise<{
   return { links: result.links, resolve };
 }
 
-describe('descriptionLinks', () => {
+describe('descriptionLinks', { tags: ['Platform'] }, () => {
   it('descriptionLinks_WithoutImages_SendsNoRequest', async () => {
     const { links, resolve } = await setup('<p>text</p>');
 

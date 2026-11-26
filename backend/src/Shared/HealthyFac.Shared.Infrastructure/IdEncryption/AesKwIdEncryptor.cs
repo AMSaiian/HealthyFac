@@ -131,15 +131,11 @@ public sealed class AesKwIdEncryptor : IIdEncryptor, IDisposable
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(encryptedId);
 
-        var version = _state.FindVersion(encryptedId);
-        if (version is null)
-        {
-            throw IdEncryptionErrors.UnsupportedVersionPrefix(encryptedId);
-        }
-
+        var version = _state.FindVersion(encryptedId) ?? throw IdEncryptionErrors.UnsupportedVersionPrefix(encryptedId);
         var token = encryptedId[version.Prefix.Length..];
 
         byte[] cipherBytes;
+
         try
         {
             cipherBytes = Base64Url.DecodeFromChars(token);
@@ -155,6 +151,7 @@ public sealed class AesKwIdEncryptor : IIdEncryptor, IDisposable
         }
 
         byte[] unwrappedBytes;
+
         try
         {
             var engine = new AesWrapEngine();
@@ -205,7 +202,7 @@ public sealed class AesKwIdEncryptor : IIdEncryptor, IDisposable
         return new EncryptionState
         {
             DefaultVersion = defaultVersion,
-            Versions = versions.OrderByDescending(version => version.Prefix.Length).ToList(),
+            Versions = [.. versions.OrderByDescending(version => version.Prefix.Length)],
         };
     }
 

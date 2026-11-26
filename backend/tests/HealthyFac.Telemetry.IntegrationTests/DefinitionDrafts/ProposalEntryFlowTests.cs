@@ -6,11 +6,15 @@ using HealthyFac.Telemetry.Domain.DefinitionDrafts.StatusDrafts;
 using HealthyFac.Telemetry.IntegrationTests.Database.Data;
 using HealthyFac.Telemetry.IntegrationTests.DefinitionDrafts.Data;
 using HealthyFac.Telemetry.IntegrationTests.MachineRegistrations.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.EntityFrameworkCore;
 
 namespace HealthyFac.Telemetry.IntegrationTests.DefinitionDrafts;
 
 [Collection(TelemetryDefinitionDraftsCollection.Name)]
+[Feature(TestFeatures.Drafts)]
+[Feature(TestFeatures.Ingest)]
+[Feature(TestFeatures.SignalModel)]
 public sealed class ProposalEntryFlowTests(TelemetryDatabaseFixture fixture)
 {
     private readonly TelemetryDatabaseFixture _fixture = fixture;
@@ -90,6 +94,7 @@ public sealed class ProposalEntryFlowTests(TelemetryDatabaseFixture fixture)
         metrics.Should().HaveCount(expectedRows, caseName);
         statuses.Should().HaveCount(expectedRows, caseName);
         phases.Should().HaveCount(expectedRows, caseName);
+
         metrics.Concat<IDefinitionDraft>(statuses)
             .Concat(phases)
             .Should()
@@ -126,6 +131,7 @@ public sealed class ProposalEntryFlowTests(TelemetryDatabaseFixture fixture)
         var failures = await Task.WhenAll(
             race.RunAsync(() => ProposalEntryFlowTestData.Proposed(_fixture, ids)),
             race.RunAsync(() => ProposalEntryFlowTestData.Applied(_fixture, ids)));
+
         var failure = failures.Single(candidate => candidate is not null);
 
         await ProposalEntryFlowTestData.Proposed(_fixture, ids);

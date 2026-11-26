@@ -79,6 +79,7 @@ public sealed class AssignWorkOrderRequestHandler(
             token => AssignAsync(request, token),
             IsolationLevel.Serializable,
             cancellationToken);
+
         _notifier.PushAssignmentChange(request.CompanyId, change);
     }
 
@@ -92,6 +93,7 @@ public sealed class AssignWorkOrderRequestHandler(
             request.Id,
             request.RowVersion,
             cancellationToken);
+
         if (workOrder.Current.Status != WorkOrderStatus.Backlog)
         {
             throw new UnprocessableException(WorkOrderErrors.Rejections.NotInBacklog);

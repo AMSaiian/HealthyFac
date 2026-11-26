@@ -69,15 +69,19 @@ public sealed class KeysetSortKey<T, TKey> : IKeysetSortKey<T>
         var isDescending = direction == SortDirection.Descending;
         var comparison = isDescending ? ExpressionType.LessThan : ExpressionType.GreaterThan;
 
-        var row = _key.Parameters[index: 0];
+        var row = _key.Parameters[0];
+
         var valueExpression = Expression.Property(
             Expression.Constant(new ValueBox { Value = value }), nameof(ValueBox.Value));
+
         var idExpression = Expression.Property(
             Expression.Constant(new IdBox { Value = after.Id }), nameof(IdBox.Value));
+
         var zero = Expression.Constant(value: 0);
 
         Expression keyAfter;
         Expression keyEqual;
+
         if (typeof(TKey) == typeof(string))
         {
             var compared = Expression.Call(StringCompare, _key.Body, valueExpression);
@@ -92,7 +96,7 @@ public sealed class KeysetSortKey<T, TKey> : IKeysetSortKey<T>
 
         var idAfter = Expression.MakeBinary(
             comparison,
-            Expression.Call(Expression.Property(row, nameof(IEntity<Guid>.Id)), GuidCompareTo, idExpression),
+            Expression.Call(Expression.Property(row, nameof(IEntity<>.Id)), GuidCompareTo, idExpression),
             zero);
 
         var predicate = Expression.Lambda<Func<T, bool>>(

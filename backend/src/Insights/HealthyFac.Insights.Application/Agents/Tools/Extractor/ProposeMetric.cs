@@ -143,6 +143,7 @@ public sealed class ProposeMetricToolRequestHandler
     {
         var buffer = request.Buffer!;
         var metric = request.Metric;
+
         if (metric is { QuantityKind: { } quantityKind, Unit: { } unitName })
         {
             var unit = buffer.FindUnit(quantityKind, unitName) ?? throw ExtractionErrors.UnknownUnit();

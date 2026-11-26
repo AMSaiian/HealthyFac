@@ -2,10 +2,13 @@ using HealthyFac.Telemetry.Domain.DefinitionDrafts;
 using HealthyFac.Telemetry.IntegrationTests.Database.Data;
 using HealthyFac.Telemetry.IntegrationTests.DefinitionDrafts.Data;
 using HealthyFac.Telemetry.IntegrationTests.MachineRegistrations.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.IntegrationTests.DefinitionDrafts;
 
 [Collection(TelemetryDefinitionDraftsCollection.Name)]
+[Feature(TestFeatures.Drafts)]
+[Feature(TestFeatures.SignalModel)]
 public sealed class GetAttemptDefinitionDraftsTests(TelemetryDatabaseFixture fixture)
 {
     private readonly TelemetryDatabaseFixture _fixture = fixture;
@@ -31,9 +34,10 @@ public sealed class GetAttemptDefinitionDraftsTests(TelemetryDatabaseFixture fix
                 (appliedId, DefinitionDraftState.Applied),
                 (dismissedId, DefinitionDraftState.Dismissed),
             ]);
+
         response.Metrics.Should().OnlyContain(draft => draft.TargetMachineId == machineId);
         response.Statuses.Should().ContainSingle().Which.Id.Should().Be(awaitingId);
-        response.Statuses[index: 0].State.Should().Be(DefinitionDraftState.AwaitingTarget);
+        response.Statuses[0].State.Should().Be(DefinitionDraftState.AwaitingTarget);
     }
 
     [Fact]

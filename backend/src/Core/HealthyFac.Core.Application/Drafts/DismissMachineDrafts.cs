@@ -31,14 +31,17 @@ public class DismissMachineDraftsRequestValidator : AbstractValidator<DismissMac
     public DismissMachineDraftsRequestValidator()
     {
         RuleFor(request => request.CompanyId).NotEmpty().WithMessage(DraftErrors.CompanyIdRequired);
+
         RuleFor(request => request.MachineId)
-            .NotEmpty()
+            .NotEqual(Guid.Empty)
             .WithMessage(MachineErrors.MachineIdRequired)
             .When(request => request.MachineId is not null);
+
         RuleFor(request => request.AttemptId)
-            .NotEmpty()
+            .NotEqual(Guid.Empty)
             .WithMessage(DraftErrors.AttemptIdRequired)
             .When(request => request.AttemptId is not null);
+
         RuleFor(request => request)
             .Must(request => request.MachineId is null != request.AttemptId is null)
             .WithMessage(DraftErrors.SearchScopeRequired);

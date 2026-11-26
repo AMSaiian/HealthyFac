@@ -1,10 +1,12 @@
 using System.Net;
 using HealthyFac.Core.ApiTests.Employees.Data;
 using HealthyFac.Core.ApiTests.Hosting;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.ApiTests.Employees;
 
 [Collection(CoreApiCollection.Name)]
+[Feature(TestFeatures.Companies)]
 public sealed class EmployeeAuthorizationTests(CoreApiFixture fixture)
 {
     private readonly CoreApiFixture _fixture = fixture;
@@ -17,7 +19,7 @@ public sealed class EmployeeAuthorizationTests(CoreApiFixture fixture)
 
         var response = await _fixture.PostEmployeeActionWithoutBodyAsync(path, claims);
 
-        response.StatusCode.Should().Be(HttpStatusCode.Forbidden, because: caseName);
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden, caseName);
     }
 
     [Fact]
@@ -76,6 +78,7 @@ public sealed class EmployeeAuthorizationTests(CoreApiFixture fixture)
         {
             Permissions = [EmployeeApiTestData.MachinesReadPermission],
         };
+
         var withRead = _fixture.CreateSupervisorClaims() with { Permissions = [EmployeeApiTestData.ReadPermission] };
 
         var forbidden = await _fixture.PostEmployeeSearchAsync(EmployeeApiTestData.LookupPath, withoutRead);

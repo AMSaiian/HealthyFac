@@ -38,20 +38,22 @@ public static class FreeSpansTestData
             [],
             ShiftTestData.Override(
                 date,
-                blocks.Split(separator: ',', StringSplitOptions.RemoveEmptyEntries)
-                    .Select(range => range.Split(separator: '-'))
-                    .Select(parts => ShiftTestData.Times(parts[0], parts[1]))
-                    .ToArray()));
+                [
+                    .. blocks.Split(separator: ',', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(range => range.Split(separator: '-'))
+                        .Select(parts => ShiftTestData.Times(parts[0], parts[1])),
+                ]));
 
     public static IReadOnlyCollection<Occupancy> Occupancies(DateOnly date, string ranges) =>
-        ranges.Split(separator: ',', StringSplitOptions.RemoveEmptyEntries)
+    [
+        .. ranges.Split(separator: ',', StringSplitOptions.RemoveEmptyEntries)
             .Select(range => range.Split(separator: '-'))
             .Select(parts => Occupancy.Of(
                 Guid.NewGuid(),
                 Utc(date, parts[0]),
                 Utc(date, parts[1]) - Utc(date, parts[0]),
-                completedAtUtc: null))
-            .ToList();
+                completedAtUtc: null)),
+    ];
 
     public static DateTime Utc(DateOnly date, string time) =>
         LocalTimes.ToUtc(

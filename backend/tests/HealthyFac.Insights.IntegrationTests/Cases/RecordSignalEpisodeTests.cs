@@ -3,11 +3,14 @@ using HealthyFac.Insights.Domain.Cases;
 using HealthyFac.Insights.Domain.Cases.Signals;
 using HealthyFac.Insights.IntegrationTests.Cases.Data;
 using HealthyFac.Telemetry.Messaging.Signals;
+using HealthyFac.Testing.Features;
 using Microsoft.EntityFrameworkCore;
 
 namespace HealthyFac.Insights.IntegrationTests.Cases;
 
 [Collection(SignalCaseCollection.Name)]
+[Feature(TestFeatures.Cases)]
+[Feature(TestFeatures.Evaluation)]
 public sealed class RecordSignalEpisodeTests(SignalCaseFixture fixture)
 {
     private readonly SignalCaseFixture _fixture = fixture;
@@ -22,18 +25,20 @@ public sealed class RecordSignalEpisodeTests(SignalCaseFixture fixture)
         var signals = await _fixture.LoadSignalsAsync();
         outcome.IsProcessed.Should().BeTrue(outcome.Error);
         cases.Should().ContainSingle();
-        signals.Should().ContainSingle().Which.CaseId.Should().Be(cases[index: 0].Id);
+        signals.Should().ContainSingle().Which.CaseId.Should().Be(cases[0].Id);
     }
 
     [Fact]
     public async Task Record_WithARepeatOrAnOlderSequence_ChangesNothing()
     {
         await _fixture.HandleSignalAsync(CaseTestData.Message(CaseTestData.FirstEpisodeId, sequence: 1));
+
         await _fixture.HandleSignalAsync(
             CaseTestData.Message(CaseTestData.FirstEpisodeId, sequence: 2, severity: SignalSeverityValue.Alarm));
 
         await _fixture.HandleSignalAsync(
             CaseTestData.Message(CaseTestData.FirstEpisodeId, sequence: 2, severity: SignalSeverityValue.Warning));
+
         await _fixture.HandleSignalAsync(CaseTestData.Message(CaseTestData.FirstEpisodeId, sequence: 1));
 
         var signal = await _fixture.LoadSignalAsync(CaseTestData.FirstEpisodeId);
@@ -91,6 +96,7 @@ public sealed class RecordSignalEpisodeTests(SignalCaseFixture fixture)
                 CaseTestData.SecondEpisodeId, sequence: 1, machineId: CaseTestData.OtherMachineId));
 
         var cases = await _fixture.LoadCasesAsync();
+
         cases.Select(candidate => candidate.MachineId)
             .Should()
             .BeEquivalentTo([CaseTestData.MachineId, CaseTestData.OtherMachineId]);
@@ -101,8 +107,10 @@ public sealed class RecordSignalEpisodeTests(SignalCaseFixture fixture)
     {
         var start = _fixture.Time.GetUtcNow().UtcDateTime;
         await _fixture.HandleSignalAsync(CaseTestData.Message(CaseTestData.FirstEpisodeId, sequence: 1));
+
         await _fixture.HandleSignalAsync(
             CaseTestData.Message(CaseTestData.FirstEpisodeId, sequence: 2, severity: SignalSeverityValue.Alarm));
+
         await _fixture.HandleSignalAsync(CaseTestData.Message(CaseTestData.SecondEpisodeId, sequence: 1));
 
         var runs = await _fixture.LoadRunsAsync();
@@ -111,7 +119,7 @@ public sealed class RecordSignalEpisodeTests(SignalCaseFixture fixture)
         var run = runs.Should().ContainSingle().Subject;
         run.Role.Should().Be(AgentRole.Triage);
         run.State.Should().Be(AgentRunState.Queued);
-        run.CaseId.Should().Be(cases[index: 0].Id);
+        run.CaseId.Should().Be(cases[0].Id);
         run.DueAt.Should().Be(start.AddSeconds(CaseTestData.DebounceSeconds));
     }
 
@@ -161,20 +169,24 @@ public sealed class RecordSignalEpisodeTests(SignalCaseFixture fixture)
     {
         await _fixture.HandleSignalAsync(CaseTestData.Message(CaseTestData.FirstEpisodeId, sequence: 1));
         await _fixture.HandleSignalAsync(CaseTestData.Message(CaseTestData.SecondEpisodeId, sequence: 1));
+
         await _fixture.HandleSignalAsync(
             CaseTestData.Message(
                 CaseTestData.FirstEpisodeId, sequence: 2, SignalEpisodeStateValue.Resolved));
+
         var casesWhileOneIsOpen = await _fixture.LoadCasesAsync();
 
         await _fixture.HandleSignalAsync(
             CaseTestData.Message(
                 CaseTestData.SecondEpisodeId, sequence: 2, SignalEpisodeStateValue.Resolved));
+
         var casesAfterTheResolve = await _fixture.LoadCasesAsync();
         await _fixture.HandleSignalAsync(CaseTestData.Message(CaseTestData.ThirdEpisodeId, sequence: 1));
 
         var casesAfterTheNextEpisode = await _fixture.LoadCasesAsync();
         casesWhileOneIsOpen.Single().State.Should().Be(CaseState.Open);
         casesAfterTheResolve.Single().State.Should().Be(CaseState.Resolved);
+
         casesAfterTheNextEpisode.Select(candidate => candidate.State)
             .Should()
             .BeEquivalentTo([CaseState.Resolved, CaseState.Open]);

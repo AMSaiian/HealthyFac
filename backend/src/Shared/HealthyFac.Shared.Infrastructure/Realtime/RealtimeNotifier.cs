@@ -34,6 +34,7 @@ internal sealed class RealtimeNotifier(
 
         var actor = _currentUserProvider.TryGetActor();
         var isOwnAction = actor?.Kind == ActorKind.User && actor.UserId == userId;
+
         if (isActorSkipped && isOwnAction)
         {
             return;

@@ -26,9 +26,11 @@ public sealed class SearchCaseSignalsRequestValidator : AbstractValidator<Search
     {
         RuleFor(request => request.CompanyId).NotEmpty().WithMessage(CaseErrors.CompanyIdRequired);
         RuleFor(request => request.CaseId).NotEmpty().WithMessage(CaseErrors.CaseIdRequired);
+
         RuleFor(request => request.Offset)
             .GreaterThanOrEqualTo(GridValidationConstants.MinOffset)
             .WithMessage(GridErrors.Validation.OffsetOutOfRange);
+
         RuleFor(request => request.Limit)
             .InclusiveBetween(GridValidationConstants.MinLimit, GridValidationConstants.MaxLimit)
             .WithMessage(GridErrors.Validation.LimitOutOfRange);

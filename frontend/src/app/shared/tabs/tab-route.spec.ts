@@ -17,7 +17,7 @@ function snapshot(params: Record<string, string>): ActivatedRouteSnapshot {
   return { params } as unknown as ActivatedRouteSnapshot;
 }
 
-describe('tab-route', () => {
+describe('tab-route', { tags: ['Platform'] }, () => {
   it.each([
     [':caseId', 'c1', { caseId: 'c1' }],
     [':caseId', 'c1/signals', { caseId: 'c1', tab: 'signals' }],

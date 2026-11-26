@@ -1,11 +1,13 @@
 using HealthyFac.Shared.Application.Logging;
 using HealthyFac.Shared.UnitTests.Logging.Data;
 using HealthyFac.Shared.Web.Logging;
+using HealthyFac.Testing.Features;
 using Serilog;
 using Serilog.Events;
 
 namespace HealthyFac.Shared.UnitTests.Logging;
 
+[Feature(TestFeatures.Platform)]
 public sealed class SensitiveDataDestructuringPolicyTests
 {
     [Theory]
@@ -23,7 +25,7 @@ public sealed class SensitiveDataDestructuringPolicyTests
         CreateLogger(sink).Information(messageTemplate: "User: {@Payload}", dto);
 
         sink.Events.Should().ContainSingle();
-        var property = sink.Events[index: 0].Properties[key: "Payload"].Should().BeOfType<StructureValue>().Subject;
+        var property = sink.Events[0].Properties["Payload"].Should().BeOfType<StructureValue>().Subject;
 
         property.Properties.Single(p => p.Name == nameof(SensitivePropertyUserDto.Username))
             .Value.Should()
@@ -49,8 +51,9 @@ public sealed class SensitiveDataDestructuringPolicyTests
         CreateLogger(sink).Information(messageTemplate: "Payload: {@Payload}", dto);
 
         sink.Events.Should().ContainSingle();
-        sink.Events[index: 0]
-            .Properties[key: "Payload"]
+
+        sink.Events[0]
+            .Properties["Payload"]
             .Should()
             .BeOfType<ScalarValue>()
             .Which.Value.Should()
@@ -61,6 +64,7 @@ public sealed class SensitiveDataDestructuringPolicyTests
     public void Destructure_WithNestedSensitiveObject_MasksNestedPropertyRecursively()
     {
         var sink = new TestLogEventSink();
+
         CreateLogger(sink)
             .Information(
                 messageTemplate: "Payload: {@Payload}",
@@ -76,7 +80,7 @@ public sealed class SensitiveDataDestructuringPolicyTests
             );
 
         sink.Events.Should().ContainSingle();
-        var root = sink.Events[index: 0].Properties[key: "Payload"].Should().BeOfType<StructureValue>().Subject;
+        var root = sink.Events[0].Properties["Payload"].Should().BeOfType<StructureValue>().Subject;
 
         var userStructure = root.Properties.Single(p => p.Name == nameof(NestedSensitiveDto.User))
             .Value.Should()
@@ -94,11 +98,12 @@ public sealed class SensitiveDataDestructuringPolicyTests
     public void Destructure_WithNullSensitiveProperty_LeavesValueNull()
     {
         var sink = new TestLogEventSink();
+
         CreateLogger(sink)
             .Information(messageTemplate: "Payload: {@Payload}", new NullableSensitiveDto { OptionalSecret = null });
 
         sink.Events.Should().ContainSingle();
-        var property = sink.Events[index: 0].Properties[key: "Payload"].Should().BeOfType<StructureValue>().Subject;
+        var property = sink.Events[0].Properties["Payload"].Should().BeOfType<StructureValue>().Subject;
 
         property.Properties.Single(p => p.Name == nameof(NullableSensitiveDto.OptionalSecret))
             .Value.Should()
@@ -118,7 +123,7 @@ public sealed class SensitiveDataDestructuringPolicyTests
         CreateLogger(sink).Information(messageTemplate: "Payload: {@Payload}", dto);
 
         sink.Events.Should().ContainSingle();
-        var root = sink.Events[index: 0].Properties[key: "Payload"].Should().BeOfType<StructureValue>().Subject;
+        var root = sink.Events[0].Properties["Payload"].Should().BeOfType<StructureValue>().Subject;
 
         var seqVal = root.Properties.Single(p => p.Name == nameof(SensitiveCollectionDto.SecretTokens))
             .Value.Should()
@@ -126,6 +131,7 @@ public sealed class SensitiveDataDestructuringPolicyTests
             .Subject;
 
         seqVal.Elements.Should().HaveCount(dto.SecretTokens.Count);
+
         foreach (var item in seqVal.Elements)
         {
             item.Should().BeOfType<ScalarValue>().Which.Value.Should().Be(MaskingConstants.DefaultMask);
@@ -143,7 +149,7 @@ public sealed class SensitiveDataDestructuringPolicyTests
         CreateLogger(sink).Information(messageTemplate: "Payload: {@Payload}", dto);
 
         sink.Events.Should().ContainSingle();
-        var root = sink.Events[index: 0].Properties[key: "Payload"].Should().BeOfType<StructureValue>().Subject;
+        var root = sink.Events[0].Properties["Payload"].Should().BeOfType<StructureValue>().Subject;
 
         var dictVal = root.Properties.Single(p => p.Name == nameof(SensitiveDictionaryDto.Headers))
             .Value.Should()
@@ -151,6 +157,7 @@ public sealed class SensitiveDataDestructuringPolicyTests
             .Subject;
 
         dictVal.Elements.Should().HaveCount(dto.Headers.Count);
+
         foreach (var kvp in dictVal.Elements)
         {
             kvp.Value.Should().BeOfType<ScalarValue>().Which.Value.Should().Be(MaskingConstants.DefaultMask);
@@ -168,7 +175,7 @@ public sealed class SensitiveDataDestructuringPolicyTests
         CreateLogger(sink).Information(messageTemplate: "Payload: {@Payload}", dto);
 
         sink.Events.Should().ContainSingle();
-        var root = sink.Events[index: 0].Properties[key: "Payload"].Should().BeOfType<StructureValue>().Subject;
+        var root = sink.Events[0].Properties["Payload"].Should().BeOfType<StructureValue>().Subject;
 
         root.Properties.Single(p => p.Name == nameof(PlainUserDto.Name))
             .Value.Should()
@@ -194,8 +201,9 @@ public sealed class SensitiveDataDestructuringPolicyTests
         CreateLogger(sink).Information(messageTemplate: "Payload: {@Payload}", scalar);
 
         sink.Events.Should().ContainSingle();
-        sink.Events[index: 0]
-            .Properties[key: "Payload"]
+
+        sink.Events[0]
+            .Properties["Payload"]
             .Should()
             .BeOfType<ScalarValue>()
             .Which.Value.Should()

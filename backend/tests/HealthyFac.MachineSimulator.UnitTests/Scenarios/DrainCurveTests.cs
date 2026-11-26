@@ -1,8 +1,10 @@
 using HealthyFac.MachineSimulator.Scenarios.Curves;
 using HealthyFac.MachineSimulator.UnitTests.Scenarios.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.MachineSimulator.UnitTests.Scenarios;
 
+[Feature(TestFeatures.Simulation)]
 public sealed class DrainCurveTests
 {
     [Theory]

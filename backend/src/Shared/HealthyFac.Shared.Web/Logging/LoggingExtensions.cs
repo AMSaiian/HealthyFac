@@ -68,6 +68,7 @@ public static class LoggingExtensions
         public WebApplication UseSharedRequestLogging(Action<RequestLoggingOptions>? configure = null)
         {
             var logger = app.Services.GetRequiredService<ILogger>();
+
             app.UseSerilogRequestLogging(options =>
             {
                 options.Logger = logger;
@@ -110,10 +111,12 @@ public static class LoggingExtensions
             {
                 sink.Endpoint = options.Endpoint;
                 sink.Protocol = OtlpProtocol.HttpProtobuf;
+
                 sink.IncludedData = IncludedData.TraceIdField
                     | IncludedData.SpanIdField
                     | IncludedData.MessageTemplateTextAttribute
                     | IncludedData.SourceContextAttribute;
+
                 sink.ResourceAttributes = TelemetryResource.CreateAttributes(provider).ToDictionary();
             },
             key => configuration[key]);

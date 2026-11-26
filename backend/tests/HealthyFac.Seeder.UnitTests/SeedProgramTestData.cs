@@ -3,9 +3,8 @@ namespace HealthyFac.Seeder.UnitTests;
 public static class SeedProgramTestData
 {
     public static TheoryData<string[]> KnownArguments =>
-        new()
-        {
-            new[] { "--telemetry" },
-            new[] { "--reset", "--telemetry" },
-        };
+    [
+        new[] { "--telemetry" },
+        new[] { "--reset", "--telemetry" },
+    ];
 }

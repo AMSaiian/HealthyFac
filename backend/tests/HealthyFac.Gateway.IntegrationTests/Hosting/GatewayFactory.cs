@@ -56,6 +56,7 @@ public sealed class GatewayFactory : WebApplicationFactory<Program>
     public HttpClient CreateAuthenticatedClient(TestTokenClaims? claims = null)
     {
         var client = CreateClient();
+
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
             BearerScheme,
             Tokens.CreateToken(claims ?? new TestTokenClaims { Subject = Guid.NewGuid() }));

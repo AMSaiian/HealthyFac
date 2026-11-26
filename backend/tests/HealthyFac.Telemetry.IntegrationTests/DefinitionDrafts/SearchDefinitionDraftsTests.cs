@@ -9,10 +9,13 @@ using HealthyFac.Telemetry.Domain.DefinitionDrafts.StatusDrafts;
 using HealthyFac.Telemetry.IntegrationTests.Database.Data;
 using HealthyFac.Telemetry.IntegrationTests.DefinitionDrafts.Data;
 using HealthyFac.Telemetry.IntegrationTests.MachineRegistrations.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.IntegrationTests.DefinitionDrafts;
 
 [Collection(TelemetryDefinitionDraftsCollection.Name)]
+[Feature(TestFeatures.Drafts)]
+[Feature(TestFeatures.SignalModel)]
 public sealed class SearchDefinitionDraftsTests(TelemetryDatabaseFixture fixture)
 {
     private readonly TelemetryDatabaseFixture _fixture = fixture;
@@ -42,6 +45,7 @@ public sealed class SearchDefinitionDraftsTests(TelemetryDatabaseFixture fixture
     public async Task Search_WithKindFilter_ReturnsOnlyThatKind()
     {
         var machineId = await ArrangeFiveDraftsAsync();
+
         var filter = new DefinitionDraftGridFilter
         {
             Kinds = new SetFilter<string> { Values = [DefinitionDraftKinds.Status] },
@@ -58,6 +62,7 @@ public sealed class SearchDefinitionDraftsTests(TelemetryDatabaseFixture fixture
     public async Task Search_WithStateFilter_ReturnsOnlyThoseStates()
     {
         var machineId = await ArrangeFiveDraftsAsync();
+
         var filter = new DefinitionDraftGridFilter
         {
             States = new SetFilter<DefinitionDraftState> { Values = [DefinitionDraftState.AwaitingTarget] },

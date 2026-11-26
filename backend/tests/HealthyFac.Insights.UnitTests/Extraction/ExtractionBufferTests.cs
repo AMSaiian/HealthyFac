@@ -2,9 +2,11 @@ using HealthyFac.Insights.Application.Extraction.Proposals;
 using HealthyFac.Insights.Messaging.Drafts;
 using HealthyFac.Insights.UnitTests.Extraction.Data;
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Insights.UnitTests.Extraction;
 
+[Feature(TestFeatures.Ingest)]
 public sealed class ExtractionBufferTests
 {
     private static readonly Guid FileMachineId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000101");
@@ -77,6 +79,7 @@ public sealed class ExtractionBufferTests
     public void AddMachine_AtTheMachineLimit_RejectsTheNext()
     {
         var buffer = CreateBuffer(isMachineFile: false);
+
         for (var index = 0; index < DraftMessageLimits.MaxMachines; index++)
         {
             buffer.AddMachine($"Machine {index}", serialNumber: null, description: null);
@@ -92,6 +95,7 @@ public sealed class ExtractionBufferTests
     {
         var buffer = CreateBuffer(isMachineFile: false);
         var machineId = buffer.AddMachine(name: "Pump", serialNumber: null, description: null);
+
         for (var index = 0; index < DraftMessageLimits.MaxMetrics; index++)
         {
             buffer.AddMetric(machineId, ExtractionBufferTestData.Metric($"metric.m{index}"));

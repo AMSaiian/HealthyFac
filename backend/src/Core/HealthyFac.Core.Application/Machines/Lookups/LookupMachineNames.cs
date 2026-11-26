@@ -87,6 +87,7 @@ public sealed class LookupMachineNamesRequestHandler(ICoreDbContext dbContext)
             .Where(machine => machine.CompanyId == request.CompanyId && request.MachineIds.Contains(machine.Id))
             .Select(machine => new NamedMachine { Id = machine.Id, Name = machine.Name })
             .ToListAsync(cancellationToken);
+
         var machineDrafts = await _dbContext.MachineDrafts
             .AsNoTracking()
             .Where(draft => draft.CompanyId == request.CompanyId

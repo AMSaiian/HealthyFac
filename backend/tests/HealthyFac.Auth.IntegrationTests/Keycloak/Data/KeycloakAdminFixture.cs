@@ -52,12 +52,14 @@ public sealed class KeycloakAdminFixture : IAsyncLifetime
     public async ValueTask InitializeAsync()
     {
         await _network.CreateAsync();
+
         await Task.WhenAll(
             Keycloak.StartAsync(KeycloakAdminTestData.RealmEnvironment),
             Mailpit.StartAsync(),
             Redis.StartAsync());
 
         var baseAddress = Keycloak.BaseAddress.TrimEnd(trimChar: '/');
+
         Settings = new Dictionary<string, string?>
         {
             [$"{KeycloakAdminOptions.SectionName}:BaseAddress"] = baseAddress,
@@ -73,6 +75,7 @@ public sealed class KeycloakAdminFixture : IAsyncLifetime
             [$"{RedisOptions.SectionName}:ConnectionString"] = Redis.ConnectionString,
             [$"{ServiceOptions.SectionName}:Name"] = ServiceName.Auth.Value,
         };
+
         var configuration = new ConfigurationBuilder().AddInMemoryCollection(Settings).Build();
 
         var services = new ServiceCollection();
@@ -100,6 +103,7 @@ public sealed class KeycloakAdminFixture : IAsyncLifetime
                     [$"{KeycloakAdminOptions.SectionName}:SpaBaseUrl"] = spaBaseUrl,
                 })
             .Build();
+
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddServiceOptions(configuration);

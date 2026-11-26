@@ -1,8 +1,10 @@
 using HealthyFac.Shared.IntegrationTests.Messaging.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.IntegrationTests.Messaging;
 
 [Collection(MessagingTransportCollection.Name)]
+[Feature(TestFeatures.Messaging)]
 public sealed class BrokerConnectionProviderTests(TransportCollectionFixture fixture)
 {
     private readonly TransportCollectionFixture _fixture = fixture;
@@ -23,6 +25,7 @@ public sealed class BrokerConnectionProviderTests(TransportCollectionFixture fix
     {
         await using var provider = _fixture.CreateBrokerConnectionProvider();
         var firstConnection = await provider.GetConnectionAsync(TestContext.Current.CancellationToken);
+
         await firstConnection.CloseAsync(
             BrokerTestData.CloseReplyCode,
             BrokerTestData.CloseReplyText,

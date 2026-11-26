@@ -23,7 +23,7 @@ interface Created {
   navigation: FakePlatformNavigation;
 }
 
-describe('HistoryStore', () => {
+describe('HistoryStore', { tags: ['Platform'] }, () => {
   let hasPermission = false;
 
   beforeEach(() => {

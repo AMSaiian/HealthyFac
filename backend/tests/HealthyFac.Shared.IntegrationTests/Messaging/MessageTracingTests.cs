@@ -2,11 +2,13 @@ using System.Diagnostics;
 using HealthyFac.Shared.Application.Observability;
 using HealthyFac.Shared.Infrastructure.Messaging.Receiving;
 using HealthyFac.Shared.IntegrationTests.Messaging.Data;
+using HealthyFac.Testing.Features;
 using HealthyFac.Testing.Tracing;
 
 namespace HealthyFac.Shared.IntegrationTests.Messaging;
 
 [Collection(MessagingTransportCollection.Name)]
+[Feature(TestFeatures.Messaging)]
 public sealed class MessageTracingTests(TransportCollectionFixture fixture)
 {
     private readonly TransportCollectionFixture _fixture = fixture;
@@ -15,6 +17,7 @@ public sealed class MessageTracingTests(TransportCollectionFixture fixture)
     public async Task Process_WithoutTraceParent_StartsNewTrace()
     {
         using var capture = new SpanCapture(ObservabilityConstants.Sources.Messaging);
+
         await _fixture.AddPendingInboxRowAsync(
             TracingTestData.NoParentRowId,
             InboxProcessorTestData.RecordedMessageType,
@@ -22,6 +25,7 @@ public sealed class MessageTracingTests(TransportCollectionFixture fixture)
             InboxProcessorTestData.UserActorId,
             InboxProcessorTestData.UserCompanyId,
             InboxTestData.Now);
+
         var processor = _fixture.Create<InboxProcessor>();
 
         await processor.RunAsync(CancellationToken.None);
@@ -38,6 +42,7 @@ public sealed class MessageTracingTests(TransportCollectionFixture fixture)
     public async Task Process_WhenHandlerThrows_MarksSpanFailed()
     {
         using var capture = new SpanCapture(ObservabilityConstants.Sources.Messaging);
+
         await _fixture.AddPendingInboxRowAsync(
             TracingTestData.FailingRowId,
             InboxProcessorTestData.FailingMessageType,
@@ -45,6 +50,7 @@ public sealed class MessageTracingTests(TransportCollectionFixture fixture)
             InboxProcessorTestData.UserActorId,
             InboxProcessorTestData.UserCompanyId,
             InboxTestData.Now);
+
         var processor = _fixture.Create<InboxProcessor>();
 
         await processor.RunAsync(CancellationToken.None);

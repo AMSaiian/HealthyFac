@@ -33,7 +33,6 @@ public sealed class MachinesPart : ISeedPart
     private readonly ServiceHosts.ServiceHosts _hosts;
     private readonly Dictionary<string, Func<SeedContext, CancellationToken, Task>> _actions = [];
 
-    private MachinesFile _file = null!;
     private IReadOnlyDictionary<Guid, ProposedMachine> _drafts = null!;
 
     public MachinesPart(ServiceHosts.ServiceHosts hosts)
@@ -43,20 +42,23 @@ public sealed class MachinesPart : ISeedPart
 
     public IReadOnlyList<SeedEvent> ReadEvents(SeedFolder folder)
     {
-        _file = folder.Read<MachinesFile>(MachinesConstants.FileName);
+        var file = folder.Read<MachinesFile>(MachinesConstants.FileName);
+
         _drafts = folder.Read<IngestSetFile>(MachinesConstants.SetFileName)
             .Entries
             .SelectMany(entry => entry.DraftsProposed.Machines)
             .ToDictionary(machine => machine.DraftId);
+
         _actions.Clear();
         var events = new List<SeedEvent>();
-        foreach (var machine in _file.Machines)
+
+        foreach (var machine in file.Machines)
         {
             events.Add(ApplyEvent(machine));
             events.Add(DefinitionsEvent(machine));
         }
 
-        events.AddRange(_file.StateChanges.Select(StateEvent));
+        events.AddRange(file.StateChanges.Select(StateEvent));
 
         return events;
     }
@@ -113,8 +115,10 @@ public sealed class MachinesPart : ISeedPart
     {
         var key = $"{machine.Key}{MachinesConstants.DefinitionsSuffix}";
         var item = SeedItem.Of(MachinesConstants.FileName, key);
+
         _actions[key] = (context, cancellationToken) =>
             ApplyDefinitionsAsync(machine, item, context, cancellationToken);
+
         var draft = FindDraft(machine, item);
 
         return new SeedEvent
@@ -215,10 +219,12 @@ public sealed class MachinesPart : ISeedPart
     )
     {
         var goLiveOn = SeedCalendar.ToDate(machine.ExpectedGoLiveOn, context.Anchor, context.Zone);
+
         var response = await _hosts.Core.SendAsync<ApplyMachineDraftRequest, ApplyMachineDraftResponse>(
             context.GetActor(machine.AppliedBy),
             ApplyRequest(machine, item, context.GetId(PeopleConstants.CompanyKey), goLiveOn),
             cancellationToken);
+
         context.SetId(MachineKey(machine.Key), response.MachineId);
     }
 
@@ -239,11 +245,14 @@ public sealed class MachinesPart : ISeedPart
             actor,
             MetricsRequest(draft, item, companyId, machineId, revision),
             cancellationToken);
+
         await _hosts.Telemetry.SendAsync<ApplyStatusDefinitionChangesRequest, ApplyStatusDefinitionChangesResponse>(
             actor,
             StatusesRequest(draft, item, companyId, machineId),
             cancellationToken);
+
         var (metricIds, statusIds) = await ReadDefinitionIdsAsync(machineId, cancellationToken);
+
         foreach (var phase in draft.Phases)
         {
             await _hosts.Telemetry.SendAsync<ApplyOperatingPhaseDraftRequest, ApplyOperatingPhaseDraftResponse>(
@@ -297,9 +306,11 @@ public sealed class MachinesPart : ISeedPart
     {
         using var scope = _hosts.Telemetry.CreateScope(ServiceActor.DatabaseInitialization.For(ServiceName.Telemetry));
         var dbContext = scope.ServiceProvider.GetRequiredService<TelemetryDbContext>();
+
         var metrics = await dbContext.MetricDefinitions
             .Where(definition => definition.MachineRegistrationId == machineId)
             .ToDictionaryAsync(definition => definition.Key, definition => definition.Id, cancellationToken);
+
         var statuses = await dbContext.StatusDefinitions
             .Where(definition => definition.MachineRegistrationId == machineId)
             .ToDictionaryAsync(definition => definition.Code, definition => definition.Id, cancellationToken);
@@ -324,7 +335,7 @@ public sealed class MachinesPart : ISeedPart
             CompanyId = companyId,
             MachineId = machineId,
             ExpectedRevision = expectedRevision,
-            Created = draft.Metrics.Select(metric => CreatedMetric(metric, item)).ToList(),
+            Created = [.. draft.Metrics.Select(metric => CreatedMetric(metric, item))],
         };
 
     private static CreatedMetricDefinition CreatedMetric(ProposedMetric metric, string item) =>
@@ -358,15 +369,17 @@ public sealed class MachinesPart : ISeedPart
         {
             CompanyId = companyId,
             MachineId = machineId,
-            Items = draft.Statuses
-                .Select(status => new StatusDefinitionChange
-                {
-                    DraftId = status.DraftId,
-                    Code = Required(status.Code, item, nameof(status.Code)),
-                    Severity = status.Severity is null ? null : StatusSeverity.FromValue(status.Severity),
-                    Description = status.Description,
-                })
-                .ToList(),
+            Items =
+            [
+                .. draft.Statuses
+                    .Select(status => new StatusDefinitionChange
+                    {
+                        DraftId = status.DraftId,
+                        Code = Required(status.Code, item, nameof(status.Code)),
+                        Severity = status.Severity is null ? null : StatusSeverity.FromValue(status.Severity),
+                        Description = status.Description,
+                    }),
+            ],
         };
 
     private static ApplyOperatingPhaseDraftRequest PhaseRequest(
@@ -404,27 +417,35 @@ public sealed class MachinesPart : ISeedPart
             Description = phase.Description,
             Priority = phase.Priority ?? 0,
             IsTracked = phase.IsTracked ?? true,
-            Conditions = phase.Conditions
-                .Select(condition => new PhaseConditionInput
-                {
-                    MetricDefinitionId = condition.MetricDraftId is { } metricDraftId ? MetricOf(metricDraftId) : null,
-                    StatusDefinitionId = condition.StatusDraftId is { } statusDraftId ? StatusOf(statusDraftId) : null,
-                    Operator = condition.Operator is null ? null : PhaseConditionOperator.FromValue(condition.Operator),
-                    Value = condition.Value,
-                    UpperValue = condition.UpperValue,
-                    States = condition.States,
-                })
-                .ToList(),
-            Limits = phase.Limits
-                .Select(limit => new PhaseLimitInput
-                {
-                    MetricDefinitionId = MetricOf(limit.MetricDraftId!.Value),
-                    WarningLow = limit.WarningLow,
-                    WarningHigh = limit.WarningHigh,
-                    AlarmLow = limit.AlarmLow,
-                    AlarmHigh = limit.AlarmHigh,
-                })
-                .ToList(),
+            Conditions =
+            [
+                .. phase.Conditions
+                    .Select(condition => new PhaseConditionInput
+                    {
+                        MetricDefinitionId =
+                            condition.MetricDraftId is { } metricDraftId ? MetricOf(metricDraftId) : null,
+                        StatusDefinitionId =
+                            condition.StatusDraftId is { } statusDraftId ? StatusOf(statusDraftId) : null,
+                        Operator = condition.Operator is null
+                            ? null
+                            : PhaseConditionOperator.FromValue(condition.Operator),
+                        Value = condition.Value,
+                        UpperValue = condition.UpperValue,
+                        States = condition.States,
+                    }),
+            ],
+            Limits =
+            [
+                .. phase.Limits
+                    .Select(limit => new PhaseLimitInput
+                    {
+                        MetricDefinitionId = MetricOf(limit.MetricDraftId!.Value),
+                        WarningLow = limit.WarningLow,
+                        WarningHigh = limit.WarningHigh,
+                        AlarmLow = limit.AlarmLow,
+                        AlarmHigh = limit.AlarmHigh,
+                    }),
+            ],
         };
     }
 }

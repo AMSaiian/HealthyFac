@@ -2,6 +2,7 @@ using System.Diagnostics.Metrics;
 using HealthyFac.MachineSimulator.Publishing;
 using HealthyFac.MachineSimulator.Scenarios;
 using HealthyFac.Shared.Application.Observability;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.Metrics.Testing;
 using Instruments = HealthyFac.Shared.Application.Observability.ObservabilityConstants.Simulator.Instruments;
@@ -9,6 +10,7 @@ using Tags = HealthyFac.Shared.Application.Observability.ObservabilityConstants.
 
 namespace HealthyFac.MachineSimulator.UnitTests.Publishing;
 
+[Feature(TestFeatures.Simulation)]
 public sealed class SimulatorMetricsTests
 {
     private readonly IMeterFactory _meterFactory = new ServiceCollection()
@@ -20,6 +22,7 @@ public sealed class SimulatorMetricsTests
     public void RecordMessage_WithPublishedAndDropped_CountsEachWithItsTags()
     {
         var metrics = new SimulatorMetrics(_meterFactory);
+
         using var collector = new MetricCollector<long>(
             _meterFactory,
             ObservabilityConstants.Simulator.Meter,
@@ -30,11 +33,11 @@ public sealed class SimulatorMetricsTests
 
         var measurements = collector.GetMeasurementSnapshot();
         measurements.Should().HaveCount(expected: 2);
-        measurements[index: 0].Value.Should().Be(expected: 1);
-        measurements[index: 0].Tags[Tags.Scenario].Should().Be(expected: "cncTurningCenter");
-        measurements[index: 0].Tags[Tags.Outcome].Should().Be(expected: "published");
-        measurements[index: 1].Tags[Tags.Scenario].Should().Be(expected: "generic");
-        measurements[index: 1].Tags[Tags.Outcome].Should().Be(expected: "dropped");
+        measurements[0].Value.Should().Be(expected: 1);
+        measurements[0].Tags[Tags.Scenario].Should().Be(expected: "cncTurningCenter");
+        measurements[0].Tags[Tags.Outcome].Should().Be(expected: "published");
+        measurements[1].Tags[Tags.Scenario].Should().Be(expected: "generic");
+        measurements[1].Tags[Tags.Outcome].Should().Be(expected: "dropped");
         collector.Instrument!.Unit.Should().Be(expected: "{message}");
     }
 
@@ -42,6 +45,7 @@ public sealed class SimulatorMetricsTests
     public void RecordPoll_WithDuration_RecordsSecondsWithThePollTag()
     {
         var metrics = new SimulatorMetrics(_meterFactory);
+
         using var collector = new MetricCollector<double>(
             _meterFactory,
             ObservabilityConstants.Simulator.Meter,
@@ -60,6 +64,7 @@ public sealed class SimulatorMetricsTests
     {
         var metrics = new SimulatorMetrics(_meterFactory);
         metrics.SetPublishingSource(() => 3);
+
         using var collector = new MetricCollector<int>(
             _meterFactory,
             ObservabilityConstants.Simulator.Meter,

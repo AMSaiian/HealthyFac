@@ -43,24 +43,34 @@ public static class ShiftEndpoints
         public IEndpointRouteBuilder MapShiftEndpoints()
         {
             var group = app.MapGroup(ShiftRoutes.EmployeeRoute);
+
             group.MapGet(ShiftRoutes.Templates, ListTemplatesAsync)
                 .RequireAuthorization(CorePermissions.Shifts.Read);
+
             group.MapPost(ShiftRoutes.Templates, CreateTemplateAsync)
                 .RequireAuthorization(CorePermissions.Shifts.Manage);
+
             group.MapPut(ShiftRoutes.TemplateById, UpdateTemplateAsync)
                 .RequireAuthorization(CorePermissions.Shifts.Manage);
+
             group.MapDelete(ShiftRoutes.TemplateById, DeleteTemplateAsync)
                 .RequireAuthorization(CorePermissions.Shifts.Manage);
+
             group.MapGet(ShiftRoutes.Overrides, ListOverridesAsync)
                 .RequireAuthorization(CorePermissions.Shifts.Read);
+
             group.MapPut(ShiftRoutes.OverrideByDate, SetOverrideAsync)
                 .RequireAuthorization(CorePermissions.Shifts.Manage);
+
             group.MapDelete(ShiftRoutes.OverrideByDate, DeleteOverrideAsync)
                 .RequireAuthorization(CorePermissions.Shifts.Manage);
+
             group.MapGet(ShiftRoutes.Schedule, GetEmployeeDayAsync)
                 .RequireAuthorization(CorePermissions.Shifts.Read);
+
             group.MapGet(ShiftRoutes.ScheduleDays, GetScheduleDaysAsync)
                 .RequireAuthorization(CorePermissions.Shifts.Read);
+
             group.MapGet(ShiftRoutes.FreeSpans, GetFreeSpansAsync)
                 .RequireAuthorization(CorePermissions.Shifts.Read);
 

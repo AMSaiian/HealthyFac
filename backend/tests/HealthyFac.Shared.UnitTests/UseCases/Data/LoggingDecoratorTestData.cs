@@ -21,9 +21,9 @@ public static class LoggingDecoratorTestData
         { new ErrorLevelRejectionException(), LogLevel.Error },
     };
 
-    public static TheoryData<Exception> IgnoredRejections => new()
-    {
+    public static TheoryData<Exception> IgnoredRejections =>
+    [
         new AppValidationException([new ValidationFailure(propertyName: "Name", errorMessage: "required")]),
         new NotFoundException(message: "quiet") { Level = null },
-    };
+    ];
 }

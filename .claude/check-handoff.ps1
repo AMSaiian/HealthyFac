@@ -2,30 +2,30 @@
 # check-handoff.ps1 - the pre-review check of the executor: it finds the mechanical findings before the review
 # (.claude/agents/executor.md, Handoff).
 # Usage: pwsh .claude/check-handoff.ps1 <feature folder> [-Repo <path>] [-Base <ref>] [-Cycle <N>]
-#        [-MainBranch <name>] [-FormatScript <path>]
+#        [-MainBranch <name>]
 # Defaults: -Repo is the checkout that holds this script file (not the current folder); -Base is the "Base:" SHA of the
 # plan header, else the merge base of HEAD and origin/-MainBranch (develop; the local branch when origin has none, Get-DefaultBase), so a main branch that
 # moved adds no files of other features; -Cycle is the Cycle:
-# line of plan.md (the highest cycle when plan.md has none); -FormatScript is format-changed.ps1 next to this file.
+# line of plan.md (the highest cycle when plan.md has none).
 # Output: one line for each problem. Exit code 1 when there is one.
 # Phase 1, the text checks in this order: the step ticks, the Red: and Proof: lines, the browser flow lines and the
 # WAITING marks, the Deviations entries, the Files: lines. When phase 1 has a problem, the script prints the problems,
-# then "Text checks failed: the format pass and the run lines were not checked.", and exits 1.
-# Phase 2 runs the format script on the changed files, so it can change files: each changed file is a problem. After
-# run-area.ps1, the format script skips the files that it formatted at the same tree. Then it checks the long lines and
-# the Full run lines. It runs no script test suite: run-area.ps1 -Area tooling does (CLAUDE.md, Build and Test).
+# then "Text checks failed: the run results were not checked.", and exits 1.
+# Phase 2 reads the run results that run-area.ps1 and run-tests.ps1 stored for this checkout (Get-RunResults), never a
+# "Full run" line of plan.md. It formats nothing and runs no test suite.
 # Problems:
 # - a step of the cycle that is not [x] or [~] (a browser check step marked [!] with WAITING: and retried: passes);
 # - a step whose text says TDD, Red, or "Proof required", with no Red: or Proof: line in its own block (under the step);
 # - a TDD step (TDD on its first line) whose block has a line that starts with Proof: but none that starts with Red: (a
 #   "Proof required" step keeps the Red: or Proof: rule);
 # - a Deviations entry of the cycle that holds a Red: or Proof: line, or that only logs a run ("Step N: done");
-# - a changed or untracked file whose path or file name is in no "Files:" line and no "#### Deviations" entry of any
+# - a changed or untracked file whose path or file name is in no "Files:" line (a backticked entry with * is a glob) and no
+#   "#### Deviations" entry of any
 #   cycle (the base holds the earlier cycles of the branch too);
-# - a file that the format script changed, and each note of a skipped cleanup;
-# - a line of a changed C# file (outside Migrations/) that is longer than max_line_length of .editorconfig;
-# - a test area (tree-id.ps1 -Area backend|frontend|tooling) that differs from the base and has no "Full run <area>:
-#   tree <id>" line with its current tree in plan.md (also for tooling, in every cycle);
+# - a test area (tree-id.ps1 -Area backend|frontend|tooling) that differs from the base and has no stored "pass" result
+#   with its current tree. A cycle that is not the last one (plan.md has a "### Cycle <N+1>" section) accepts an
+#   "affected" or a "full" result. The last cycle needs a "full" result for backend and frontend, and any "pass" result
+#   for tooling.
 # - a browser flow line of a step (.claude/browser-checks.md, Flow Lines): a "pass" line without "seen:", or with a
 #   caveat (a timeout, "not checked", a minimized window, a faked size, a script drag, a stubbed function, a DOM-only
 #   measurement; the text of a "retried:" part does not count); a "fail" line or a WAITING step that names a transient
@@ -36,8 +36,7 @@ param(
   [string]$Repo = (git -C $PSScriptRoot rev-parse --show-toplevel),
   [string]$Base,
   [int]$Cycle = 0,
-  [string]$MainBranch = 'develop',
-  [string]$FormatScript = (Join-Path $PSScriptRoot 'format-changed.ps1')
+  [string]$MainBranch = 'develop'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -128,8 +127,11 @@ foreach ($line in $planLines) {
 $knownText = ($planFilesText + "`n" + ($planDeviationLines -join "`n")).Replace('\', '/')
 $changed = @(@(git -C $Repo diff --name-only $Base) + @(git -C $Repo ls-files --others --exclude-standard) |
     Where-Object { $_ } | ForEach-Object { $_.Replace('\', '/') } | Sort-Object -Unique)
+# A backticked entry with a star is a glob: "**" matches any path, "*" matches a name part (for a bulk change of many files).
+$globs = @([regex]::Matches($knownText, '`([^`\s]*\*[^`\s]*)`') | ForEach-Object { ConvertTo-GlobRegex $_.Groups[1].Value })
 foreach ($path in $changed) {
   $name = Split-Path $path -Leaf
+  if (@($globs | Where-Object { $path -match $_ }).Count -gt 0) { continue }
   if (-not $knownText.Contains($path, [StringComparison]::OrdinalIgnoreCase) -and
     -not $knownText.Contains($name, [StringComparison]::OrdinalIgnoreCase)) {
     $problems.Add("File $path is in no Files: line and no Deviations entry of plan.md.")
@@ -138,40 +140,25 @@ foreach ($path in $changed) {
 
 if ($problems.Count -gt 0) {
   $problems
-  'Text checks failed: the format pass and the run lines were not checked.'
+  'Text checks failed: the run results were not checked.'
   exit 1
 }
 
-$existing = @($changed | Where-Object { Test-Path -LiteralPath (Join-Path $Repo $_) -PathType Leaf })
-if ($existing.Count -gt 0 -and $FormatScript -and (Test-Path -LiteralPath $FormatScript)) {
-  $before = @{}
-  foreach ($path in $existing) { $before[$path] = (Get-FileHash -LiteralPath (Join-Path $Repo $path)).Hash }
-  $notes = @(& $FormatScript -Repo $Repo -Files $existing)
-  foreach ($note in $notes) { $problems.Add("Formatter: $note") }
-  foreach ($path in $existing) {
-    if ((Get-FileHash -LiteralPath (Join-Path $Repo $path)).Hash -ne $before[$path]) {
-      $problems.Add("The formatter changed $path. Run the tests of its area again and write a new Full run line.")
-    }
-  }
-}
-
-foreach ($line in @(Get-LongLines -Repo $Repo -Files $existing)) {
-  $problems.Add("$($line.File):$($line.Line) has $($line.Length) characters; max_line_length is $($line.Limit). Split the line.")
-}
-
-$areaRuns = [regex]::Matches(($planLines -join "`n"), 'Full run (backend|frontend|tooling):\s*tree\s+([0-9a-f]{40})')
+$isLastCycle = -not ($planLines | Where-Object { $_ -match "^### Cycle $($Cycle + 1)\s*$" })
+$results = @(Get-RunResults $Repo)
 foreach ($area in $Areas) {
   $current = Get-TreeId -Repo $Repo -Area $area
   $atBase = Get-TreeId -Repo $Repo -Area $area -Ref $Base
   if ($current -eq $atBase) { continue }
-  $tested = @($areaRuns | Where-Object { $_.Groups[1].Value -eq $area } | ForEach-Object { $_.Groups[2].Value })
-  if ($current -in $tested) { continue }
-  if ($tested.Count -eq 0) {
-    $problems.Add("Cycle ${Cycle}: the $area area changed since the base, but plan.md has no 'Full run ${area}: tree <id>' line.")
+  $passed = @($results | Where-Object { $_.area -eq $area -and $_.status -eq 'pass' -and $_.tree -eq $current })
+  $isFullNeeded = $isLastCycle -and $area -ne 'tooling'
+  if ($isFullNeeded -and @($passed | Where-Object { $_.kind -eq 'Full run' }).Count -gt 0) { continue }
+  if (-not $isFullNeeded -and $passed.Count -gt 0) { continue }
+  if ($isFullNeeded) {
+    $problems.Add("Cycle ${Cycle}: the $area area changed, but no passed full run has the current tree $current. Run pwsh .claude/run-area.ps1 -Area $area.")
   } else {
-    $problems.Add("The last Full run ${area}: tree $($tested[-1]) is not the current $area tree $current. Run the $area full suite again.")
+    $problems.Add("Cycle ${Cycle}: the $area area changed, but no passed run has the current tree $current. Run pwsh .claude/run-tests.ps1 -Area $area -Changed.")
   }
 }
-
 $problems
 if ($problems.Count -gt 0) { exit 1 }

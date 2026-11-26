@@ -1,7 +1,9 @@
 using HealthyFac.Insights.Application.Agents.Prompts;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Insights.UnitTests.Agents;
 
+[Feature(TestFeatures.Cases)]
 public sealed class AgentDataBlocksTests
 {
     private const string Tag = "case";

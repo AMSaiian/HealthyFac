@@ -3,10 +3,13 @@ using HealthyFac.Insights.IntegrationTests.Database;
 using HealthyFac.Insights.IntegrationTests.Database.Data;
 using HealthyFac.Insights.IntegrationTests.Documents.Data;
 using HealthyFac.Insights.Messaging.Ingest;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Insights.IntegrationTests.Documents;
 
 [Collection(InsightsCollection.Name)]
+[Feature(TestFeatures.Ingest)]
+[Feature(TestFeatures.Files)]
 public sealed class FileMessageTests(InsightsFixture fixture)
 {
     private static readonly Guid MachineId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000101");
@@ -116,6 +119,7 @@ public sealed class FileMessageTests(InsightsFixture fixture)
         var completed = IngestAttemptTestData.CreateCompleted();
         await _fixture.SaveAsync(completed, IngestAttemptTestData.CreateDocument(completed.Id));
         var newerAt = IngestAttemptTestData.Now.AddMinutes(value: 10);
+
         await _fixture.HandleMachineChangedAsync(
             IngestAttemptTestData.CompanyId, IngestAttemptTestData.FileId, MachineId, newerAt);
 

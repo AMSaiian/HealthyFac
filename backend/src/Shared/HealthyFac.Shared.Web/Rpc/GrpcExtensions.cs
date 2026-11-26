@@ -35,13 +35,16 @@ public static class GrpcExtensions
             services.AddValidatedOptions<GrpcEndpointOptions, GrpcEndpointOptionsValidator>(
                 GrpcEndpointOptions.SectionName,
                 configuration);
+
             services.AddSingleton<GrpcPortMiddleware>();
+
             services.AddGrpc(options =>
             {
                 options.EnableDetailedErrors = environment.IsDevelopment();
                 options.MaxReceiveMessageSize = GrpcConstants.MaxReceiveMessageSizeBytes;
                 options.Interceptors.Add<GrpcExceptionInterceptor>();
             });
+
             services.AddOptions<KestrelServerOptions>()
                 .Configure<IOptions<GrpcEndpointOptions>>((kestrel, grpcOptions) =>
                     kestrel.ConfigureEndpointDefaults(listen =>
@@ -81,6 +84,7 @@ public static class GrpcExtensions
         public IEndpointRouteBuilder MapSharedGrpcReflection()
         {
             var environment = app.ServiceProvider.GetRequiredService<IHostEnvironment>();
+
             if (environment.IsDevelopment())
             {
                 app.MapGrpcReflectionService().AllowAnonymous();

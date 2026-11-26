@@ -73,14 +73,18 @@ public sealed class CompositionStubs : IAsyncDisposable
     {
         DraftSourceStub.Serve(Core, DraftSearchCompositionTestData.CoreSearchPath, []);
         DraftSourceStub.Serve(Telemetry, DraftSearchCompositionTestData.TelemetrySearchPath, []);
+
         Core.Respond(
             HttpMethod.Post,
             DraftSearchCompositionTestData.NamesPath,
             status: 200,
             json: "{\"machines\":[],\"machineDrafts\":[]}");
+
         Core.Respond(HttpMethod.Get, CoreAttemptDrafts, status: 200, json: "{\"groups\":[]}");
+
         Telemetry.Respond(
             HttpMethod.Get, TelemetryAttemptDrafts, status: 200, json: "{\"metrics\":[],\"statuses\":[]}");
+
         Core.Respond(HttpMethod.Post, CoreMachineDismiss, status: 200, json: "{\"dismissedCount\":0}");
         Telemetry.Respond(HttpMethod.Post, TelemetryMachineDismiss, status: 200, json: "{\"dismissedCount\":0}");
         Core.Respond(HttpMethod.Post, CoreAttemptDismiss, status: 200, json: "{\"dismissedCount\":0}");

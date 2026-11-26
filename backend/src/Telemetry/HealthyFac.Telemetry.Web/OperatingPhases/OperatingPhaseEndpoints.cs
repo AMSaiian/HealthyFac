@@ -35,16 +35,22 @@ public static class OperatingPhaseEndpoints
         public IEndpointRouteBuilder MapOperatingPhaseEndpoints()
         {
             var group = app.MapGroup(OperatingPhaseRoutes.BaseRoute);
+
             group.MapGet(OperatingPhaseRoutes.Root, ListAsync)
                 .RequireAuthorization(TelemetryPermissions.OperatingPhases.Read);
+
             group.MapPost(OperatingPhaseRoutes.Root, CreateAsync)
                 .RequireAuthorization(TelemetryPermissions.OperatingPhases.Write);
+
             group.MapPut(OperatingPhaseRoutes.Order, ReorderAsync)
                 .RequireAuthorization(TelemetryPermissions.OperatingPhases.Write);
+
             group.MapGet(OperatingPhaseRoutes.ById, GetAsync)
                 .RequireAuthorization(TelemetryPermissions.OperatingPhases.Read);
+
             group.MapPut(OperatingPhaseRoutes.ById, UpdateAsync)
                 .RequireAuthorization(TelemetryPermissions.OperatingPhases.Write);
+
             group.MapDelete(OperatingPhaseRoutes.ById, DeleteAsync)
                 .RequireAuthorization(TelemetryPermissions.OperatingPhases.Write);
 

@@ -21,7 +21,7 @@ const READERS: Record<TestColumn, (value: unknown) => Partial<TestFilter>> = {
 
 const COLUMNS: readonly TestColumn[] = ['name', 'tags'];
 
-describe('toTableFilters', () => {
+describe('toTableFilters', { tags: ['Persistence'] }, () => {
   it('toTableFilters_WithAppliedFilter_WritesOneConstraintPerColumn', () => {
     const filters = toTableFilters(COLUMNS, WRITERS, { name: 'la', tags: [] });
 
@@ -32,7 +32,7 @@ describe('toTableFilters', () => {
   });
 });
 
-describe('readTableFilters', () => {
+describe('readTableFilters', { tags: ['Persistence'] }, () => {
   it('readTableFilters_WithPendingValues_ReadsTrimmedPatchOfEveryColumn', () => {
     const patch = readTableFilters(COLUMNS, READERS, { name: [{ value: '  ab  ' }], tags: { value: ['x'] } });
 
@@ -46,7 +46,7 @@ describe('readTableFilters', () => {
   });
 });
 
-describe('asRange', () => {
+describe('asRange', { tags: ['Persistence'] }, () => {
   it('asRange_WithNonRange_ReturnsEmptyRange', () => {
     const range = asRange('x');
 

@@ -1,8 +1,10 @@
 using HealthyFac.Insights.Application.Embeddings;
 using HealthyFac.Insights.UnitTests.Embeddings.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Insights.UnitTests.Embeddings;
 
+[Feature(TestFeatures.Ingest)]
 public sealed class VectorNormalizationTests
 {
     [Fact]

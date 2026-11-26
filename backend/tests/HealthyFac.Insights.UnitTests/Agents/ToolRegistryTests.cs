@@ -6,12 +6,14 @@ using HealthyFac.Insights.Domain.Agents.ToolCalls;
 using HealthyFac.Insights.Infrastructure.Agents.Tools;
 using HealthyFac.Insights.UnitTests.Agents.Data;
 using HealthyFac.Insights.UnitTests.Extraction.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
 
 namespace HealthyFac.Insights.UnitTests.Agents;
 
+[Feature(TestFeatures.Cases)]
 public sealed class ToolRegistryTests
 {
     private static readonly Guid CompanyId = Guid.Parse(input: "22222222-2222-2222-2222-222222222222");
@@ -21,47 +23,41 @@ public sealed class ToolRegistryTests
     private readonly List<AgentToolCall> _rows = [];
     private readonly FakeLogger _logger = new();
 
-    [Fact]
-    public void For_WithTheRolePlanner_ReturnsOnlyThePlannerTools()
+    [Theory]
+    [MemberData(nameof(ToolTestData.ToolsOfRole), MemberType = typeof(ToolTestData))]
+    public void For_WithARole_ReturnsOnlyTheToolsOfThatRole(
+        string caseName,
+        AgentRole role,
+        string[] expectedNames
+    )
     {
-        var functions = CreateRegistry().For(AgentRole.Planner, CreateContext());
+        var functions = CreateRegistry().For(role, CreateContext());
 
-        functions.Select(function => function.Name)
-            .Should()
-            .BeEquivalentTo(
-                ToolTestData.PlannerToolName,
-                ToolTestData.RejectedToolName,
-                ToolTestData.FailedToolName,
-                ToolTestData.EpisodeToolName);
-    }
-
-    [Fact]
-    public void For_WithTheRoleExtractor_ReturnsOnlyTheExtractorTools()
-    {
-        var functions = CreateRegistry().For(AgentRole.Extractor, CreateContext());
-
-        functions.Select(function => function.Name).Should().BeEquivalentTo(ToolTestData.ExtractorToolName);
+        functions.Select(function => function.Name).Should().BeEquivalentTo(expectedNames, caseName);
     }
 
     [Fact]
     public async Task Invoke_WithACompanyAndMachineInTheArguments_UsesTheValuesOfTheContext()
     {
         var function = FindFunction(ToolTestData.PlannerToolName);
+
         var arguments = new AIFunctionArguments
         {
-            [key: "text"] = "hello",
-            [key: "companyId"] = ToolTestData.ForeignGuidText,
-            [key: "machineId"] = ToolTestData.ForeignGuidText,
+            ["text"] = "hello",
+            ["companyId"] = ToolTestData.ForeignGuidText,
+            ["machineId"] = ToolTestData.ForeignGuidText,
         };
 
         var result = await function.InvokeAsync(arguments, TestContext.Current.CancellationToken);
 
         var row = _rows.Single();
         var text = result!.ToString()!;
+
         text.Should()
             .StartWith(expected: "<tool_result>")
             .And.Contain(new PrefixIdEncryptor().Encrypt(CompanyId))
             .And.Contain(expected: "hello");
+
         text.Should().NotContain(ToolTestData.ForeignGuidText);
         _scopes.LastCompanyId.Should().Be(CompanyId);
         row.Outcome.Should().Be(ToolCallOutcome.Succeeded);
@@ -77,10 +73,11 @@ public sealed class ToolRegistryTests
         var second = Guid.Parse(input: "55555555-5555-5555-5555-555555555555");
         EpisodeHandler.Received.Clear();
         var function = FindFunction(ToolTestData.EpisodeToolName);
+
         var arguments = new AIFunctionArguments
         {
-            [key: "episodeId"] = encryptor.Encrypt(first),
-            [key: "otherEpisodeIds"] = new[] { encryptor.Encrypt(second) },
+            ["episodeId"] = encryptor.Encrypt(first),
+            ["otherEpisodeIds"] = new[] { encryptor.Encrypt(second) },
         };
 
         var result = await function.InvokeAsync(arguments, TestContext.Current.CancellationToken);
@@ -108,7 +105,7 @@ public sealed class ToolRegistryTests
         var function = FindFunction(ToolTestData.RejectedToolName);
 
         var result = await function.InvokeAsync(
-            new AIFunctionArguments { [key: "text"] = "x" },
+            new AIFunctionArguments { ["text"] = "x" },
             TestContext.Current.CancellationToken);
 
         var row = _rows.Single();
@@ -122,7 +119,7 @@ public sealed class ToolRegistryTests
         var function = FindFunction(ToolTestData.PlannerToolName);
 
         await function.InvokeAsync(
-            new AIFunctionArguments { [key: "text"] = JsonDocument.Parse(json: "[1]").RootElement },
+            new AIFunctionArguments { ["text"] = JsonDocument.Parse(json: "[1]").RootElement },
             TestContext.Current.CancellationToken);
 
         _rows.Single().Outcome.Should().Be(ToolCallOutcome.Rejected);
@@ -134,16 +131,18 @@ public sealed class ToolRegistryTests
         var function = FindFunction(ToolTestData.FailedToolName);
 
         var result = await function.InvokeAsync(
-            new AIFunctionArguments { [key: "text"] = "x" },
+            new AIFunctionArguments { ["text"] = "x" },
             TestContext.Current.CancellationToken);
 
         var entry = _logger.Collector.GetSnapshot().Should().ContainSingle().Which;
         entry.Level.Should().Be(LogLevel.Warning);
+
         entry.Exception.Should()
             .BeOfType<InvalidOperationException>()
             .Which.Message
             .Should()
             .Be(ToolTestData.DownstreamFailureText);
+
         result!.ToString().Should().NotContain(ToolTestData.DownstreamFailureText);
         _rows.Single().Outcome.Should().Be(ToolCallOutcome.Failed);
     }
@@ -154,7 +153,7 @@ public sealed class ToolRegistryTests
         var function = FindFunction(ToolTestData.RejectedToolName);
 
         await function.InvokeAsync(
-            new AIFunctionArguments { [key: "text"] = "x" },
+            new AIFunctionArguments { ["text"] = "x" },
             TestContext.Current.CancellationToken);
 
         _logger.Collector.GetSnapshot().Should().BeEmpty();

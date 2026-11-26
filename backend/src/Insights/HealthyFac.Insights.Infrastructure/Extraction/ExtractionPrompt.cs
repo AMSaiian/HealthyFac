@@ -41,12 +41,14 @@ public static partial class ExtractionPrompt
     public static string BuildSystemPrompt(ExtractionInput input)
     {
         var template = ReadTemplate();
+
         var prompt = template
             .Replace(UnitCatalogPlaceholder, FormatUnits(input.Units), StringComparison.Ordinal)
             .Replace(ExistingKeysPlaceholder, FormatLines(input.Signals.MetricKeys), StringComparison.Ordinal)
             .Replace(ExistingCodesPlaceholder, FormatLines(input.Signals.StatusCodes), StringComparison.Ordinal);
 
         var left = PlaceholderPattern().Match(prompt);
+
         if (left.Success)
         {
             throw new InvalidOperationException(string.Format(UnresolvedMessage, left.Value));
@@ -64,12 +66,14 @@ public static partial class ExtractionPrompt
     public static string BuildUserMessage(ExtractionInput input)
     {
         var builder = new StringBuilder();
+
         if (input.IsMachineFile)
         {
             builder.AppendLine(MachineFileLine);
         }
 
         builder.AppendLine(DocumentStart);
+
         foreach (var chunk in input.Chunks)
         {
             var location = string.IsNullOrWhiteSpace(chunk.Location) ? string.Empty : $"[{Escape(chunk.Location)}] ";
@@ -114,8 +118,10 @@ public static partial class ExtractionPrompt
     private static string ReadTemplate()
     {
         var assembly = Assembly.GetExecutingAssembly();
+
         using var stream = assembly.GetManifestResourceStream(ResourceName)
             ?? throw new InvalidOperationException(string.Format(MissingResourceMessage, ResourceName));
+
         using var reader = new StreamReader(stream, Encoding.UTF8);
 
         return reader.ReadToEnd();

@@ -1,9 +1,11 @@
 using HealthyFac.Seeder.SeedFiles;
 using HealthyFac.Seeder.Timeline;
 using HealthyFac.Seeder.UnitTests.SeedFiles.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Seeder.UnitTests.SeedFiles;
 
+[Feature(TestFeatures.Seeding)]
 public sealed class SeedCheckTests
 {
     private static readonly TimeZoneInfo Kyiv = TimeZoneInfo.FindSystemTimeZoneById(id: "Europe/Kyiv");
@@ -47,8 +49,8 @@ public sealed class SeedCheckTests
         var failures = await check.RunAsync(SeedCheckTestData.EventsWithAnEventAfterTheMarker, CancellationToken.None);
 
         failures.Should().ContainSingle();
-        failures[index: 0].Item.Should().Be(SeedCheckTestData.LateItem);
-        failures[index: 0].Rule.Should().Contain(SeedCheckTestData.CompletionItem);
+        failures[0].Item.Should().Be(SeedCheckTestData.LateItem);
+        failures[0].Rule.Should().Contain(SeedCheckTestData.CompletionItem);
     }
 
     [Fact(Explicit = true)]
@@ -98,8 +100,8 @@ public sealed class SeedCheckTests
             SeedCheckTestData.ScriptEventsWithAModeOneEventAfterTheMarker, CancellationToken.None);
 
         failures.Should().ContainSingle();
-        failures[index: 0].Item.Should().Be(SeedCheckTestData.LateItem);
-        failures[index: 0].Rule.Should().Contain(SeedCheckTestData.CompletionItem);
+        failures[0].Item.Should().Be(SeedCheckTestData.LateItem);
+        failures[0].Rule.Should().Contain(SeedCheckTestData.CompletionItem);
     }
 
     [Fact(Explicit = true)]
@@ -111,8 +113,8 @@ public sealed class SeedCheckTests
             SeedCheckTestData.ScriptEventsWithAStepAfterTheScriptMarker, CancellationToken.None);
 
         failures.Should().ContainSingle();
-        failures[index: 0].Item.Should().Be(SeedCheckTestData.ScriptLateStepItem);
-        failures[index: 0].Rule.Should().Contain(SeedCheckTestData.ScriptMarkerItem);
+        failures[0].Item.Should().Be(SeedCheckTestData.ScriptLateStepItem);
+        failures[0].Rule.Should().Contain(SeedCheckTestData.ScriptMarkerItem);
     }
 
     [Fact(Explicit = true)]

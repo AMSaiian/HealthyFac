@@ -5,7 +5,7 @@ import { chipTooltipOf, estimateTextOf, previewWidthOf } from './staging-area.ut
 
 const AXIS = axisOf(Temporal.PlainDate.from('2027-06-01'), 'Europe/Kyiv');
 
-describe('estimateTextOf', () => {
+describe('estimateTextOf', { tags: ['Platform'] }, () => {
   it.each([
     ['LessThanOneHour', 45, 'WORK_ORDERS.SCHEDULE_TAB.ESTIMATE_MINUTES', 0, 45],
     ['ExactHours', 120, 'WORK_ORDERS.SCHEDULE_TAB.ESTIMATE_HOURS', 2, 0],
@@ -15,7 +15,7 @@ describe('estimateTextOf', () => {
   });
 });
 
-describe('previewWidthOf', () => {
+describe('previewWidthOf', { tags: ['Platform'] }, () => {
   it('previewWidthOf_ForSixHoursOnAThousandPixelAxis_IsAQuarterOfTheAxis', () => {
     expect(previewWidthOf(360, AXIS, 1000)).toBeCloseTo(250);
   });
@@ -25,7 +25,7 @@ describe('previewWidthOf', () => {
   });
 });
 
-describe('chipTooltipOf', () => {
+describe('chipTooltipOf', { tags: ['Platform'] }, () => {
   it('chipTooltipOf_ForATitleAndAnEstimateText_GivesTheTitleThenTheEstimateOnTwoLines', () => {
     const lines = chipTooltipOf('Replace filter', '1 h 30 min').split('\n');
 

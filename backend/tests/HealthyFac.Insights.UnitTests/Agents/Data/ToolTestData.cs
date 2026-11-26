@@ -1,6 +1,7 @@
 using FluentValidation.Results;
 using HealthyFac.Insights.Application.Agents.Tools;
 using HealthyFac.Insights.Application.Agents.Tools.Invocation;
+using HealthyFac.Insights.Domain.Agents.Runs;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.UseCases;
 using Microsoft.Extensions.DependencyInjection;
@@ -9,6 +10,12 @@ namespace HealthyFac.Insights.UnitTests.Agents.Data;
 
 public static class ToolTestData
 {
+    public static TheoryData<string, AgentRole, string[]> ToolsOfRole => new()
+    {
+        { "planner", AgentRole.Planner, [PlannerToolName, RejectedToolName, FailedToolName, EpisodeToolName] },
+        { "extractor", AgentRole.Extractor, [ExtractorToolName] },
+    };
+
     public const string PlannerToolName = "echo_machine";
     public const string ExtractorToolName = "extract_only";
     public const string RejectedToolName = "always_rejected";

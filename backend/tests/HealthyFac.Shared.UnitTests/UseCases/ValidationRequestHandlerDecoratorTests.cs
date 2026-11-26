@@ -1,11 +1,13 @@
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.UseCases.Decorators;
 using HealthyFac.Shared.UnitTests.UseCases.Data;
+using HealthyFac.Testing.Features;
 using HealthyFac.Testing.Logging;
 using Microsoft.Extensions.Logging;
 
 namespace HealthyFac.Shared.UnitTests.UseCases;
 
+[Feature(TestFeatures.Platform)]
 public sealed class ValidationRequestHandlerDecoratorTests
 {
     private const string ErrorsKey = "@Errors";
@@ -33,7 +35,7 @@ public sealed class ValidationRequestHandlerDecoratorTests
         var entry = _logger.Entries.Should().ContainSingle(e => e.Level == LogLevel.Information).Subject;
         entry.Exception.Should().BeNull();
         var errors = entry.Properties[ErrorsKey].Should().BeAssignableTo<IDictionary<string, string[]>>().Subject;
-        errors[key: "name"].Should().ContainSingle(ValidationMessages.NameRequired);
+        errors["name"].Should().ContainSingle(ValidationMessages.NameRequired);
     }
 
     [Fact]

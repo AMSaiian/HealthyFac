@@ -2,10 +2,12 @@ using HealthyFac.Insights.Application.Embeddings;
 using HealthyFac.Insights.Application.Ingest.Processing;
 using HealthyFac.Insights.Infrastructure.Ingest.ProviderCalls;
 using HealthyFac.Insights.UnitTests.Embeddings.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.Options;
 
 namespace HealthyFac.Insights.UnitTests.Embeddings;
 
+[Feature(TestFeatures.Ingest)]
 public sealed class ChunkEmbedderTests
 {
     private const int ShortVectorSize = 768;
@@ -36,15 +38,15 @@ public sealed class ChunkEmbedderTests
 
         vectors.Should().HaveCount(expected: 3);
         vectors.Should().OnlyContain(vector => Math.Abs(Norm(vector) - 1f) < EmbeddingTestData.NormTolerance);
-        vectors[index: 0][0].Should().BeLessThan(vectors[index: 1][0]);
-        vectors[index: 1][0].Should().BeLessThan(vectors[index: 2][0]);
+        vectors[0][0].Should().BeLessThan(vectors[1][0]);
+        vectors[1][0].Should().BeLessThan(vectors[2][0]);
     }
 
     [Fact]
     public async Task Embed_WhenOneTextAnswers429Once_RepeatsOnlyThatText()
     {
         var texts = EmbeddingTestData.Texts(ManyTexts);
-        _generator.TransientFailureText = texts[index: 3];
+        _generator.TransientFailureText = texts[3];
 
         var vectors = await _embedder.EmbedAsync(texts, TestContext.Current.CancellationToken);
 

@@ -8,11 +8,13 @@ using HealthyFac.Core.IntegrationTests.Shifts.Data;
 using HealthyFac.Core.IntegrationTests.WorkOrders.Data;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.UseCases;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Core.IntegrationTests.WorkOrders;
 
 [Collection(CoreWorkOrdersCollection.Name)]
+[Feature(TestFeatures.WorkOrders)]
 public sealed class ApplyScheduleChangesTests(CoreDatabaseFixture fixture)
 {
     private const int TransactionsOfOneWinnerAndOneRepeatedLoser = 3;
@@ -36,8 +38,10 @@ public sealed class ApplyScheduleChangesTests(CoreDatabaseFixture fixture)
         var rowsAfter = await _fixture.CountHistoryRowsAsync(first);
 
         response.WorkOrders.Select(applied => applied.Id).Should().BeEquivalentTo([first, second]);
+
         moved.Current.PlannedStartLocal.Should()
             .Be(ApplyScheduleTestData.Start(ApplyScheduleTestData.AfternoonTime));
+
         rowsAfter.Should().Be(firstRows + 1);
     }
 
@@ -117,8 +121,10 @@ public sealed class ApplyScheduleChangesTests(CoreDatabaseFixture fixture)
     {
         var tenant = await ArrangeTenantAsync();
         _fixture.Clock.Release();
+
         var inactive = await _fixture.ArrangeOtherEmployeeAsync(
             tenant.CompanyId, ApplyScheduleTestData.InactiveWorkerEmail, isDeactivated: true);
+
         _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "07:00"));
         var completed = await CreateScheduledAsync(tenant, tenant.EmployeeId, ApplyScheduleTestData.FirstTime);
         await _fixture.CompleteWorkOrderAsync(completed);
@@ -131,11 +137,14 @@ public sealed class ApplyScheduleChangesTests(CoreDatabaseFixture fixture)
 
         var completedChange = await ChangeAsync(
             completed, tenant.EmployeeId, ApplyScheduleTestData.SecondAfternoonTime);
+
         var toInactiveChange = await ChangeAsync(toInactive, inactive.EmployeeId, ApplyScheduleTestData.FirstTime);
         var beforeNowChange = await ChangeAsync(beforeNow, tenant.EmployeeId, time: null);
         var afterShiftChange = await ChangeAsync(afterShift, tenant.EmployeeId, ApplyScheduleTestData.AfterShiftTime);
+
         var takenChange = await ChangeAsync(
             taken, tenant.EmployeeId, ApplyScheduleTestData.OverlappingAfternoonTime);
+
         var changes = new[]
         {
             completedChange,
@@ -161,6 +170,7 @@ public sealed class ApplyScheduleChangesTests(CoreDatabaseFixture fixture)
                 (afterShift, ScheduleChangeRejection.OutsideShift),
                 (taken, ScheduleChangeRejection.SlotTaken),
             ]);
+
         rowsAfter.Should().Be(rowsBefore);
     }
 
@@ -185,6 +195,7 @@ public sealed class ApplyScheduleChangesTests(CoreDatabaseFixture fixture)
     {
         var tenant = await ArrangeTenantAsync();
         var scheduled = await CreateScheduledAsync(tenant, tenant.EmployeeId, ApplyScheduleTestData.FirstTime);
+
         var stale = ApplyScheduleTestData.Change(
             scheduled, ApplyScheduleTestData.StaleRowVersion, tenant.EmployeeId, ApplyScheduleTestData.AfternoonTime);
 
@@ -209,6 +220,7 @@ public sealed class ApplyScheduleChangesTests(CoreDatabaseFixture fixture)
         var moved = await _fixture.LoadWorkOrderAsync(scheduled);
 
         resized.Estimate.Should().Be(TimeSpan.FromMinutes(ApplyScheduleTestData.TwoHours));
+
         moved.Current.PlannedStartLocal.Should()
             .Be(ApplyScheduleTestData.Start(ApplyScheduleTestData.AfternoonTime));
     }
@@ -218,6 +230,7 @@ public sealed class ApplyScheduleChangesTests(CoreDatabaseFixture fixture)
     {
         var tenant = await ArrangeTenantAsync();
         var scheduled = await CreateScheduledAsync(tenant, tenant.EmployeeId, ApplyScheduleTestData.FirstTime);
+
         var stale = ApplyScheduleTestData.Change(
             scheduled, ApplyScheduleTestData.StaleRowVersion, tenant.EmployeeId, ApplyScheduleTestData.AfterShiftTime);
 
@@ -231,6 +244,7 @@ public sealed class ApplyScheduleChangesTests(CoreDatabaseFixture fixture)
     {
         var tenant = await ArrangeTenantAsync();
         var otherCompanyId = await _fixture.CreateCompanyAsync(WorkOrderTestData.OtherCompanyName);
+
         var foreign = await _fixture.CreateWorkOrderAsync(
             otherCompanyId,
             Guid.CreateVersion7(),
@@ -263,11 +277,13 @@ public sealed class ApplyScheduleChangesTests(CoreDatabaseFixture fixture)
             race.RunAsync(() => ApplyInScopeAsync(tenant, secondChange)));
 
         failures.Count(failure => failure is null).Should().Be(expected: 1);
+
         failures.Single(failure => failure is not null)
             .Should()
             .BeOfType<UnprocessableException>()
             .Which.Message.Should()
             .Be(WorkOrderErrors.Rejections.ScheduleChangesRejected);
+
         race.SaveCounts.Should().Equal(ShiftTestData.UniqueRaceSaveCounts);
         (_fixture.Transactions.Count - transactionsBefore).Should().Be(TransactionsOfOneWinnerAndOneRepeatedLoser);
     }
@@ -296,6 +312,7 @@ public sealed class ApplyScheduleChangesTests(CoreDatabaseFixture fixture)
             ShiftTestData.Today.AddDays(value: -30),
             ShiftTestData.Morning,
             ShiftTestData.Afternoon);
+
         _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "07:00"));
     }
 

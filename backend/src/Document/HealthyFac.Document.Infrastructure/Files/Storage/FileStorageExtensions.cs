@@ -37,6 +37,7 @@ public static class FileStorageExtensions
                             Delay = TimeSpan.FromSeconds(FileStorageConstants.RetryDelaySeconds),
                         },
                     }));
+
             services.AddSingleton<BlobFileStorage>();
             services.AddSingleton<IFileStorage>(provider => provider.GetRequiredService<BlobFileStorage>());
 

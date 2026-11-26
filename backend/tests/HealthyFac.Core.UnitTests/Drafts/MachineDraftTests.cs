@@ -1,8 +1,11 @@
 using HealthyFac.Core.Domain.Drafts;
 using HealthyFac.Core.UnitTests.Drafts.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.UnitTests.Drafts;
 
+[Feature(TestFeatures.Drafts)]
+[Feature(TestFeatures.Machines)]
 public sealed class MachineDraftTests
 {
     [Fact]

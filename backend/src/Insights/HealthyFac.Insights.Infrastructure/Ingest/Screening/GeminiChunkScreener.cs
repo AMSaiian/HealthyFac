@@ -72,9 +72,11 @@ public sealed class GeminiChunkScreener(
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var count = Math.Min(_options.BatchSize, chunks.Count - start);
+
                 var answer = await _providers.ExecuteAsync(
                     token => AskAsync(prompt.Text, chunks, start, count, token),
                     cancellationToken);
+
                 inputTokens += answer.InputTokens;
                 outputTokens += answer.OutputTokens;
                 firstUnsafe = answer.Verdicts.Where(verdict => !verdict.IsSafe).MinBy(verdict => verdict.Index);
@@ -97,6 +99,7 @@ public sealed class GeminiChunkScreener(
         var reason = firstUnsafe?.Reason is { Length: > ReasonMaxLength } text
             ? text[..ReasonMaxLength]
             : firstUnsafe?.Reason;
+
         var log = CreateLog(
             prompt,
             startedAt,

@@ -40,6 +40,7 @@ public sealed class ActorHeadersHandler(IIncomingAccessTokenAccessor accessor) :
     private static void SetHeader(HttpRequestMessage request, string name, string? value)
     {
         request.Headers.Remove(name);
+
         if (value is not null)
         {
             request.Headers.Add(name, value);

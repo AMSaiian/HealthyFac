@@ -20,7 +20,7 @@ import { CasePageStore } from './case-page.store';
 const EMPTY_PAGE = { items: [], totalCount: 0 };
 const CASE_ID = 'case-1';
 
-describe('CasePageStore', () => {
+describe('CasePageStore', { tags: ['Cases'] }, () => {
   const realtime = createFakeRealtimeConnection();
   const get = vi.fn();
   const searchSignals = vi.fn();

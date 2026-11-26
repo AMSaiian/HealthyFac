@@ -1,9 +1,11 @@
 using System.Net;
 using HealthyFac.Shared.Infrastructure.HttpFailures;
 using HealthyFac.Shared.UnitTests.HttpFailures.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.UnitTests.HttpFailures;
 
+[Feature(TestFeatures.Platform)]
 public sealed class HttpResponseMessageExtensionsTests
 {
     [Fact]
@@ -30,6 +32,7 @@ public sealed class HttpResponseMessageExtensionsTests
         var act = () => response.EnsureSuccessAsync(CancellationToken.None);
 
         var exception = await act.Should().ThrowAsync<HttpRequestException>();
+
         exception.Which.Message.Should()
             .Contain(HttpMethod.Post.Method)
             .And.Contain(HttpFailureTestData.RequestPath)
@@ -49,6 +52,7 @@ public sealed class HttpResponseMessageExtensionsTests
         var act = () => response.EnsureSuccessAsync(CancellationToken.None);
 
         var exception = await act.Should().ThrowAsync<HttpRequestException>();
+
         exception.Which.Message.Should()
             .Contain(expected: "504")
             .And.NotContain(HttpFailureTestData.HtmlText)
@@ -66,6 +70,7 @@ public sealed class HttpResponseMessageExtensionsTests
         var act = () => response.EnsureSuccessAsync(CancellationToken.None);
 
         var exception = await act.Should().ThrowAsync<HttpRequestException>();
+
         exception.Which.Message.Should()
             .Contain(expected: "400")
             .And.NotContain(new string(HttpFailureTestData.KeptCharacter, count: 10));
@@ -82,6 +87,7 @@ public sealed class HttpResponseMessageExtensionsTests
         var act = () => response.EnsureSuccessAsync(CancellationToken.None);
 
         var exception = await act.Should().ThrowAsync<HttpRequestException>();
+
         exception.Which.Message.Should()
             .Contain(expected: "400")
             .And.Contain(HttpFailureTestData.ProblemDetail)
@@ -99,6 +105,7 @@ public sealed class HttpResponseMessageExtensionsTests
         var act = () => response.EnsureSuccessAsync(CancellationToken.None);
 
         var exception = await act.Should().ThrowAsync<HttpRequestException>();
+
         exception.Which.Message.Should()
             .Contain(expected: "400")
             .And.NotContain(HttpFailureTestData.ProblemDetail)
@@ -116,6 +123,7 @@ public sealed class HttpResponseMessageExtensionsTests
         var act = () => response.EnsureSuccessAsync(CancellationToken.None);
 
         var exception = await act.Should().ThrowAsync<HttpRequestException>();
+
         exception.Which.Message.Should()
             .Contain(new string(HttpFailureTestData.KeptCharacter, HttpFailureConstants.MaxReasonLength))
             .And.NotContain(HttpFailureTestData.CutCharacter.ToString());
@@ -131,6 +139,7 @@ public sealed class HttpResponseMessageExtensionsTests
         var act = () => response.EnsureSuccessAsync(CancellationToken.None);
 
         var exception = await act.Should().ThrowAsync<HttpRequestException>();
+
         exception.Which.Message.Should()
             .Contain(HttpFailureTestData.RequestPath)
             .And.NotContain(HttpFailureTestData.QueryValue);

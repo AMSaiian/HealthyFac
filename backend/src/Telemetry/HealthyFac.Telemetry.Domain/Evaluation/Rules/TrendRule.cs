@@ -28,8 +28,10 @@ public static class TrendRule
     )
     {
         var isNearLimit = forecastSeconds is > 0 && forecastSeconds <= settings.HorizonSeconds;
+
         var isAboveNoise = behavior == MetricBehavior.Counter
             || Math.Abs(slope) * settings.HorizonSeconds > settings.NoiseGuardFactor * sigma;
+
         var isTrending = isNearLimit && isAboveNoise;
 
         return (new RuleCondition { IsOpen = isTrending, IsAlarm = false, IsResolved = !isTrending },

@@ -47,7 +47,7 @@ function setup(scrollHeight: number): {
   };
 }
 
-describe('CellText', () => {
+describe('CellText', { tags: ['Persistence'] }, () => {
   afterEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();

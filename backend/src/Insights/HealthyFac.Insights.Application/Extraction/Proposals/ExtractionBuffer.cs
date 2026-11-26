@@ -98,6 +98,7 @@ public sealed class ExtractionBuffer
     public void AddMetric(Guid machineDraftId, ProposedMetric metric)
     {
         var machine = Find(machineDraftId);
+
         if (machine.Metrics.Count >= DraftMessageLimits.MaxMetrics)
         {
             throw ExtractionErrors.Rejected(ExtractionErrors.TooManyMetrics);
@@ -122,6 +123,7 @@ public sealed class ExtractionBuffer
     public void AddStatus(Guid machineDraftId, ProposedStatus status)
     {
         var machine = Find(machineDraftId);
+
         if (machine.Statuses.Count >= DraftMessageLimits.MaxStatuses)
         {
             throw ExtractionErrors.Rejected(ExtractionErrors.TooManyStatuses);
@@ -146,6 +148,7 @@ public sealed class ExtractionBuffer
     public void AddPhase(Guid machineDraftId, ProposedPhase phase)
     {
         var machine = Find(machineDraftId);
+
         if (phase.Code is { } code && machine.Phases.Any(other => SameText(other.Code, code)))
         {
             throw ExtractionErrors.DuplicatePhaseCode(code);
@@ -178,6 +181,7 @@ public sealed class ExtractionBuffer
     {
         var machine = Find(machineDraftId);
         var draft = machine.Metrics.FirstOrDefault(metric => SameText(metric.Key, key));
+
         if (draft is not null)
         {
             return new ResolvedSignal { DraftId = draft.DraftId };
@@ -205,6 +209,7 @@ public sealed class ExtractionBuffer
     {
         var machine = Find(machineDraftId);
         var draft = machine.Statuses.FirstOrDefault(status => SameText(status.Code, code));
+
         if (draft is not null)
         {
             return new ResolvedSignal { DraftId = draft.DraftId };

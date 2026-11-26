@@ -1,9 +1,11 @@
 using HealthyFac.MachineSimulator.IntegrationTests.Simulation.Data;
 using HealthyFac.MachineSimulator.Scenarios;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.MachineSimulator.IntegrationTests.Simulation;
 
 [Collection(SimulatorCollection.Name)]
+[Feature(TestFeatures.Simulation)]
 public sealed class DiscoveryTests(SimulatorFixture fixture)
 {
     private readonly SimulatorFixture _fixture = fixture;
@@ -40,6 +42,7 @@ public sealed class DiscoveryTests(SimulatorFixture fixture)
     }
 
     [Fact]
+    [Feature(TestFeatures.Machines)]
     public async Task Tick_AfterTheMachineIsDeleted_PublishesNothingAfterTheNextStatePoll()
     {
         var machine = await _fixture.ArrangeRunningMachineAsync(SimulatorTestData.GenericSerialNumber);
@@ -52,6 +55,7 @@ public sealed class DiscoveryTests(SimulatorFixture fixture)
     }
 
     [Fact]
+    [Feature(TestFeatures.Machines)]
     public async Task Tick_AfterTheRegistrationIsDeleted_PublishesNothingAfterTheNextStatePoll()
     {
         var machine = await _fixture.ArrangeRunningMachineAsync(SimulatorTestData.GenericSerialNumber);
@@ -64,6 +68,7 @@ public sealed class DiscoveryTests(SimulatorFixture fixture)
     }
 
     [Fact]
+    [Feature(TestFeatures.Machines)]
     public async Task Tick_WithMachineWithoutRegistration_PublishesNothingUntilTheRegistrationExists()
     {
         var companyId = await _fixture.CreateCompanyAsync();
@@ -80,13 +85,16 @@ public sealed class DiscoveryTests(SimulatorFixture fixture)
     }
 
     [Fact]
+    [Feature(TestFeatures.Machines)]
     public async Task Tick_WithGoLiveDateInTheFuture_PublishesNothing()
     {
         var companyId = await _fixture.CreateCompanyAsync();
+
         var machine = await _fixture.CreateMachineAsync(
             companyId,
             SimulatorTestData.GenericSerialNumber,
             goLiveInDays: 2);
+
         await _fixture.RegisterMachineAsync(machine);
         await _fixture.DiscoverAsync();
 
@@ -101,10 +109,12 @@ public sealed class DiscoveryTests(SimulatorFixture fixture)
         var machine = await _fixture.ArrangeRunningMachineAsync(
             ScenarioBinding.CncSerialNumber,
             isDiscovered: false);
+
         await _fixture.StoreReadingAsync(
             machine.MachineId,
             SimulatorTestData.CounterKey,
             SimulatorTestData.StoredCounterValue);
+
         await _fixture.DiscoverAsync();
 
         var view = _fixture.Engine.Find(machine.MachineId, _fixture.Clock.GetUtcNow().UtcDateTime);

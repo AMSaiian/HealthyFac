@@ -1,16 +1,17 @@
 using HealthyFac.Insights.Application.MetricUnits;
-using HealthyFac.Insights.Infrastructure.MetricUnits;
 using HealthyFac.Insights.IntegrationTests.Database;
 using HealthyFac.Insights.IntegrationTests.Database.Data;
 using HealthyFac.Insights.IntegrationTests.MetricUnits.Data;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Telemetry.Messaging.MetricUnits;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.DependencyInjection;
 using StackExchange.Redis;
 
 namespace HealthyFac.Insights.IntegrationTests.MetricUnits;
 
 [Collection(InsightsCollection.Name)]
+[Feature(TestFeatures.SignalModel)]
 public sealed class MetricUnitCacheTests(InsightsFixture fixture)
 {
     private const string CatalogKey = "insights:metric-units";
@@ -55,7 +56,7 @@ public sealed class MetricUnitCacheTests(InsightsFixture fixture)
             .KeyTimeToLiveAsync(CatalogKey);
 
         timeToLive.Should().NotBeNull();
-        timeToLive!.Value.TotalSeconds.Should().BeInRange(MinTimeToLiveSeconds - 1, MaxTimeToLiveSeconds);
+        timeToLive.Value.TotalSeconds.Should().BeInRange(MinTimeToLiveSeconds - 1, MaxTimeToLiveSeconds);
     }
 
     [Fact]

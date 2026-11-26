@@ -30,33 +30,41 @@ public sealed class SensitiveDataDestructuringPolicy : IDestructuringPolicy
         if (value is null)
         {
             result = null;
+
             return false;
         }
 
         var type = value.GetType();
+
         if (IsSimpleType(type))
         {
             result = null;
+
             return false;
         }
 
         var plan = PlanCache.GetOrAdd(type, CreatePlan);
+
         if (!plan.IsWholeClassMasked && !plan.HasSensitiveProperties)
         {
             result = null;
+
             return false;
         }
 
         if (plan.IsWholeClassMasked)
         {
             result = new ScalarValue(plan.ClassMask ?? MaskingConstants.DefaultMask);
+
             return true;
         }
 
         var properties = new List<LogEventProperty>(plan.Properties.Count);
+
         foreach (var property in plan.Properties)
         {
             object? propertyValue;
+
             try
             {
                 propertyValue = property.PropertyInfo.GetValue(value);
@@ -76,12 +84,14 @@ public sealed class SensitiveDataDestructuringPolicy : IDestructuringPolicy
         }
 
         result = new StructureValue(properties, type.Name);
+
         return true;
     }
 
     private static TypeMaskingPlan CreatePlan(Type type)
     {
         var classAttribute = type.GetCustomAttribute<SensitiveDataAttribute>(inherit: true);
+
         if (classAttribute is not null)
         {
             return new TypeMaskingPlan
@@ -103,6 +113,7 @@ public sealed class SensitiveDataDestructuringPolicy : IDestructuringPolicy
         foreach (var prop in readableProperties)
         {
             var attribute = prop.GetCustomAttribute<SensitiveDataAttribute>(inherit: true);
+
             if (attribute is not null)
             {
                 hasSensitiveProperties = true;
@@ -143,6 +154,7 @@ public sealed class SensitiveDataDestructuringPolicy : IDestructuringPolicy
         if (propertyValue is System.Collections.IDictionary dictionary)
         {
             var entries = new List<KeyValuePair<ScalarValue, LogEventPropertyValue>>(dictionary.Count);
+
             foreach (System.Collections.DictionaryEntry entry in dictionary)
             {
                 entries.Add(
@@ -158,6 +170,7 @@ public sealed class SensitiveDataDestructuringPolicy : IDestructuringPolicy
         if (propertyValue is System.Collections.IEnumerable enumerable)
         {
             var elements = new List<LogEventPropertyValue>();
+
             foreach (var item in enumerable)
             {
                 elements.Add(new ScalarValue(SensitiveDataMasker.Mask(item, attribute)));

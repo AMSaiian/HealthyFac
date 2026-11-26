@@ -17,6 +17,7 @@ public sealed class BackgroundQueue<TItem> : IBackgroundQueue<TItem>
     public BackgroundQueue(BackgroundQueueCapacity capacity, IBackgroundItemDropObserver<TItem>? dropObserver = null)
     {
         _dropObserver = dropObserver;
+
         _channel = capacity.Limit is { } limit
             ? Channel.CreateBounded<BackgroundEnvelope<TItem>>(
                 new BoundedChannelOptions(limit) { FullMode = BoundedChannelFullMode.DropOldest },
@@ -30,6 +31,7 @@ public sealed class BackgroundQueue<TItem> : IBackgroundQueue<TItem>
     public void Enqueue(TItem item, ActivityContext parentContext)
     {
         var envelope = new BackgroundEnvelope<TItem> { Item = item, ParentContext = parentContext };
+
         if (!_channel.Writer.TryWrite(envelope))
         {
             ReportDropped(item);

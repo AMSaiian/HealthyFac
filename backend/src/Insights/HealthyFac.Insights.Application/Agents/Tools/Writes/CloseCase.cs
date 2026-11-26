@@ -108,6 +108,7 @@ public sealed class CloseCaseToolRequestHandler(IInsightsDbContext dbContext)
         }
 
         var existingId = await ActionBuffering.FindAsync(_dbContext, request.RunId, request.CallId, cancellationToken);
+
         var actionId = existingId
             ?? await ActionBuffering.AddAsync(
                 _dbContext,

@@ -71,6 +71,7 @@ public sealed class SeederFixture : IAsyncLifetime, IResetBeforeEachTest
     public Dictionary<string, string?> CreateSettings()
     {
         var settings = new Dictionary<string, string?>();
+
         foreach (var service in SeederTestData.ServiceNames)
         {
             AddSettings(settings, service);
@@ -147,6 +148,7 @@ public sealed class SeederFixture : IAsyncLifetime, IResetBeforeEachTest
     {
         using var scope = host.CreateScope(SeederTestData.InitializationActor);
         var context = scope.ServiceProvider.GetRequiredService<TContext>();
+
         var connectionString = new NpgsqlConnectionStringBuilder(_database.ConnectionString)
         {
             Database = DatabaseName(service),
@@ -174,6 +176,7 @@ public sealed class SeederFixture : IAsyncLifetime, IResetBeforeEachTest
     private async Task DeleteTrackedOrganizationsAsync()
     {
         var accounts = new KeycloakAccounts(_hosts.Auth);
+
         foreach (var companyId in _organizations)
         {
             await accounts.DeleteOrganizationWithMembersAsync(companyId, CancellationToken.None);
@@ -200,6 +203,7 @@ public sealed class SeederFixture : IAsyncLifetime, IResetBeforeEachTest
         {
             Database = DatabaseName(service),
         };
+
         Set(key: "ConnectionStrings:Database", database.ConnectionString);
         Set(key: "ConnectionStrings:RabbitMq", SeederTestData.RabbitMqUnused);
         Set(key: "Redis:ConnectionString", _redis.ConnectionString);
@@ -211,10 +215,12 @@ public sealed class SeederFixture : IAsyncLifetime, IResetBeforeEachTest
                 Set(key: "InviteTokens:Keys:0:Secret", SeederTestData.InviteTokenSecret);
                 Set(key: "Smtp:Host", _mailpit.SmtpHost);
                 Set(key: "Smtp:Port", _mailpit.SmtpPort.ToString());
+
                 break;
             case "document":
                 AddIdEncryption(Set);
                 Set(key: "FileStorage:ConnectionString", _storage.ConnectionString);
+
                 break;
             case "insights":
                 AddIdEncryption(Set);
@@ -231,19 +237,23 @@ public sealed class SeederFixture : IAsyncLifetime, IResetBeforeEachTest
                 Set(key: "Gemini:Location", value: "test-location");
                 Set(key: "Gemini:ChatModel", value: "test-chat-model");
                 Set(key: "Gemini:TriageModel", value: "test-triage-model");
+
                 break;
             case "auth":
                 Set(key: "KeycloakAdmin:BaseAddress", _keycloak.BaseAddress.TrimEnd(trimChar: '/'));
                 Set(key: "KeycloakAdmin:Realm", SeederTestData.KeycloakRealm);
                 Set(key: "KeycloakAdmin:SpaClientId", value: "healthyfac-spa");
                 Set(key: "KeycloakAdmin:SpaBaseUrl", SeederTestData.KeycloakSpaUrl);
+
                 Set(
                     key: "ServiceTokens:TokenEndpoint",
                     string.Format(
                         SeederTestData.TokenPathFormat, _keycloak.BaseAddress.TrimEnd(trimChar: '/'),
                         SeederTestData.KeycloakRealm));
+
                 Set(key: "ServiceTokens:ClientId", value: "healthyfac-auth");
                 Set(key: "ServiceTokens:ClientSecret", SeederTestData.AuthClientSecret);
+
                 break;
         }
     }

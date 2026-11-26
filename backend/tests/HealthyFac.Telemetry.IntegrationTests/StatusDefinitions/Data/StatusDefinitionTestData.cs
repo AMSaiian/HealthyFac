@@ -34,9 +34,6 @@ public static class StatusDefinitionTestData
     /// <summary>A change that proposes no severity and no description.</summary>
     public static StatusDefinitionChange NoProposal(string code) => new() { Code = code };
 
-    public static IReadOnlyList<StatusDefinitionChange> Changes(int count) =>
-        Enumerable.Range(start: 1, count).Select(number => Change($"B-{number}")).ToList();
-
     /// <summary>5000 visible characters in 500 bold runs: about 13,500 HTML characters.</summary>
     public static string FormattedDescriptionAtVisibleLimit =>
         "<p>"

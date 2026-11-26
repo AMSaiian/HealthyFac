@@ -40,6 +40,7 @@ public sealed class TokenExchangeHandler(
     {
         var accessToken = _accessor.TryGetUserAccessToken();
         var userId = _accessor.TryGetUserId();
+
         if (accessToken is null || userId is null)
         {
             throw ServiceTokenErrors.NoIncomingUserToken();

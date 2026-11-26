@@ -14,21 +14,21 @@ public static class InviteTokenTestData
 
     public static Guid InviteId { get; } = Guid.Parse(input: "0d4f4b6e-3c1a-4e57-9a5e-6f1b2c3d4e5f");
 
-    public static TheoryData<string> MalformedTokens => new()
-    {
+    public static TheoryData<string> MalformedTokens =>
+    [
         "a.b",
         $"{InviteId:N}.k1.%%%",
-    };
+    ];
 
-    public static TheoryData<string> TokensWithUnreadableInviteId => new()
-    {
+    public static TheoryData<string> TokensWithUnreadableInviteId =>
+    [
         "a.b",
         "not-a-guid.k1.AAAA",
         $"{InviteId:N}.k1.sig.extra",
-    };
+    ];
 
-    public static TheoryData<InviteTokenOptions> InvalidOptions => new()
-    {
+    public static TheoryData<InviteTokenOptions> InvalidOptions =>
+    [
         BuildOptions(keys: [BuildKey(CurrentKeyId, isDefault: true), BuildKey(OlderKeyId, isDefault: true)]),
         BuildOptions(keys: [BuildKey(CurrentKeyId, isDefault: false)]),
         BuildOptions(keys: [BuildKey(CurrentKeyId, isDefault: true), BuildKey(CurrentKeyId, isDefault: false)]),
@@ -43,7 +43,7 @@ public static class InviteTokenTestData
             ]),
         BuildOptions(lifetimeHours: 0),
         BuildOptions(TooLongLifetimeHours),
-    };
+    ];
 
     public static InviteTokenOptions BuildOptions(
         int lifetimeHours = LifetimeHours,

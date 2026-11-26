@@ -29,13 +29,18 @@ public static class EmployeeEndpoints
         public IEndpointRouteBuilder MapEmployeeEndpoints()
         {
             var group = app.MapGroup(EmployeeRoutes.BaseRoute);
+
             group.MapPost(EmployeeRoutes.RetryProvisioning, RetryProvisioningAsync)
                 .RequireAuthorization(CorePermissions.Employees.Manage);
+
             group.MapPost(EmployeeRoutes.Deactivate, DeactivateAsync)
                 .RequireAuthorization(CorePermissions.Employees.Manage);
+
             group.MapGet(EmployeeRoutes.Me, GetCurrentAsync);
+
             group.MapPost(EmployeeRoutes.Search, SearchAsync)
                 .RequireAuthorization(CorePermissions.Employees.Read);
+
             group.MapPost(EmployeeRoutes.Lookup, LookupAsync)
                 .RequireAuthorization(CorePermissions.Employees.Read);
 

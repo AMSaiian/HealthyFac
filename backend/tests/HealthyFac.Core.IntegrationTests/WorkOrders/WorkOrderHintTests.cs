@@ -5,10 +5,12 @@ using HealthyFac.Core.IntegrationTests.Machines.Data;
 using HealthyFac.Core.IntegrationTests.Shifts.Data;
 using HealthyFac.Core.IntegrationTests.WorkOrders.Data;
 using HealthyFac.Shared.Application.Realtime;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.IntegrationTests.WorkOrders;
 
 [Collection(CoreWorkOrdersCollection.Name)]
+[Feature(TestFeatures.WorkOrders)]
 public sealed class WorkOrderHintTests(CoreDatabaseFixture fixture)
 {
     private readonly CoreDatabaseFixture _fixture = fixture;
@@ -69,8 +71,10 @@ public sealed class WorkOrderHintTests(CoreDatabaseFixture fixture)
         var tenant = await WorkOrderHintTestData.ArrangeTenantAsync(_fixture);
         var completed = await WorkOrderHintTestData.CreateAssignedAsync(_fixture, tenant, time: "09:00");
         var next = await WorkOrderHintTestData.CreateAssignedAsync(_fixture, tenant, time: "10:00");
+
         await _fixture.ChangeStatusAsync(
             tenant.CompanyId, Guid.CreateVersion7(), completed, WorkOrderStatus.InProgress);
+
         _fixture.Clock.Freeze(ShiftTestData.NowOn(ShiftTestData.Tomorrow, time: "10:20"));
         _fixture.RealtimeQueue.Clear();
 
@@ -82,12 +86,13 @@ public sealed class WorkOrderHintTests(CoreDatabaseFixture fixture)
     }
 
     private List<Guid> HintedWorkOrderIds() =>
-        _fixture.RealtimeQueue.Items
+    [
+        .. _fixture.RealtimeQueue.Items
             .Select(item => item.Push.Hint)
             .OfType<RealtimeHint>()
             .Where(hint => hint.Topic == RealtimeTopic.WorkOrders)
-            .Select(hint => hint.WorkOrderId!.Value)
-            .ToList();
+            .Select(hint => hint.WorkOrderId!.Value),
+    ];
 
     [Fact]
     public async Task ApplyWorkOrderDraft_WithAPendingDraft_RecordsTheWorkOrdersHint()

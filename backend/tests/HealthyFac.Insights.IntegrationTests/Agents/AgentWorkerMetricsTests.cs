@@ -3,12 +3,14 @@ using HealthyFac.Insights.Domain.Agents.Runs;
 using HealthyFac.Insights.IntegrationTests.Agents.Data;
 using HealthyFac.Insights.IntegrationTests.Cases;
 using HealthyFac.Insights.IntegrationTests.Cases.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.Diagnostics.Metrics.Testing;
 using Constants = HealthyFac.Shared.Application.Observability.ObservabilityConstants.Agents;
 
 namespace HealthyFac.Insights.IntegrationTests.Agents;
 
 [Collection(SignalCaseCollection.Name)]
+[Feature(TestFeatures.Cases)]
 public sealed class AgentWorkerMetricsTests(SignalCaseFixture fixture)
 {
     private readonly SignalCaseFixture _fixture = fixture;

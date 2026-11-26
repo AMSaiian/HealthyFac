@@ -6,7 +6,7 @@ function failure(status: number, detail: unknown): HttpErrorResponse {
   return new HttpErrorResponse({ status, error: { detail } });
 }
 
-describe('draftConflictKey', () => {
+describe('draftConflictKey', { tags: ['Drafts'] }, () => {
   it('draftConflictKey_With422DraftNotPending_ReturnsItsKey', () => {
     expect(draftConflictKey(failure(HttpStatusCode.UnprocessableEntity, 'draftNotPending'))).toBe(
       'DRAFTS.CONFLICTS.DRAFT_NOT_PENDING',
@@ -20,15 +20,10 @@ describe('draftConflictKey', () => {
     expect(draftConflictKey(failure(HttpStatusCode.UnprocessableEntity, reason))).toBe(key);
   });
 
-  it('draftConflictKey_With409ChangedTextOfCore_ReturnsDraftChanged', () => {
-    const changed = 'The draft or the machine changed since you read it. Reload it and try again.';
-
-    expect(draftConflictKey(failure(HttpStatusCode.Conflict, changed))).toBe('DRAFTS.CONFLICTS.DRAFT_CHANGED');
-  });
-
-  it('draftConflictKey_With409ChangedTextOfTelemetry_ReturnsDraftChanged', () => {
-    const changed = 'The draft changed since you read it. Reload it and try again.';
-
+  it.each([
+    ['Core', 'The draft or the machine changed since you read it. Reload it and try again.'],
+    ['Telemetry', 'The draft changed since you read it. Reload it and try again.'],
+  ])('draftConflictKey_With409ChangedTextOf%s_ReturnsDraftChanged', (_service, changed) => {
     expect(draftConflictKey(failure(HttpStatusCode.Conflict, changed))).toBe('DRAFTS.CONFLICTS.DRAFT_CHANGED');
   });
 

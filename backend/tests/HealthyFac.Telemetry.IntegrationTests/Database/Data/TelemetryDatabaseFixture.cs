@@ -85,6 +85,7 @@ public sealed class TelemetryDatabaseFixture : IAsyncLifetime, IResetBeforeEachT
         {
             [DatabaseTestData.ConnectionStringKey] = _database.ConnectionString,
         };
+
         _configureSettings?.Invoke(settings);
 
         var configuration = new ConfigurationBuilder()

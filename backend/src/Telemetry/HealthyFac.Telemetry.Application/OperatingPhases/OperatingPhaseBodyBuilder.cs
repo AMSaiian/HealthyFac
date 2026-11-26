@@ -47,6 +47,7 @@ public static class OperatingPhaseBodyBuilder
                 .AsNoTracking()
                 .Where(metric => metric.MachineRegistrationId == machineId)
                 .ToDictionaryAsync(metric => metric.Id, cancellationToken);
+
             var statusIds = await dbContext.StatusDefinitions
                 .AsNoTracking()
                 .Where(status => status.MachineRegistrationId == machineId)
@@ -98,6 +99,7 @@ public static class OperatingPhaseBodyBuilder
                 .Where(condition => condition.MetricDefinitionId.HasValue)
                 .Select(condition => condition.MetricDefinitionId!.Value)
                 .ToHashSet();
+
             var limits = new List<OperatingPhaseLimit>();
 
             for (var index = 0; index < input.Limits.Count; index++)

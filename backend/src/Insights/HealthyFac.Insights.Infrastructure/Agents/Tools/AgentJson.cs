@@ -25,8 +25,10 @@ public sealed class AgentJson : IAgentJson
     private static JsonSerializerOptions Encrypting(JsonSerializerOptions options, IIdEncryptor encryptor)
     {
         var resolver = options.TypeInfoResolver ?? new DefaultJsonTypeInfoResolver();
+
         options.TypeInfoResolver =
             resolver.WithAddedModifier(typeInfo => IdEncryptionJsonModifier.Apply(typeInfo, encryptor));
+
         options.MakeReadOnly();
 
         return options;

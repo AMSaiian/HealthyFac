@@ -1,22 +1,14 @@
 using System.Text.Json;
 using HealthyFac.Shared.UnitTests.HealthChecks.Data;
 using HealthyFac.Shared.Web.HealthChecks;
+using HealthyFac.Testing.Features;
 using Microsoft.AspNetCore.Http;
 
 namespace HealthyFac.Shared.UnitTests.HealthChecks;
 
+[Feature(TestFeatures.Platform)]
 public sealed class HealthEndpointTests
 {
-    [Fact]
-    public async Task Readiness_OnPublicPort_ReturnsNotFound()
-    {
-        using var host = await HealthHostFactory.StartAsync(hasFallbackPolicy: false);
-
-        var response = await host.GetOnPortAsync(HealthCheckConstants.Routes.Readiness, HealthHostFactory.PublicPort);
-
-        response.StatusCode.Should().Be(StatusCodes.Status404NotFound);
-    }
-
     [Fact]
     public async Task Readiness_OnHealthPort_WithFallbackPolicy_ReturnsStatus()
     {
@@ -38,14 +30,15 @@ public sealed class HealthEndpointTests
         response.StatusCode.Should().Be(StatusCodes.Status200OK);
     }
 
-    [Fact]
-    public async Task DetailedHealth_OnPublicPort_ReturnsNotFound()
+    [Theory]
+    [MemberData(nameof(HealthEndpointTestData.PublicPortRoutes), MemberType = typeof(HealthEndpointTestData))]
+    public async Task Health_OnPublicPort_ReturnsNotFound(string caseName, string route)
     {
         using var host = await HealthHostFactory.StartAsync(hasFallbackPolicy: false);
 
-        var response = await host.GetOnPortAsync(HealthCheckConstants.Routes.Detailed, HealthHostFactory.PublicPort);
+        var response = await host.GetOnPortAsync(route, HealthHostFactory.PublicPort);
 
-        response.StatusCode.Should().Be(StatusCodes.Status404NotFound);
+        response.StatusCode.Should().Be(StatusCodes.Status404NotFound, caseName);
     }
 
     [Fact]
@@ -56,6 +49,7 @@ public sealed class HealthEndpointTests
         var response = await host.GetOnPortAsync(HealthCheckConstants.Routes.Detailed, HealthHostFactory.HealthPort);
 
         using var report = JsonDocument.Parse(response.Body);
+
         var checkNames = report.RootElement
             .GetProperty(HealthCheckConstants.Properties.Checks)
             .EnumerateArray()

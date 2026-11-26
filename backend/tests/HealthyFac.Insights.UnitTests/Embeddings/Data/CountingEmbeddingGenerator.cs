@@ -38,6 +38,7 @@ public sealed class CountingEmbeddingGenerator : IEmbeddingGenerator<string, Emb
         }
 
         Interlocked.Increment(ref _callCount);
+
         if (TransientFailureText is not null
             && values.Contains(TransientFailureText)
             && Interlocked.Exchange(ref _isFailureSpent, value: 1) == 0)
@@ -47,12 +48,16 @@ public sealed class CountingEmbeddingGenerator : IEmbeddingGenerator<string, Emb
 
         var current = Interlocked.Increment(ref _inFlight);
         InterlockedMax(ref _maxInFlight, current);
+
         try
         {
             await Task.Delay(Delay, cancellationToken);
 
-            return new GeneratedEmbeddings<Embedding<float>>(
-                values.Select(value => new Embedding<float>(CreateVector(value))).ToList());
+            return
+            [
+                with(
+                    [.. values.Select(value => new Embedding<float>(CreateVector(value)))]),
+            ];
         }
         finally
         {
@@ -69,6 +74,7 @@ public sealed class CountingEmbeddingGenerator : IEmbeddingGenerator<string, Emb
     private static void InterlockedMax(ref int target, int value)
     {
         int seen;
+
         do
         {
             seen = target;

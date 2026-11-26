@@ -1,9 +1,11 @@
 using HealthyFac.MachineSimulator.Scenarios.Curves;
 using HealthyFac.MachineSimulator.Scenarios.Modules;
 using HealthyFac.MachineSimulator.UnitTests.Scenarios.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.MachineSimulator.UnitTests.Scenarios;
 
+[Feature(TestFeatures.Simulation)]
 public sealed class ModuleStateTests
 {
     [Theory]
@@ -124,29 +126,20 @@ public sealed class ModuleStateTests
         module.Mode.Should().Be(ModuleMode.Failure);
     }
 
-    [Fact]
-    public void Advance_AfterExpectedThenDrainingWithoutDuration_UsesTheDurationOfAdvance()
+    [Theory]
+    [MemberData(nameof(ModuleStateTestData.ModesBeforeDraining), MemberType = typeof(ModuleStateTestData))]
+    public void Advance_AfterAnotherModeThenDrainingWithoutDuration_UsesTheDurationOfAdvance(
+        string caseName,
+        ModuleMode previousMode
+    )
     {
         var module = new ModuleState(ModuleKind.Trip);
         module.SetMode(ModuleMode.Draining, ModuleStateTestData.LongDrainDuration);
-        module.SetMode(ModuleMode.Expected);
+        module.SetMode(previousMode);
         module.SetMode(ModuleMode.Draining);
 
         module.Advance(TimeSpan.FromMinutes(minutes: 3), ModuleStateTestData.DrainDuration);
 
-        module.Mode.Should().Be(ModuleMode.Failure);
-    }
-
-    [Fact]
-    public void Advance_AfterFailureThenDrainingWithoutDuration_UsesTheDurationOfAdvance()
-    {
-        var module = new ModuleState(ModuleKind.Trip);
-        module.SetMode(ModuleMode.Draining, ModuleStateTestData.LongDrainDuration);
-        module.SetMode(ModuleMode.Failure);
-        module.SetMode(ModuleMode.Draining);
-
-        module.Advance(TimeSpan.FromMinutes(minutes: 3), ModuleStateTestData.DrainDuration);
-
-        module.Mode.Should().Be(ModuleMode.Failure);
+        module.Mode.Should().Be(ModuleMode.Failure, caseName);
     }
 }

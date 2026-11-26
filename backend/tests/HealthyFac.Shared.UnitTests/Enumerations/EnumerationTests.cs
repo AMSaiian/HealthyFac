@@ -1,7 +1,9 @@
 using HealthyFac.Shared.UnitTests.Enumerations.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.UnitTests.Enumerations;
 
+[Feature(TestFeatures.Platform)]
 public sealed class EnumerationTests
 {
     [Theory]

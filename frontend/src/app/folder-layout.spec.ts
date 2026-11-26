@@ -36,7 +36,7 @@ function utilsWithoutSourceFile(files: readonly string[]): string[] {
     .filter((path) => !all.has(`${path.slice(0, -UTILS_SUFFIX.length)}${SOURCE_SUFFIX}`));
 }
 
-describe('folder layout', () => {
+describe('folder layout', { tags: ['Conventions'] }, () => {
   const files = Object.keys(import.meta.glob('./**/*.ts'));
 
   it('folderLayout_FormSchemas_LieInTheirFormFolder', () => {

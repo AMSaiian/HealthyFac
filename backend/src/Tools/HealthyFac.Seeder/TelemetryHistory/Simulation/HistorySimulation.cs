@@ -60,11 +60,13 @@ public sealed class HistorySimulation
     public IReadOnlyList<HistorySample> Run(DateTime fromExclusive, DateTime toInclusive)
     {
         var samples = new List<HistorySample>();
+
         while (_nextTick <= toInclusive)
         {
             var at = _nextTick;
             _nextTick += _interval;
             var sample = Advance(at);
+
             if (sample is not null && (at > fromExclusive || at == _windowStart))
             {
                 samples.Add(new HistorySample { SampledAt = at, Sample = sample });
@@ -79,6 +81,7 @@ public sealed class HistorySimulation
         ApplyStateChanges(at);
         _events.StartDrains(Machine, at);
         var tick = Machine.Tick(at, _interval);
+
         if (tick is null || _events.IsGap(at))
         {
             return null;
@@ -90,6 +93,7 @@ public sealed class HistorySimulation
     private void ApplyStateChanges(DateTime at)
     {
         var appliedBefore = _appliedChanges;
+
         while (_appliedChanges < _stateChanges.Count && _stateChanges[_appliedChanges].StartedAt <= at)
         {
             _appliedChanges++;

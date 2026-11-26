@@ -80,6 +80,7 @@ public static class PeopleFixtureExtensions
         public async Task<int> CountFailedInboxMessagesAsync()
         {
             var failedCount = 0;
+
             foreach (var host in fixture.Hosts.All)
             {
                 var inbox = await fixture.LoadInboxAsync(host);

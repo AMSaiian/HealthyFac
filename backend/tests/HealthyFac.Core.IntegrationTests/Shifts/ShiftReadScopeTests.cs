@@ -4,10 +4,12 @@ using HealthyFac.Core.Application.Shifts.DaySchedules;
 using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Shifts.Data;
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.IntegrationTests.Shifts;
 
 [Collection(CoreShiftsCollection.Name)]
+[Feature(TestFeatures.Shifts)]
 public sealed class ShiftReadScopeTests(CoreDatabaseFixture fixture)
 {
     private readonly CoreDatabaseFixture _fixture = fixture;

@@ -67,6 +67,7 @@ internal static class TypeInspection
             yield return type;
 
             var wrappedTypes = type.IsArray ? [type.GetElementType()!] : type.GetGenericArguments();
+
             foreach (var wrappedType in wrappedTypes.SelectMany(wrapped => wrapped.ExpandWrappedTypes()))
             {
                 yield return wrappedType;
@@ -85,13 +86,15 @@ internal static class TypeInspection
                 return [];
             }
 
-            return type.GetInterfaces()
-                .Where(implemented => !(implemented.Assembly.GetName().Name ?? string.Empty).StartsWith(
-                    ConventionConstants.ProjectAssemblyPrefix,
-                    StringComparison.Ordinal
-                ))
-                .SelectMany(implemented => type.GetInterfaceMap(implemented).TargetMethods)
-                .ToHashSet();
+            return
+            [
+                .. type.GetInterfaces()
+                    .Where(implemented => !(implemented.Assembly.GetName().Name ?? string.Empty).StartsWith(
+                        ConventionConstants.ProjectAssemblyPrefix,
+                        StringComparison.Ordinal
+                    ))
+                    .SelectMany(implemented => type.GetInterfaceMap(implemented).TargetMethods),
+            ];
         }
     }
 

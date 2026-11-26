@@ -2,12 +2,14 @@ using HealthyFac.Core.Application;
 using HealthyFac.Core.Application.Shifts.DaySchedules;
 using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Shifts.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Core.IntegrationTests.Shifts;
 
 [Collection(CoreShiftsCollection.Name)]
+[Feature(TestFeatures.Shifts)]
 public sealed class DayScheduleReaderTests(CoreDatabaseFixture fixture)
 {
     private const string JanuaryBlock = "08:00-12:00";
@@ -46,7 +48,7 @@ public sealed class DayScheduleReaderTests(CoreDatabaseFixture fixture)
         var days = shifts.Resolve(AprilMonday, JuneTuesday);
 
         shifts.Versions.Select(version => version.EffectiveFrom).Should().Equal(March, June);
-        days[index: 0].Blocks.Should().ContainSingle().Which.Start.Should().Be(new TimeOnly(hour: 9, minute: 0));
+        days[0].Blocks.Should().ContainSingle().Which.Start.Should().Be(new TimeOnly(hour: 9, minute: 0));
         days[^1].Blocks.Should().ContainSingle().Which.Start.Should().Be(new TimeOnly(hour: 13, minute: 0));
     }
 
@@ -81,6 +83,7 @@ public sealed class DayScheduleReaderTests(CoreDatabaseFixture fixture)
         using var scope = _fixture.ScopeFactory.CreateScope();
         var reader = scope.ServiceProvider.GetRequiredService<DayScheduleReader>();
         var zone = await reader.GetZoneAsync(tenant.CompanyId, CancellationToken.None);
+
         var shifts = await reader.LoadWithAllVersionsAsync(
             tenant.EmployeeId,
             zone,

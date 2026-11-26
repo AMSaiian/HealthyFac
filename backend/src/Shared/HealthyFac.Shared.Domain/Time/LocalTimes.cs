@@ -17,6 +17,7 @@ public static class LocalTimes
     public static DateTime ToUtc(DateTime local, TimeZoneInfo zone)
     {
         var unspecified = DateTime.SpecifyKind(local, DateTimeKind.Unspecified);
+
         var offset = zone.IsInvalidTime(unspecified)
             ? zone.GetUtcOffset(unspecified.AddDays(value: -1))
             : zone.IsAmbiguousTime(unspecified)

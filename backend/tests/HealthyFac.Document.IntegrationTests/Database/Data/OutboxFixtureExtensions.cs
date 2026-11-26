@@ -18,15 +18,18 @@ public static class OutboxFixtureExtensions
         {
             using var scope = fixture.ScopeFactory.CreateScope();
             var messageType = TMessage.MessageType;
+
             var payloads = await scope.ServiceProvider.GetRequiredService<DocumentDbContext>()
                 .OutboxMessages
                 .Where(message => message.Type == messageType)
                 .Select(message => message.Payload)
                 .ToListAsync();
 
-            return payloads
-                .Select(payload => JsonSerializer.Deserialize<TMessage>(payload, JsonSerializerOptions.Web)!)
-                .ToList();
+            return
+            [
+                .. payloads.Select(payload =>
+                    JsonSerializer.Deserialize<TMessage>(payload, JsonSerializerOptions.Web)!),
+            ];
         }
     }
 }

@@ -1,8 +1,10 @@
 using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.UnitTests.CurrentUser.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.UnitTests.CurrentUser;
 
+[Feature(TestFeatures.Identity)]
 public sealed class KnownActorsTests
 {
     [Fact]
@@ -16,6 +18,7 @@ public sealed class KnownActorsTests
         var ids = actors.Select(actor => actor.UserId).ToList();
 
         ids.Should().OnlyHaveUniqueItems();
+
         ids.Select(id => id.ToString()[KnownActorsTestData.VersionCharacterIndex].ToString())
             .Should()
             .AllBe(KnownActorsTestData.VersionDigits);

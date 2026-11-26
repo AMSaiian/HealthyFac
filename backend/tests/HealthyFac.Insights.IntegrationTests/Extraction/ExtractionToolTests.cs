@@ -7,11 +7,13 @@ using HealthyFac.Insights.IntegrationTests.Documents.Data;
 using HealthyFac.Insights.IntegrationTests.Extraction.Data;
 using HealthyFac.Insights.IntegrationTests.Ingest.Data;
 using HealthyFac.Insights.Messaging.Drafts;
+using HealthyFac.Testing.Features;
 using static HealthyFac.Insights.IntegrationTests.Extraction.Data.ExtractionToolTestData;
 
 namespace HealthyFac.Insights.IntegrationTests.Extraction;
 
 [Collection(InsightsCollection.Name)]
+[Feature(TestFeatures.Ingest)]
 public sealed class ExtractionToolTests(InsightsFixture fixture)
 {
     private const string Final = "Done.";
@@ -26,9 +28,11 @@ public sealed class ExtractionToolTests(InsightsFixture fixture)
         await _fixture.StartAttemptAsync();
         var chat = _fixture.Ingest.Chat;
         chat.ScriptToolCall(callId: "c1", functionName: "propose_machine", MachineCall);
+
         chat.ScriptToolCalls(
             (CallId: "c2", Name: "propose_metric", ArgumentsJson: MetricCall),
             (CallId: "c3", Name: "propose_status", ArgumentsJson: StatusCall));
+
         chat.ScriptToolCall(callId: "c4", functionName: "propose_operating_phase", PhaseCall);
         chat.ScriptText(Final);
 
@@ -67,12 +71,14 @@ public sealed class ExtractionToolTests(InsightsFixture fixture)
 
         var drafts = await _fixture.ReadOutboxMessagesAsync<DraftsProposed>();
         var calls = await _fixture.LoadExtractorToolCallsAsync();
+
         drafts.Should()
             .ContainSingle()
             .Which.Machines.Single()
             .Metrics.Select(metric => metric.Key)
             .Should()
             .Equal("coolant.level");
+
         calls.Select(call => call.Outcome)
             .Should()
             .Equal(ToolCallOutcome.Succeeded, ToolCallOutcome.Rejected, ToolCallOutcome.Succeeded);
@@ -106,12 +112,14 @@ public sealed class ExtractionToolTests(InsightsFixture fixture)
     {
         _fixture.ArrangeFile();
         await _fixture.StartAttemptAsync();
+
         _fixture.Ingest.Chat.ScriptToolCalls(
         [
             .. Enumerable.Range(start: 1, OverMachineLimit)
                 .Select(number => (CallId: $"c{number}", Name: "propose_machine",
                     ArgumentsJson: $$"""{"name":"M{{number}}"}""")),
         ]);
+
         _fixture.Ingest.Chat.ScriptText(Final);
 
         await _fixture.RunWorkerAsync(TestContext.Current.CancellationToken);
@@ -119,8 +127,8 @@ public sealed class ExtractionToolTests(InsightsFixture fixture)
         var drafts = await _fixture.ReadOutboxMessagesAsync<DraftsProposed>();
         var calls = await _fixture.LoadExtractorToolCallsAsync();
         drafts.Should().ContainSingle().Which.Machines.Should().HaveCount(DraftMessageLimits.MaxMachines);
-        calls.Last().Outcome.Should().Be(ToolCallOutcome.Rejected);
-        calls.Last().Result.Should().Contain(DraftMessageLimits.MaxMachines.ToString());
+        calls[^1].Outcome.Should().Be(ToolCallOutcome.Rejected);
+        calls[^1].Result.Should().Contain(DraftMessageLimits.MaxMachines.ToString());
     }
 
     [Fact]
@@ -142,6 +150,7 @@ public sealed class ExtractionToolTests(InsightsFixture fixture)
         machine.TargetMachineId.Should().Be(FileMachineId);
         phase.Conditions.Select(condition => condition.MetricId).Should().Equal(ExistingMetricId, null);
         phase.Conditions.Select(condition => condition.StatusId).Should().Equal(null, ExistingStatusId);
+
         phase.Conditions.Should()
             .OnlyContain(condition => condition.MetricDraftId == null && condition.StatusDraftId == null);
     }
@@ -161,8 +170,8 @@ public sealed class ExtractionToolTests(InsightsFixture fixture)
         var drafts = await _fixture.ReadOutboxMessagesAsync<DraftsProposed>();
         var calls = await _fixture.LoadExtractorToolCallsAsync();
         drafts.Should().ContainSingle().Which.Machines.Single().Phases.Should().BeEmpty();
-        calls.Last().Outcome.Should().Be(ToolCallOutcome.Rejected);
-        calls.Last().Result.Should().Contain(expected: "no.such.key");
+        calls[^1].Outcome.Should().Be(ToolCallOutcome.Rejected);
+        calls[^1].Result.Should().Contain(expected: "no.such.key");
     }
 
     [Fact]
@@ -170,6 +179,7 @@ public sealed class ExtractionToolTests(InsightsFixture fixture)
     {
         _fixture.ArrangeFile();
         var attemptId = await _fixture.StartAttemptAsync();
+
         _fixture.Ingest.Chat.Usage = new Microsoft.Extensions.AI.UsageDetails
             { InputTokenCount = 11, OutputTokenCount = 7 };
 
@@ -182,6 +192,7 @@ public sealed class ExtractionToolTests(InsightsFixture fixture)
         run.IngestAttemptId.Should().Be(attemptId);
         run.PromptVersion.Should().Be(expected: "extractor-v4");
         run.InputTokens.Should().BeGreaterThan(expected: 0);
+
         calls.Select(call => call.ToolName)
             .Should()
             .Equal("propose_machine", "propose_metric", "propose_status");
@@ -192,6 +203,7 @@ public sealed class ExtractionToolTests(InsightsFixture fixture)
     {
         _fixture.ArrangeFile();
         var attemptId = await _fixture.StartAttemptAsync();
+
         _fixture.Ingest.Chat.Failure = new HttpRequestException(
             message: "unavailable", inner: null, System.Net.HttpStatusCode.BadRequest);
 

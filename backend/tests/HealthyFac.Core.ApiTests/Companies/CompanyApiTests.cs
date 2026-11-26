@@ -4,10 +4,12 @@ using System.Text.Json.Nodes;
 using HealthyFac.Core.ApiTests.Companies.Data;
 using HealthyFac.Core.ApiTests.Employees.Data;
 using HealthyFac.Core.ApiTests.Hosting;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.ApiTests.Companies;
 
 [Collection(CoreApiCollection.Name)]
+[Feature(TestFeatures.Companies)]
 public sealed class CompanyApiTests(CoreApiFixture fixture)
 {
     private readonly CoreApiFixture _fixture = fixture;
@@ -19,8 +21,8 @@ public sealed class CompanyApiTests(CoreApiFixture fixture)
         var body = await response.Content.ReadFromJsonAsync<JsonObject>(TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        body![propertyName: "name"]!.GetValue<string>().Should().Be(CoreApiTestData.CompanyName);
-        body[propertyName: "timeZoneId"]!.GetValue<string>().Should().Be(CoreApiTestData.CompanyTimeZoneId);
+        body!["name"]!.GetValue<string>().Should().Be(CoreApiTestData.CompanyName);
+        body["timeZoneId"]!.GetValue<string>().Should().Be(CoreApiTestData.CompanyTimeZoneId);
     }
 
     [Fact]

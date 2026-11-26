@@ -4,10 +4,12 @@ using HealthyFac.Insights.ApiTests.Ingest.Data;
 using HealthyFac.Insights.Application.Ingest;
 using HealthyFac.Insights.Domain.Ingest;
 using HealthyFac.Insights.Messaging.Ingest;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Insights.ApiTests.Ingest;
 
 [Collection(InsightsApiCollection.Name)]
+[Feature(TestFeatures.Ingest)]
 public sealed class StartIngestAttemptApiTests(InsightsApiFixture fixture)
 {
     private readonly InsightsApiFixture _fixture = fixture;
@@ -16,6 +18,7 @@ public sealed class StartIngestAttemptApiTests(InsightsApiFixture fixture)
     public async Task Start_ForPdfAttachment_StoresTheQueuedAttemptWithTheSnapshotAndTheMessage()
     {
         var machineId = Guid.CreateVersion7();
+
         _fixture.ArrangeFile(
             StartIngestAttemptTestData.Pdf, StartIngestAttemptTestData.Attachment, machineId: machineId);
 
@@ -68,7 +71,7 @@ public sealed class StartIngestAttemptApiTests(InsightsApiFixture fixture)
     public async Task Start_ForFileOfAnotherCompany_Returns404()
     {
         _fixture.ArrangeFile(
-            StartIngestAttemptTestData.Pdf, StartIngestAttemptTestData.Attachment, companyId: Guid.CreateVersion7());
+            StartIngestAttemptTestData.Pdf, StartIngestAttemptTestData.Attachment, Guid.CreateVersion7());
 
         var response = await StartAsync();
 
@@ -139,6 +142,7 @@ public sealed class StartIngestAttemptApiTests(InsightsApiFixture fixture)
     public async Task Start_WithoutToken_Returns401()
     {
         using var client = _fixture.CreateClient();
+
         using var request = new HttpRequestMessage(
             HttpMethod.Post,
             StartIngestAttemptTestData.StartPath(_fixture.IdEncryptor.Encrypt(StartIngestAttemptTestData.FileId)));

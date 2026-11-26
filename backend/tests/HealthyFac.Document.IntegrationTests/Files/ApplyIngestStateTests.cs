@@ -6,10 +6,13 @@ using HealthyFac.Document.IntegrationTests.Database.Data;
 using HealthyFac.Document.IntegrationTests.Files.Data;
 using HealthyFac.Insights.Messaging.Ingest;
 using HealthyFac.Shared.Infrastructure.Messaging;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Document.IntegrationTests.Files;
 
 [Collection(DocumentDatabaseCollection.Name)]
+[Feature(TestFeatures.Files)]
+[Feature(TestFeatures.Ingest)]
 public sealed class ApplyIngestStateTests(DocumentDatabaseFixture fixture)
 {
     private static readonly Guid CompanyId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000b01");
@@ -23,6 +26,7 @@ public sealed class ApplyIngestStateTests(DocumentDatabaseFixture fixture)
     public async Task ApplyIngestState_WithNewerState_StoresIt()
     {
         var fileId = await SeedFileAsync();
+
         await _fixture.ApplyIngestStateAsync(
             Create(fileId, IngestMessageStates.Queued, failedCount: 0, ChangedAt));
 
@@ -40,6 +44,7 @@ public sealed class ApplyIngestStateTests(DocumentDatabaseFixture fixture)
     public async Task ApplyIngestState_WithOlderTime_ChangesNothing()
     {
         var fileId = await SeedFileAsync();
+
         await _fixture.ApplyIngestStateAsync(
             Create(fileId, IngestMessageStates.Completed, failedCount: 0, ChangedAt));
 
@@ -69,9 +74,11 @@ public sealed class ApplyIngestStateTests(DocumentDatabaseFixture fixture)
     public async Task ApplyIngestState_WithMessageFromTheMessagingJson_StoresTheState()
     {
         var fileId = await SeedFileAsync();
+
         var payload = JsonSerializer.Serialize(
             Create(fileId, IngestMessageStates.InProcess, failedCount: 2, ChangedAt),
             MessagingJsonOptions.Instance);
+
         var received = JsonSerializer.Deserialize<IngestStateChanged>(payload, MessagingJsonOptions.Instance)!;
 
         await _fixture.ApplyIngestStateAsync(received);
@@ -96,6 +103,6 @@ public sealed class ApplyIngestStateTests(DocumentDatabaseFixture fixture)
     {
         var ids = await _fixture.SeedFilesAsync(CompanyId, [UpdateFileTestData.CompanyFile()]);
 
-        return ids[index: 0];
+        return ids[0];
     }
 }

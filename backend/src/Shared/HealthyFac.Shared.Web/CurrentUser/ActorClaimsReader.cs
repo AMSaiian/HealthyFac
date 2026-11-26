@@ -50,7 +50,7 @@ public static class ActorClaimsReader
             .Select(claim => claim.Value)
             .ToList();
 
-        if (organizations.Count == 1 && Guid.TryParse(organizations[index: 0], out companyId))
+        if (organizations.Count == 1 && Guid.TryParse(organizations[0], out companyId))
         {
             return true;
         }
@@ -118,12 +118,14 @@ public static class ActorClaimsReader
     )
     {
         var clientId = user.FindFirst(KeycloakClaimTypes.ClientId)!.Value;
+
         if (!options.AllowedClients.Contains(clientId, StringComparer.Ordinal))
         {
             throw CurrentUserErrors.ServiceClientNotAllowed(clientId);
         }
 
         var isActorValid = Guid.TryParse(headers[ActorHeaderNames.ActorId].ToString(), out var actorId);
+
         if (!isActorValid || actorId == Guid.Empty)
         {
             throw CurrentUserErrors.ServiceActorMissing();

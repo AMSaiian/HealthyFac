@@ -111,6 +111,7 @@ public sealed class GetPhaseTimesRequestHandler(ITelemetryDbContext dbContext, T
     {
         var from = request.From;
         var to = request.To;
+
         var spans = await _dbContext.PhaseIntervals
             .AsNoTracking()
             .Where(interval => interval.MachineRegistrationId == request.MachineId
@@ -123,8 +124,10 @@ public sealed class GetPhaseTimesRequestHandler(ITelemetryDbContext dbContext, T
                 EndedAt = interval.EndedAt,
             })
             .ToListAsync(cancellationToken);
+
         var times = PhaseTimeCalculator.Calculate(spans, from, to, _timeProvider.GetUtcNow().UtcDateTime);
         var timedPhaseIds = times.PhaseSeconds.Keys.ToList();
+
         var phases = await _dbContext.OperatingPhases
             .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
             .AsNoTracking()
@@ -144,9 +147,10 @@ public sealed class GetPhaseTimesRequestHandler(ITelemetryDbContext dbContext, T
 
         return new PhaseTimesResponse
         {
-            Phases = phases
-                .Select(phase => phase with { Seconds = times.PhaseSeconds.GetValueOrDefault(phase.PhaseId) })
-                .ToList(),
+            Phases =
+            [
+                .. phases.Select(phase => phase with { Seconds = times.PhaseSeconds.GetValueOrDefault(phase.PhaseId) }),
+            ],
             UnknownModeSeconds = times.UnknownModeSeconds,
             NoDataSeconds = times.NoDataSeconds,
         };

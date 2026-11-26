@@ -3,11 +3,13 @@ using HealthyFac.Shared.Application.Observability;
 using HealthyFac.Telemetry.Domain.MetricDefinitions;
 using HealthyFac.Telemetry.Domain.SignalEpisodes;
 using HealthyFac.Telemetry.IntegrationTests.Evaluation.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.Diagnostics.Metrics.Testing;
 
 namespace HealthyFac.Telemetry.IntegrationTests.Evaluation;
 
 [Collection(TelemetryEvaluationCollection.Name)]
+[Feature(TestFeatures.Evaluation)]
 public sealed class EvaluateMachineTests(TelemetryEvaluationFixture fixture)
 {
     private const double Tolerance = 1e-9;
@@ -18,6 +20,7 @@ public sealed class EvaluateMachineTests(TelemetryEvaluationFixture fixture)
     public async Task Evaluate_WithSamplesAroundTheSettleLimit_ReadsOnlyThoseBeforeItInOrder()
     {
         var arrangement = await _fixture.ArrangeEvaluationMachineAsync();
+
         await _fixture.SeedSamplesAsync(
             arrangement, EvaluationTestData.Constant(arrangement, value: 50, count: 10, _fixture.Origin));
 
@@ -36,7 +39,7 @@ public sealed class EvaluateMachineTests(TelemetryEvaluationFixture fixture)
         second.Watermark.Should().Be(_fixture.At(seconds: 9));
         second.DueAt.Should().Be(_fixture.At(seconds: 30));
         secondRows.Should().ContainSingle().Which.SamplesSinceRestart.Should().Be(expected: 10);
-        secondRows[index: 0].OperatingPhaseId.Should().BeNull();
+        secondRows[0].OperatingPhaseId.Should().BeNull();
     }
 
     [Fact]
@@ -90,10 +93,12 @@ public sealed class EvaluateMachineTests(TelemetryEvaluationFixture fixture)
         messages.Select(message => message.Sequence).Should().Equal(1, 2, 3);
         messages.Select(message => message.State).Should().Equal("open", "open", "resolved");
         messages.Select(message => message.Severity).Should().Equal("warning", "alarm", "alarm");
+
         messages.Select(message => message.ChangedAt)
             .Should()
             .Equal(
                 _fixture.At(seconds: 61), _fixture.At(seconds: 66), _fixture.At(seconds: 71));
+
         messages.Should().OnlyContain(message => message.MetricKey == "spindle.temperature");
     }
 
@@ -101,16 +106,20 @@ public sealed class EvaluateMachineTests(TelemetryEvaluationFixture fixture)
     public async Task Evaluate_WithALateReading_ChangesNothingKeepsItStoredAndCountsIt()
     {
         var arrangement = await _fixture.ArrangeEvaluationMachineAsync();
+
         await _fixture.SeedSamplesAsync(
             arrangement,
             EvaluationTestData.Series(arrangement, EvaluationTestData.Wiggle(mean: 50, count: 70), _fixture.Origin));
+
         _fixture.Time.SetUtcNow(_fixture.At(seconds: 80));
         await _fixture.EvaluateAsync(arrangement.MachineId);
         var before = (await _fixture.LoadStatisticsAsync(arrangement.MetricId)).Single();
+
         using var collector = new MetricCollector<long>(
             _fixture.Database.GetSingleton<IMeterFactory>(),
             ObservabilityConstants.Evaluation.Meter,
             ObservabilityConstants.Evaluation.Instruments.LateReadings);
+
         await _fixture.SeedSamplesAsync(
             arrangement,
             [
@@ -140,6 +149,7 @@ public sealed class EvaluateMachineTests(TelemetryEvaluationFixture fixture)
     {
         var arrangement = await _fixture.ArrangeEvaluationMachineAsync();
         var active = new[] { arrangement.WarningStatusId, arrangement.ErrorStatusId };
+
         await _fixture.SeedSamplesAsync(
             arrangement,
             EvaluationTestData.Build(arrangement, _fixture.Origin, new Segment(Count: 5, Mean: 95, active)));
@@ -151,22 +161,23 @@ public sealed class EvaluateMachineTests(TelemetryEvaluationFixture fixture)
         var statistics = (await _fixture.LoadStatisticsAsync(arrangement.MetricId)).Single();
 
         statistics.IsWarm.Should().BeFalse();
+
         Summarize(episodes)
             .Should()
             .BeEquivalentTo(
-            [
                 Line(rule: "threshold", severity: "alarm", state: "open", _fixture.At(seconds: 1)) + "   1",
                 Line(rule: "status", severity: "warning", state: "open", _fixture.At(seconds: 0)) + "   1",
-                Line(rule: "status", severity: "alarm", state: "open", _fixture.At(seconds: 0)) + "   1",
-            ]);
+                Line(rule: "status", severity: "alarm", state: "open", _fixture.At(seconds: 0)) + "   1");
     }
 
     [Fact]
     public async Task Evaluate_InAnUntrackedPhase_OpensTheThresholdAndStoresNoStatistics()
     {
         var arrangement = await _fixture.ArrangeEvaluationMachineAsync();
+
         await _fixture.AddEvaluationPhaseAsync(
             arrangement, code: "cutting", priority: 0, arrangement.CuttingStatusId, isTracked: false, limits: null);
+
         await _fixture.SeedSamplesAsync(
             arrangement,
             EvaluationTestData.Build(
@@ -186,11 +197,14 @@ public sealed class EvaluateMachineTests(TelemetryEvaluationFixture fixture)
     public async Task Evaluate_WithTrackedPhases_LearnsEachPhaseInItsOwnRow()
     {
         var arrangement = await _fixture.ArrangeEvaluationMachineAsync();
+
         var cutting = await _fixture.AddEvaluationPhaseAsync(
             arrangement, code: "cutting", priority: 0, arrangement.CuttingStatusId, isTracked: true, limits: null);
+
         var partChange = await _fixture.AddEvaluationPhaseAsync(
             arrangement, code: "part.change", priority: 1, arrangement.PartChangeStatusId, isTracked: true,
             limits: null);
+
         await _fixture.SeedSamplesAsync(
             arrangement,
             EvaluationTestData.Build(
@@ -206,9 +220,11 @@ public sealed class EvaluateMachineTests(TelemetryEvaluationFixture fixture)
         var rows = await _fixture.LoadStatisticsAsync(arrangement.MetricId);
 
         rows.Select(row => row.OperatingPhaseId).Should().BeEquivalentTo([cutting, partChange]);
+
         rows.Single(row => row.OperatingPhaseId == cutting)
             .WarmMean.Should()
             .BeApproximately(expectedValue: 50, precision: 0.1);
+
         rows.Single(row => row.OperatingPhaseId == partChange)
             .WarmMean.Should()
             .BeApproximately(expectedValue: 70, precision: 0.1);
@@ -218,8 +234,10 @@ public sealed class EvaluateMachineTests(TelemetryEvaluationFixture fixture)
     public async Task Evaluate_WhileNothingMatches_NeverLearnsAndOpensUnknownModeAfterTheDwell()
     {
         var arrangement = await _fixture.ArrangeEvaluationMachineAsync();
+
         await _fixture.AddEvaluationPhaseAsync(
             arrangement, code: "cutting", priority: 0, arrangement.CuttingStatusId, isTracked: true, limits: null);
+
         await _fixture.SeedSamplesAsync(
             arrangement,
             EvaluationTestData.Build(
@@ -244,6 +262,7 @@ public sealed class EvaluateMachineTests(TelemetryEvaluationFixture fixture)
     public async Task Evaluate_AfterAPhaseSwitchThatChangesTheLimits_WaitsForTheSettleTimeBeforeCounting()
     {
         var arrangement = await _fixture.ArrangeEvaluationMachineAsync();
+
         await _fixture.AddEvaluationPhaseAsync(
             arrangement,
             code: "cutting",
@@ -251,9 +270,11 @@ public sealed class EvaluateMachineTests(TelemetryEvaluationFixture fixture)
             arrangement.CuttingStatusId,
             isTracked: true,
             new MetricLimits { AlarmHigh = 120 });
+
         await _fixture.AddEvaluationPhaseAsync(
             arrangement, code: "part.change", priority: 1, arrangement.PartChangeStatusId, isTracked: true,
             limits: null);
+
         await _fixture.SeedSamplesAsync(
             arrangement,
             EvaluationTestData.Build(
@@ -277,6 +298,7 @@ public sealed class EvaluateMachineTests(TelemetryEvaluationFixture fixture)
     public async Task Evaluate_InAPhaseWithAnEmptyLimitRow_OpensNothingForAValueThatTheDefinitionLimitsWouldReject()
     {
         var arrangement = await _fixture.ArrangeEvaluationMachineAsync(new MetricLimits { AlarmLow = 10 });
+
         await _fixture.AddEvaluationPhaseAsync(
             arrangement,
             code: "stopped",
@@ -284,6 +306,7 @@ public sealed class EvaluateMachineTests(TelemetryEvaluationFixture fixture)
             arrangement.PartChangeStatusId,
             isTracked: true,
             new MetricLimits());
+
         await _fixture.SeedSamplesAsync(
             arrangement,
             EvaluationTestData.Build(
@@ -304,8 +327,10 @@ public sealed class EvaluateMachineTests(TelemetryEvaluationFixture fixture)
     public async Task Evaluate_InAPhaseWithoutALimitRow_UsesTheDefinitionLimits()
     {
         var arrangement = await _fixture.ArrangeEvaluationMachineAsync(new MetricLimits { AlarmLow = 10 });
+
         await _fixture.AddEvaluationPhaseAsync(
             arrangement, code: "stopped", priority: 0, arrangement.PartChangeStatusId, isTracked: true, limits: null);
+
         await _fixture.SeedSamplesAsync(
             arrangement,
             EvaluationTestData.Build(
@@ -327,6 +352,7 @@ public sealed class EvaluateMachineTests(TelemetryEvaluationFixture fixture)
     public async Task Evaluate_InAPhaseWithItsOwnAlarmLimit_OpensTheAlarmForAValueAboveIt()
     {
         var arrangement = await _fixture.ArrangeEvaluationMachineAsync(new MetricLimits());
+
         await _fixture.AddEvaluationPhaseAsync(
             arrangement,
             code: "stopped",
@@ -334,6 +360,7 @@ public sealed class EvaluateMachineTests(TelemetryEvaluationFixture fixture)
             arrangement.PartChangeStatusId,
             isTracked: true,
             new MetricLimits { AlarmHigh = 90 });
+
         await _fixture.SeedSamplesAsync(
             arrangement,
             EvaluationTestData.Build(
@@ -355,13 +382,16 @@ public sealed class EvaluateMachineTests(TelemetryEvaluationFixture fixture)
     public async Task Evaluate_WhileAnEpisodeIsOpen_FreezesTheBaseline()
     {
         var arrangement = await _fixture.ArrangeEvaluationMachineAsync();
+
         await _fixture.SeedSamplesAsync(
             arrangement,
             EvaluationTestData.Build(
                 arrangement, _fixture.Origin, new Segment(Count: 70, Mean: 50, [], HasWiggle: true)));
+
         _fixture.Time.SetUtcNow(_fixture.At(seconds: 80));
         await _fixture.EvaluateAsync(arrangement.MachineId);
         var before = (await _fixture.LoadStatisticsAsync(arrangement.MetricId)).Single();
+
         await _fixture.SeedSamplesAsync(
             arrangement,
             EvaluationTestData.Build(arrangement, _fixture.At(seconds: 70), new Segment(Count: 30, Mean: 95, [])));
@@ -379,6 +409,7 @@ public sealed class EvaluateMachineTests(TelemetryEvaluationFixture fixture)
     public async Task Evaluate_WhenThePumpStopsWithFlowZero_OpensNothingBeforeDuringOrAfterTheSwitch()
     {
         var arrangement = await _fixture.ArrangeEvaluationMachineAsync(new MetricLimits());
+
         await _fixture.AddEvaluationPhaseAsync(
             arrangement,
             code: "running",
@@ -386,9 +417,11 @@ public sealed class EvaluateMachineTests(TelemetryEvaluationFixture fixture)
             arrangement.CuttingStatusId,
             isTracked: true,
             new MetricLimits { AlarmLow = 10 });
+
         await _fixture.AddEvaluationPhaseAsync(
             arrangement, code: "stopped", priority: 1, arrangement.PartChangeStatusId, isTracked: true,
             new MetricLimits());
+
         await _fixture.SeedSamplesAsync(
             arrangement,
             EvaluationTestData.Build(
@@ -409,6 +442,7 @@ public sealed class EvaluateMachineTests(TelemetryEvaluationFixture fixture)
     public async Task Evaluate_WithAValueBeyondTheAlarmLimitOfBothPhases_OpensDuringTheDwell()
     {
         var arrangement = await _fixture.ArrangeEvaluationMachineAsync(new MetricLimits());
+
         await _fixture.AddEvaluationPhaseAsync(
             arrangement,
             code: "running",
@@ -416,6 +450,7 @@ public sealed class EvaluateMachineTests(TelemetryEvaluationFixture fixture)
             arrangement.CuttingStatusId,
             isTracked: true,
             new MetricLimits { AlarmHigh = 90 });
+
         await _fixture.AddEvaluationPhaseAsync(
             arrangement,
             code: "stopped",
@@ -423,6 +458,7 @@ public sealed class EvaluateMachineTests(TelemetryEvaluationFixture fixture)
             arrangement.PartChangeStatusId,
             isTracked: true,
             new MetricLimits { AlarmHigh = 95 });
+
         await _fixture.SeedSamplesAsync(
             arrangement,
             EvaluationTestData.Build(
@@ -444,6 +480,7 @@ public sealed class EvaluateMachineTests(TelemetryEvaluationFixture fixture)
     public async Task Evaluate_WhileAnEpisodeIsOpenInTheDwell_DoesNotResolveInsideTheLooserLimitsOnly()
     {
         var arrangement = await _fixture.ArrangeEvaluationMachineAsync(new MetricLimits());
+
         await _fixture.AddEvaluationPhaseAsync(
             arrangement,
             code: "running",
@@ -451,6 +488,7 @@ public sealed class EvaluateMachineTests(TelemetryEvaluationFixture fixture)
             arrangement.CuttingStatusId,
             isTracked: true,
             new MetricLimits { AlarmHigh = 90 });
+
         await _fixture.AddEvaluationPhaseAsync(
             arrangement,
             code: "stopped",
@@ -458,6 +496,7 @@ public sealed class EvaluateMachineTests(TelemetryEvaluationFixture fixture)
             arrangement.PartChangeStatusId,
             isTracked: true,
             new MetricLimits { AlarmHigh = 120 });
+
         await _fixture.SeedSamplesAsync(
             arrangement,
             EvaluationTestData.Build(
@@ -486,11 +525,12 @@ public sealed class EvaluateMachineTests(TelemetryEvaluationFixture fixture)
             new Segment(Count: 40, Mean: 50, [], HasWiggle: true));
 
     private static List<string> Summarize(IEnumerable<SignalEpisode> episodes) =>
-        episodes
+    [
+        .. episodes
             .Select(episode =>
                 Line(episode.Rule.Value, episode.Severity.Value, episode.State.Value, episode.OpenedAt)
-                + $" {episode.EscalatedAt:O} {episode.ResolvedAt:O} {episode.Sequence}")
-            .ToList();
+                + $" {episode.EscalatedAt:O} {episode.ResolvedAt:O} {episode.Sequence}"),
+    ];
 
     private static string Line(string rule, string severity, string state, DateTime openedAt) =>
         $"{rule} {severity} {state} {openedAt:O}";

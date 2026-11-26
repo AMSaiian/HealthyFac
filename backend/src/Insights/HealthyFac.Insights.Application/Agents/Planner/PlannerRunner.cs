@@ -76,6 +76,7 @@ public sealed class PlannerRunner(
     {
         var prompt = _prompts.For(AgentRole.Planner);
         run.UseModel(_model.ModelName, prompt.Version, prompt.Hash);
+
         var context = new ToolContext
         {
             CompanyId = maintenanceCase.CompanyId,
@@ -87,7 +88,9 @@ public sealed class PlannerRunner(
             EndLoop = _toolCallIds.EndLoop,
             RenewLease = token => _lease.RenewAsync(run, token),
         };
+
         var tools = _registry.For(AgentRole.Planner, context);
+
         var userMessage = AgentDataBlocks.Wrap(
             CaseBlockTag,
             JsonSerializer.Serialize(CaseSnapshot.From(maintenanceCase), _json.Snapshots));
@@ -125,6 +128,7 @@ public sealed class PlannerRunner(
         if (!await HasBufferedActionAsync(run.Id, cancellationToken))
         {
             _logger.LogWarning(message: "The planner run {RunId} ended without a write action.", run.Id);
+
             await _commit.FailWithTextAsync(
                 run.Id,
                 AgentRunErrorCode.NoDecision,
@@ -137,6 +141,7 @@ public sealed class PlannerRunner(
         }
 
         await _lease.RenewAsync(run, cancellationToken);
+
         await _commit.CommitAsync(
             run,
             maintenanceCase,

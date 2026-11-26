@@ -5,10 +5,13 @@ using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Employees.Data;
 using HealthyFac.Core.Messaging.Employees;
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.IntegrationTests.Employees;
 
 [Collection(CoreEmployeesCollection.Name)]
+[Feature(TestFeatures.Companies)]
+[Feature(TestFeatures.Identity)]
 public sealed class AcceptEmployeeInviteTests(CoreDatabaseFixture fixture)
 {
     private readonly CoreDatabaseFixture _fixture = fixture;
@@ -42,11 +45,11 @@ public sealed class AcceptEmployeeInviteTests(CoreDatabaseFixture fixture)
         var messages = await ReadAcceptedMessagesAsync(employeeId);
 
         messages.Should().ContainSingle();
-        messages[index: 0].CompanyId.Should().Be(arranged.CompanyId);
-        messages[index: 0].Email.Should().Be(InviteTestData.AcceptOutboxEmail);
-        messages[index: 0].FirstName.Should().Be(InviteTestData.EmployeeFirstName);
-        messages[index: 0].LastName.Should().Be(InviteTestData.EmployeeLastName);
-        messages[index: 0].RoleCode.Should().Be(RoleCode.Worker.Value);
+        messages[0].CompanyId.Should().Be(arranged.CompanyId);
+        messages[0].Email.Should().Be(InviteTestData.AcceptOutboxEmail);
+        messages[0].FirstName.Should().Be(InviteTestData.EmployeeFirstName);
+        messages[0].LastName.Should().Be(InviteTestData.EmployeeLastName);
+        messages[0].RoleCode.Should().Be(RoleCode.Worker.Value);
     }
 
     [Fact]
@@ -89,6 +92,7 @@ public sealed class AcceptEmployeeInviteTests(CoreDatabaseFixture fixture)
 
         race.SaveCounts.Should().Equal(1, 1);
         failures.Count(failure => failure is null).Should().Be(expected: 1);
+
         failures.Single(failure => failure is not null)
             .Should()
             .BeOfType<ConflictException>()
@@ -128,6 +132,7 @@ public sealed class AcceptEmployeeInviteTests(CoreDatabaseFixture fixture)
 
         race.SaveCounts.Should().Equal(1, 1);
         failures.Count(failure => failure is null).Should().Be(expected: 1);
+
         failures.Single(failure => failure is not null)
             .Should()
             .BeOfType<ConflictException>()
@@ -146,6 +151,6 @@ public sealed class AcceptEmployeeInviteTests(CoreDatabaseFixture fixture)
     {
         var messages = await _fixture.ReadOutboxMessagesAsync<EmployeeAccepted>();
 
-        return messages.Where(message => message.EmployeeId == employeeId).ToList();
+        return [.. messages.Where(message => message.EmployeeId == employeeId)];
     }
 }

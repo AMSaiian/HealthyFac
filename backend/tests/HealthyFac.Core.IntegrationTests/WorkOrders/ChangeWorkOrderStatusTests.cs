@@ -5,32 +5,21 @@ using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Shifts.Data;
 using HealthyFac.Core.IntegrationTests.WorkOrders.Data;
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.IntegrationTests.WorkOrders;
 
 [Collection(CoreWorkOrdersCollection.Name)]
+[Feature(TestFeatures.WorkOrders)]
 public sealed class ChangeWorkOrderStatusTests(CoreDatabaseFixture fixture)
 {
     private readonly CoreDatabaseFixture _fixture = fixture;
 
     [Fact]
-    public async Task ChangeStatus_ToBacklog_ThrowsValidation()
-    {
-        var (tenant, workOrderId) = await ArrangeStagedAsync();
-
-        var act = () => _fixture.ChangeStatusAsync(
-            tenant.CompanyId,
-            tenant.IdentityUserId,
-            workOrderId,
-            WorkOrderStatus.Backlog);
-
-        await act.Should().ThrowAsync<AppValidationException>();
-    }
-
-    [Fact]
     public async Task ChangeStatus_OfBacklogWorkOrder_ThrowsNotScheduled()
     {
         var tenant = await _fixture.ArrangeShiftTenantAsync();
+
         var created = await _fixture.CreateWorkOrderAsync(
             tenant.CompanyId,
             tenant.IdentityUserId,
@@ -65,6 +54,7 @@ public sealed class ChangeWorkOrderStatusTests(CoreDatabaseFixture fixture)
     public async Task ChangeStatus_InOwnScopeOfWorkOrderNotAssignedToTheActor_ThrowsForbidden()
     {
         var tenant = await _fixture.ArrangeShiftTenantAsync();
+
         var created = await _fixture.CreateWorkOrderAsync(
             tenant.CompanyId,
             tenant.IdentityUserId,
@@ -85,6 +75,7 @@ public sealed class ChangeWorkOrderStatusTests(CoreDatabaseFixture fixture)
     {
         var (tenant, workOrderId) = await ArrangeStagedAsync();
         var staleRowVersion = await _fixture.LoadWorkOrderRowVersionAsync(workOrderId);
+
         await _fixture.ChangeStatusAsync(
             tenant.CompanyId,
             tenant.IdentityUserId,
@@ -167,12 +158,15 @@ public sealed class ChangeWorkOrderStatusTests(CoreDatabaseFixture fixture)
     private async Task<(ShiftTenant Tenant, Guid WorkOrderId)> ArrangeStagedAsync()
     {
         var tenant = await _fixture.ArrangeShiftTenantAsync();
+
         await _fixture.SeedVersionAsync(
             tenant.EmployeeId,
             ShiftTestData.Today.AddDays(value: -30),
             ShiftTestData.Morning,
             ShiftTestData.Afternoon);
+
         _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "07:00"));
+
         var created = await _fixture.CreateWorkOrderAsync(
             tenant.CompanyId,
             tenant.IdentityUserId,

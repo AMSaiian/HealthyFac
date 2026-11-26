@@ -1,4 +1,5 @@
 using HealthyFac.Telemetry.Infrastructure.Database;
+using HealthyFac.Testing.Features;
 using HealthyFac.Testing.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -6,6 +7,8 @@ using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace HealthyFac.Telemetry.UnitTests.Database;
 
+[Feature(TestFeatures.Persistence)]
+[Feature(TestFeatures.Conventions)]
 public sealed class AggregateRelationModelTests
 {
     private const string UnusedConnectionString = "Host=unused;Database=unused";

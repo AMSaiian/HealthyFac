@@ -24,7 +24,7 @@ function nameOf(token: string, constants: ReadonlyMap<string, ReadonlySet<string
   return isProperty ? [token] : [`<unresolved ${token}>`];
 }
 
-describe('route query params', () => {
+describe('route query params', { tags: ['Conventions'] }, () => {
   it('everyRouterQueryParam_IsAComposeOrAViewInput', () => {
     const sources = Object.entries(
       import.meta.glob(['./**/*.ts', '!./**/*.spec.ts'], { query: '?raw', import: 'default', eager: true }) as Record<

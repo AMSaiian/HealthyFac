@@ -24,6 +24,7 @@ public sealed class OverlapProbeInterceptor : SaveChangesInterceptor
         Interlocked.Exchange(ref _isArmed, value: 0);
         Interlocked.Exchange(ref _startedCount, value: 0);
         Interlocked.Exchange(ref _hasOverlapped, value: 0);
+
         Interlocked.Exchange(
             ref _secondStarted, new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously));
     }

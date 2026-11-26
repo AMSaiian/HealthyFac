@@ -3,10 +3,12 @@ using HealthyFac.Core.Domain.Employees;
 using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Employees.Data;
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.IntegrationTests.Employees;
 
 [Collection(CoreEmployeesCollection.Name)]
+[Feature(TestFeatures.Companies)]
 public sealed class RetryProvisioningTests(CoreDatabaseFixture fixture)
 {
     private readonly CoreDatabaseFixture _fixture = fixture;
@@ -58,6 +60,7 @@ public sealed class RetryProvisioningTests(CoreDatabaseFixture fixture)
 
         race.SaveCounts.Should().Equal(1, 1);
         failures.Count(failure => failure is null).Should().Be(expected: 1);
+
         failures.Single(failure => failure is not null)
             .Should()
             .BeOfType<ConflictException>()
@@ -76,6 +79,7 @@ public sealed class RetryProvisioningTests(CoreDatabaseFixture fixture)
         await act.Should()
             .ThrowAsync<UnprocessableException>()
             .WithMessage(EmployeeProvisioningErrors.Rejections.EmployeeNotRetryable);
+
         var messages = await _fixture.ReadAcceptedMessagesAsync(arranged.EmployeeId);
 
         messages.Should().ContainSingle();

@@ -4,10 +4,12 @@ using HealthyFac.Document.Domain.Files;
 using HealthyFac.Document.Infrastructure.Files.Inspection;
 using HealthyFac.Document.UnitTests.Files.Data;
 using HealthyFac.Shared.Application.Observability;
+using HealthyFac.Testing.Features;
 using HealthyFac.Testing.Tracing;
 
 namespace HealthyFac.Document.UnitTests.Files;
 
+[Feature(TestFeatures.Files)]
 public sealed class FileInspectorTests
 {
     private readonly FileSignaturesFileInspector _inspector = new();
@@ -27,7 +29,7 @@ public sealed class FileInspectorTests
             stream, extension, declaredType, FilePurpose.Attachment, TestContext.Current.CancellationToken);
 
         inspection.Type.Should().NotBeNull(name);
-        inspection.Type!.Extension.Should().Be(AllowedFileTypes.FindByExtension(extension)!.Extension);
+        inspection.Type.Extension.Should().Be(AllowedFileTypes.FindByExtension(extension)!.Extension);
     }
 
     [Theory]

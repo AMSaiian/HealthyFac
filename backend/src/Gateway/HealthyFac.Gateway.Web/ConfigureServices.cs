@@ -53,9 +53,11 @@ public static class ConfigureServices
             services.AddSharedRealtime(configuration);
             services.AddGatewaySecurity(configuration);
             services.AddGatewayRateLimiting(configuration);
+
             services.AddReverseProxy()
                 .LoadFromConfig(configuration.GetSection(GatewayConstants.ReverseProxySection))
                 .AddTransforms(RemoveActorHeaders);
+
             services.AddSingleton<IAvailableDestinationsPolicy, HealthyOnlyDestinationsPolicy>();
             services.AddSingleton<ProxyErrorMiddleware>();
             services.AddSingleton<DownstreamClient>();
@@ -76,6 +78,7 @@ public static class ConfigureServices
             services.AddSingleton<IPostConfigureOptions<JwtBearerOptions>, RealtimeTokenReader>();
             services.AddSingleton<IConfigureOptions<WebSocketOptions>, WebSocketOriginOptionsSetup>();
             services.AddSingleton<RevocationCheckMiddleware>();
+
             services.AddAuthorizationBuilder()
                 .SetAuthenticatedFallbackPolicy()
                 .AddPolicy(GatewayConstants.AuthenticatedPolicyName, policy => policy.RequireAuthenticatedUser());
@@ -88,6 +91,7 @@ public static class ConfigureServices
             services.AddSharedLogging(configuration);
             services.AddSharedTracing(configuration);
             services.AddSharedMetrics(configuration);
+
             services.AddSharedHealthChecks(configuration)
                 .AddRedis(
                     provider => provider.GetRequiredService<IConnectionMultiplexer>(),
@@ -134,6 +138,7 @@ public static class ConfigureServices
             app.MapDraftCompositionEndpoints();
             app.MapMachineCompositionEndpoints();
             app.MapRealtimeEndpoints();
+
             app.MapReverseProxy(proxy =>
             {
                 proxy.UseMiddleware<ProxyErrorMiddleware>();

@@ -2,9 +2,11 @@ using HealthyFac.Shared.Infrastructure.RichText;
 using HealthyFac.Telemetry.Application.StatusDefinitions;
 using HealthyFac.Telemetry.Infrastructure.StatusDefinitions.Seeding;
 using HealthyFac.Telemetry.UnitTests.Fakers.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.UnitTests.Fakers;
 
+[Feature(TestFeatures.Seeding)]
 public sealed class StatusDefinitionFakerTests
 {
     [Fact]
@@ -17,6 +19,7 @@ public sealed class StatusDefinitionFakerTests
         var definitions = faker.Generate(StatusDefinitionFakerTestData.ItemCount);
 
         var validator = new CreateStatusDefinitionRequestValidator(new HtmlSanitizerRichTextPolicy());
+
         var failures = definitions
             .SelectMany(definition => validator.Validate(
                     new CreateStatusDefinitionRequest
@@ -29,6 +32,7 @@ public sealed class StatusDefinitionFakerTests
                     })
                 .Errors)
             .ToList();
+
         failures.Should().BeEmpty();
         definitions.Select(definition => definition.Code).Should().OnlyHaveUniqueItems();
     }

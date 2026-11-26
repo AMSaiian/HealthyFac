@@ -1,10 +1,12 @@
 using System.Net;
 using HealthyFac.Core.ApiTests.Hosting;
 using HealthyFac.Core.ApiTests.Machines.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.ApiTests.Machines;
 
 [Collection(CoreApiCollection.Name)]
+[Feature(TestFeatures.Machines)]
 public sealed class MachineInputTests(CoreApiFixture fixture)
 {
     private readonly CoreApiFixture _fixture = fixture;
@@ -18,6 +20,7 @@ public sealed class MachineInputTests(CoreApiFixture fixture)
             HttpMethod.Get,
             $"{MachineApiTestData.MachinesPath}/{MachineApiTestData.InvalidEncryptedId}",
             claims);
+
         var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
@@ -52,24 +55,11 @@ public sealed class MachineInputTests(CoreApiFixture fixture)
             HttpMethod.Get,
             $"{MachineApiTestData.MachinesPath}/{encrypted}",
             claims);
+
         var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         body.Should().Contain(MachineApiTestData.GoLiveJson);
-    }
-
-    [Fact]
-    public async Task Search_WithGoLiveRangeFromAfterTo_Returns400()
-    {
-        var claims = _fixture.CreateMachineClaims(MachineApiTestData.ReadPermission);
-
-        var response = await _fixture.SendMachineRequestAsync(
-            HttpMethod.Post,
-            MachineApiTestData.SearchPath,
-            claims,
-            MachineApiTestData.SearchWithBackwardsGoLiveRangeBody);
-
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]
@@ -88,7 +78,7 @@ public sealed class MachineInputTests(CoreApiFixture fixture)
 
     [Theory]
     [MemberData(nameof(MachineApiTestData.BadFilterBodies), MemberType = typeof(MachineApiTestData))]
-    public async Task Search_WithBadFilterValue_Returns400(string body)
+    public async Task Search_WithInvalidFilterOrSort_Returns400(string caseName, string body)
     {
         var claims = _fixture.CreateMachineClaims(MachineApiTestData.ReadPermission);
 
@@ -98,21 +88,7 @@ public sealed class MachineInputTests(CoreApiFixture fixture)
             claims,
             body);
 
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-    }
-
-    [Fact]
-    public async Task Search_WithSortOnState_Returns400()
-    {
-        var claims = _fixture.CreateMachineClaims(MachineApiTestData.ReadPermission);
-
-        var response = await _fixture.SendMachineRequestAsync(
-            HttpMethod.Post,
-            MachineApiTestData.SearchPath,
-            claims,
-            MachineApiTestData.SearchSortedByStateBody);
-
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest, caseName);
     }
 
     [Fact]

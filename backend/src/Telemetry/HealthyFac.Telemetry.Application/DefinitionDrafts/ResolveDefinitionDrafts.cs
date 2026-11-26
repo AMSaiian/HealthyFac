@@ -61,6 +61,7 @@ public sealed class ResolveDefinitionDraftsRequestHandler(
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         var machineIds = request.Entries.Select(resolved => resolved.MachineId).Distinct().ToList();
+
         foreach (var machineId in machineIds)
         {
             _notifier.AddDefinitionDraftsHint(request.CompanyId, request.AttemptId, machineId);

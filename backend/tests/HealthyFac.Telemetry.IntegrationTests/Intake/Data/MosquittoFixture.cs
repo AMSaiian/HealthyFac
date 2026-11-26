@@ -50,6 +50,7 @@ public sealed class MosquittoFixture(MosquittoTestBroker broker)
     )
     {
         var client = _factory.CreateMqttClient();
+
         var result = await client.ConnectAsync(
             CreateOptions(
                 MosquittoTestBroker.TelemetryUser,
@@ -69,6 +70,7 @@ public sealed class MosquittoFixture(MosquittoTestBroker broker)
     )
     {
         var client = _factory.CreateMqttClient();
+
         await client.ConnectAsync(
             CreateOptions(
                 MosquittoTestBroker.TelemetryUser,

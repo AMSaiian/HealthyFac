@@ -1,11 +1,13 @@
 using HealthyFac.Insights.IntegrationTests.Database;
 using HealthyFac.Insights.IntegrationTests.Database.Data;
 using HealthyFac.Shared.Application.Realtime;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Insights.IntegrationTests.Realtime;
 
 [Collection(InsightsCollection.Name)]
+[Feature(TestFeatures.Realtime)]
 public sealed class RealtimeRegistrationTests(InsightsFixture fixture)
 {
     private readonly InsightsFixture _fixture = fixture;

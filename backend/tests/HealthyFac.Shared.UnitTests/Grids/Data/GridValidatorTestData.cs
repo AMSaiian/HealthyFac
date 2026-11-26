@@ -30,11 +30,11 @@ public static class GridValidatorTestData
 
     public static readonly DateTime RangeEnd = RangeStart.AddDays(value: 1);
 
-    public static TheoryData<DateTimeKind> NonUtcKinds => new()
-    {
+    public static TheoryData<DateTimeKind> NonUtcKinds =>
+    [
         DateTimeKind.Unspecified,
         DateTimeKind.Local,
-    };
+    ];
 
     public static TheoryData<DateTime, DateTime> RangesWithFromNotBeforeTo => new()
     {

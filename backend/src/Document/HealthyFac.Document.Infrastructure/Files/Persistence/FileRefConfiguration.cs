@@ -76,9 +76,11 @@ public class FileRefConfiguration : IEntityTypeConfiguration<FileRef>
                 CheckConstraintSql.AllowedValues(
                     nameof(FileRef.Extension).ToSnakeCase(),
                     AllowedFileTypes.All.Select(type => type.Extension)));
+
             table.HasCheckConstraint(
                 ConstraintName(nameof(FileRef.MachineId), EmbeddedRule),
                 $"purpose <> '{FilePurpose.Embedded.Value}' OR machine_id IS NULL");
+
             table.HasCheckConstraint(
                 ConstraintName(nameof(FileRef.Sha256), HashRule),
                 $"octet_length(sha256) = {FileRef.Sha256Length}");

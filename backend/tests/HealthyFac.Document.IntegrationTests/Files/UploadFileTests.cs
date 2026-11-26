@@ -14,6 +14,7 @@ using HealthyFac.Document.IntegrationTests.MachineRegistrations.Data;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.Observability;
 using HealthyFac.Shared.Application.UseCases;
+using HealthyFac.Testing.Features;
 using HealthyFac.Testing.Tracing;
 using Microsoft.Extensions.DependencyInjection;
 using Cases = HealthyFac.Document.IntegrationTests.Files.Data.UploadFileTestData.OutOfScopeCases;
@@ -21,6 +22,7 @@ using Cases = HealthyFac.Document.IntegrationTests.Files.Data.UploadFileTestData
 namespace HealthyFac.Document.IntegrationTests.Files;
 
 [Collection(DocumentDatabaseCollection.Name)]
+[Feature(TestFeatures.Files)]
 public sealed class UploadFileTests(DocumentDatabaseFixture fixture)
 {
     private readonly DocumentDatabaseFixture _fixture = fixture;
@@ -104,6 +106,7 @@ public sealed class UploadFileTests(DocumentDatabaseFixture fixture)
 
     [Theory]
     [MemberData(nameof(UploadFileTestData.OutOfScopeMachines), MemberType = typeof(UploadFileTestData))]
+    [Feature(TestFeatures.Machines)]
     public async Task UploadMachineFile_OutsideScope_Throws404AndStoresNothing(string scenario)
     {
         var machineId = await ArrangeMachineAsync(scenario);
@@ -177,6 +180,7 @@ public sealed class UploadFileTests(DocumentDatabaseFixture fixture)
     {
         using var cancellation = new CancellationTokenSource();
         using var scope = _fixture.CreateUserScope(UploadFileTestData.CompanyId);
+
         var handler = CreateHandler(
             scope,
             new CancellingFileStorage(scope.ServiceProvider.GetRequiredService<IFileStorage>(), cancellation));
@@ -197,6 +201,7 @@ public sealed class UploadFileTests(DocumentDatabaseFixture fixture)
         using var cancellation = new CancellationTokenSource();
         await cancellation.CancelAsync();
         using var scope = _fixture.CreateUserScope(UploadFileTestData.CompanyId);
+
         var handler = scope.ServiceProvider
             .GetRequiredService<IRequestHandler<UploadFileRequest, UploadFileResponse>>();
 
@@ -216,6 +221,7 @@ public sealed class UploadFileTests(DocumentDatabaseFixture fixture)
     {
         using var capture = new SpanCapture(
             ObservabilityConstants.Sources.UseCases, ObservabilityConstants.Files.Source);
+
         using var parent = new Activity(operationName: "test").Start();
 
         var response = await _fixture.UploadCompanyFileAsync(
@@ -280,6 +286,7 @@ public sealed class UploadFileTests(DocumentDatabaseFixture fixture)
                 return await _fixture.RegisterMachineAsync(UploadFileTestData.OtherCompanyId);
             case Cases.DeletedRegistration:
                 var machineId = await _fixture.RegisterMachineAsync(UploadFileTestData.CompanyId);
+
                 await _fixture.UnregisterMachineAsync(
                     new MachineDeleted
                     {

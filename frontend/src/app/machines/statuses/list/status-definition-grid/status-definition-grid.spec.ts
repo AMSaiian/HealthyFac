@@ -52,25 +52,24 @@ function setup(options: { canWrite?: boolean; canDelete?: boolean } = {}): Setup
   return { emittedSorts, grid: fixture.componentInstance as unknown as GridAccess };
 }
 
-describe('StatusDefinitionGrid', () => {
+describe('StatusDefinitionGrid', { tags: ['SignalModel'] }, () => {
   afterEach(() => {
     vi.unstubAllGlobals();
   });
 
-  it('onSort_WithSortableField_EmitsColumnAndDirection', () => {
+  it.each([
+    [
+      'SortableField_EmitsColumnAndDirection',
+      { field: StatusDefinitionSortColumn.Code, order: -1 },
+      [{ column: StatusDefinitionSortColumn.Code, direction: SortDirection.Descending }],
+    ],
+    ['UnknownField_EmitsNull', { field: 'unknown', order: 1 }, [null]],
+  ])('onSort_With%s', (_name, event, expected) => {
     const { grid, emittedSorts } = setup();
 
-    grid.grid.onSort({ field: StatusDefinitionSortColumn.Code, order: -1 });
+    grid.grid.onSort(event);
 
-    expect(emittedSorts).toEqual([{ column: StatusDefinitionSortColumn.Code, direction: SortDirection.Descending }]);
-  });
-
-  it('onSort_WithUnknownField_EmitsNull', () => {
-    const { grid, emittedSorts } = setup();
-
-    grid.grid.onSort({ field: 'unknown', order: 1 });
-
-    expect(emittedSorts).toEqual([null]);
+    expect(emittedSorts).toEqual(expected);
   });
 
   it.each([

@@ -33,6 +33,7 @@ public static class ShiftDateRules
     public static void EnsureInRange(DateOnly date, DateOnly today)
     {
         EnsureNotPast(date, today);
+
         if (date > today.AddDays(ShiftValidationConstants.MaxDaysAhead))
         {
             throw DateOutOfRange();

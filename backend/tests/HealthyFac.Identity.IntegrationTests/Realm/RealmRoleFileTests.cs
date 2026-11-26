@@ -1,7 +1,9 @@
 using HealthyFac.Identity.IntegrationTests.Realm.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Identity.IntegrationTests.Realm;
 
+[Feature(TestFeatures.Identity)]
 public sealed class RealmRoleFileTests
 {
     [Theory]
@@ -46,6 +48,7 @@ public sealed class RealmRoleFileTests
         var telemetry = RealmRoleFileTestData.ReadRolePermissions(
             RealmTestData.InsightsServiceRoleName,
             RealmTestData.TelemetryClientId);
+
         var core = RealmRoleFileTestData.ReadRolePermissions(
             RealmTestData.InsightsServiceRoleName,
             RealmTestData.CoreClientId);
@@ -58,14 +61,17 @@ public sealed class RealmRoleFileTests
     public void WorkOrdersScope_InRealmFile_HasCoreAudienceAndRoleMapping()
     {
         var realm = RealmRoleFileTestData.ReadRealm();
-        var scope = realm[propertyName: "clientScopes"]!.AsArray()
-            .Single(candidate => candidate![propertyName: "name"]!.GetValue<string>()
+
+        var scope = realm["clientScopes"]!.AsArray()
+            .Single(candidate => candidate!["name"]!.GetValue<string>()
                 == RealmTestData.WorkOrdersScopeName)!;
-        var audience = scope[propertyName: "protocolMappers"]!.AsArray().Single()![propertyName: "config"]![
-            propertyName: "included.client.audience"]!.GetValue<string>();
-        var mappedRoles = realm[propertyName: "clientScopeMappings"]![RealmTestData.CoreClientId]!.AsArray()
-            .Single(candidate => candidate![propertyName: "clientScope"]!.GetValue<string>()
-                == RealmTestData.WorkOrdersScopeName)![propertyName: "roles"]!.AsArray()
+
+        var audience = scope["protocolMappers"]!.AsArray().Single()!["config"]![
+            "included.client.audience"]!.GetValue<string>();
+
+        var mappedRoles = realm["clientScopeMappings"]![RealmTestData.CoreClientId]!.AsArray()
+            .Single(candidate => candidate!["clientScope"]!.GetValue<string>()
+                == RealmTestData.WorkOrdersScopeName)!["roles"]!.AsArray()
             .Select(role => role!.GetValue<string>());
 
         audience.Should().Be(RealmTestData.CoreClientId);
@@ -76,13 +82,15 @@ public sealed class RealmRoleFileTests
     public void InsightsClient_InRealmFile_OffersTheWorkOrdersScopeAndMapsSignals()
     {
         var realm = RealmRoleFileTestData.ReadRealm();
-        var optionalScopes = realm[propertyName: "clients"]!.AsArray()
-            .Single(candidate => candidate![propertyName: "clientId"]!.GetValue<string>()
-                == RealmTestData.InsightsClientId)![propertyName: "optionalClientScopes"]!.AsArray()
+
+        var optionalScopes = realm["clients"]!.AsArray()
+            .Single(candidate => candidate!["clientId"]!.GetValue<string>()
+                == RealmTestData.InsightsClientId)!["optionalClientScopes"]!.AsArray()
             .Select(scope => scope!.GetValue<string>());
-        var telemetryRoles = realm[propertyName: "clientScopeMappings"]![RealmTestData.TelemetryClientId]!.AsArray()
-            .Single(candidate => candidate![propertyName: "clientScope"]!.GetValue<string>()
-                == RealmTestData.TelemetryScopeName)![propertyName: "roles"]!.AsArray()
+
+        var telemetryRoles = realm["clientScopeMappings"]![RealmTestData.TelemetryClientId]!.AsArray()
+            .Single(candidate => candidate!["clientScope"]!.GetValue<string>()
+                == RealmTestData.TelemetryScopeName)!["roles"]!.AsArray()
             .Select(role => role!.GetValue<string>());
 
         optionalScopes.Should().Contain(RealmTestData.WorkOrdersScopeName);

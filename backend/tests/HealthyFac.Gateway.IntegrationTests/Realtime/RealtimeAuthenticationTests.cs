@@ -3,11 +3,14 @@ using HealthyFac.Gateway.IntegrationTests.Hosting;
 using HealthyFac.Gateway.IntegrationTests.Realtime.Data;
 using HealthyFac.Gateway.IntegrationTests.Revocation.Data;
 using HealthyFac.Shared.Infrastructure.Revocation;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Gateway.IntegrationTests.Realtime;
 
 [Collection(GatewayProxyCollection.Name)]
+[Feature(TestFeatures.Gateway)]
+[Feature(TestFeatures.Realtime)]
 public sealed class RealtimeAuthenticationTests(GatewayEnvironment environment) : IAsyncLifetime
 {
     private const string Rejected = "*401*";
@@ -60,18 +63,21 @@ public sealed class RealtimeAuthenticationTests(GatewayEnvironment environment) 
     {
         var subject = Guid.NewGuid();
         await using var gateway = _environment.CreateGateway(_core);
+
         await gateway.Services.GetRequiredService<ITokenRevocationStore>()
             .RevokeAsync(
                 subject,
                 DateTimeOffset.UtcNow - RevocationTestData.RevocationAge,
                 RevocationTestData.RevocationTimeToLive,
                 CancellationToken.None);
+
         var token = gateway.Tokens.CreateToken(
             RealtimeTestData.Claims(subject) with
             {
                 IssuedAt = DateTimeOffset.UtcNow - RevocationTestData.TokenAge,
                 Lifetime = TimeSpan.FromHours(hours: 1),
             });
+
         var webSocketClient = RealtimeTestData.CreateWebSocketClient(gateway);
 
         var act = async () => await webSocketClient.ConnectAsync(

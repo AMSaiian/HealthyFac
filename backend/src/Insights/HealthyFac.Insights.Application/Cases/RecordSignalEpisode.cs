@@ -76,13 +76,17 @@ public sealed class RecordSignalEpisodeRequestHandler(
     {
         var now = _timeProvider.GetUtcNow().UtcDateTime;
         var change = ToChange(message);
+
         var signal = await _dbContext.MachineSignals.SingleOrDefaultAsync(
             candidate => candidate.Id == message.EpisodeId && candidate.CompanyId == message.CompanyId,
             cancellationToken);
+
         var isNewSignal = signal is null;
+
         var wasUncoveredOrDismissed = signal is null
             || signal.Coverage.IsUncovered
             || signal.Coverage == SignalCoverage.Dismissed;
+
         var hasBeenDismissed = signal?.Coverage == SignalCoverage.Dismissed;
 
         if (signal is null)
@@ -104,6 +108,7 @@ public sealed class RecordSignalEpisodeRequestHandler(
             var resolvedCase = await _dbContext.MaintenanceCases
                 .Include(candidate => candidate.Signals)
                 .SingleAsync(candidate => candidate.Id == caseId, cancellationToken);
+
             MarkCaseTouched(resolvedCase);
             isResolved = resolvedCase.ResolveIfDone(now);
         }

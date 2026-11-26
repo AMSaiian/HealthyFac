@@ -65,7 +65,7 @@ function affectedError(): HttpErrorResponse {
   });
 }
 
-describe('ShiftsStore', () => {
+describe('ShiftsStore', { tags: ['Shifts'] }, () => {
   const shiftVersions = vi.fn();
   const shiftOverrides = vi.fn();
   const createVersion = vi.fn();
@@ -549,7 +549,7 @@ describe('ShiftsStore', () => {
   });
 });
 
-describe('toShiftDialog', () => {
+describe('toShiftDialog', { tags: ['Shifts'] }, () => {
   it.each([
     ['WithoutCompose', null, null],
     ['WithTheNewVersion', 'shift-version', { kind: 'version', version: null }],
@@ -571,7 +571,7 @@ describe('toShiftDialog', () => {
   });
 });
 
-describe('shift utils', () => {
+describe('shift utils', { tags: ['Shifts'] }, () => {
   it('normalizeVersion_WithSecondsAndMissingDays_CutsThemAndFillsSevenDays', () => {
     expect(VERSION.days).toHaveLength(7);
     expect(VERSION.days[0].blocks).toEqual([{ start: '08:00', end: '12:00' }]);
@@ -598,7 +598,7 @@ describe('shift utils', () => {
   });
 });
 
-describe('isOverrideDateTaken', () => {
+describe('isOverrideDateTaken', { tags: ['Shifts'] }, () => {
   it.each([
     ['CreateOnADateWithAnOverride', true, DayScheduleSource.Override, true],
     ['EditOfAnOverride', false, DayScheduleSource.Override, false],
@@ -609,7 +609,7 @@ describe('isOverrideDateTaken', () => {
   });
 });
 
-describe('override calendar', () => {
+describe('override calendar', { tags: ['Shifts'] }, () => {
   it.each([
     ['TheShownMonth', Temporal.PlainYearMonth.from('2027-08'), '2027-08-01'],
     ['TheMonthOfTheFormDate', null, '2027-06-01'],

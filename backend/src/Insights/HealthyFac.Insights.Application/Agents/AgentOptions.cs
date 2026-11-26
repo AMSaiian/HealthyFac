@@ -63,42 +63,55 @@ public sealed class AgentOptionsValidator : AbstractValidator<AgentOptions>
         RuleFor(options => options.RunDebounceSeconds)
             .GreaterThan(valueToCompare: 0)
             .WithMessage(AgentMessages.ValueNotPositive);
+
         RuleFor(options => options.PlannerMaxIterations)
             .GreaterThan(valueToCompare: 0)
             .WithMessage(AgentMessages.ValueNotPositive);
+
         RuleFor(options => options.PlannerHistoryMinutes)
             .GreaterThan(valueToCompare: 0)
             .WithMessage(AgentMessages.ValueNotPositive);
+
         RuleFor(options => options.PlannerHistoryBucketCount)
             .GreaterThan(valueToCompare: 0)
             .WithMessage(AgentMessages.ValueNotPositive);
+
         RuleFor(options => options.HistoryMaxRangeHours)
             .GreaterThan(valueToCompare: 0)
             .WithMessage(AgentMessages.ValueNotPositive);
+
         RuleFor(options => options.ManualSearchChunks)
             .GreaterThan(valueToCompare: 0)
             .WithMessage(AgentMessages.ValueNotPositive);
+
         RuleFor(options => options.OpenWorkOrderCount)
             .GreaterThan(valueToCompare: 0)
             .WithMessage(AgentMessages.ValueNotPositive);
+
         RuleFor(options => options.EpisodeRangeHours)
             .GreaterThan(valueToCompare: 0)
             .WithMessage(AgentMessages.ValueNotPositive);
+
         RuleFor(options => options.EpisodeCount)
             .GreaterThan(valueToCompare: 0)
             .WithMessage(AgentMessages.ValueNotPositive);
+
         RuleFor(options => options.ExtractorMaxIterations)
             .GreaterThan(valueToCompare: 0)
             .WithMessage(AgentMessages.ValueNotPositive);
+
         RuleFor(options => options.MaxConsecutiveErrors)
             .GreaterThan(valueToCompare: 0)
             .WithMessage(AgentMessages.ValueNotPositive);
+
         RuleFor(options => options.RunLeaseSeconds)
             .GreaterThan(valueToCompare: 0)
             .WithMessage(AgentMessages.ValueNotPositive);
+
         RuleFor(options => options.PollSeconds)
             .GreaterThan(valueToCompare: 0)
             .WithMessage(AgentMessages.ValueNotPositive);
+
         RuleForEach(options => options.ProviderRetryDelaysSeconds)
             .GreaterThan(valueToCompare: 0)
             .WithMessage(AgentMessages.ValueNotPositive);

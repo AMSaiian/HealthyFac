@@ -120,6 +120,7 @@ public sealed class SoftDeleteInterceptor(
         }
 
         var steps = new Queue<(IForeignKey Relation, IReadOnlyCollection<Guid> PrincipalKeys)>();
+
         foreach (var group in CollectPrincipalKeys(dbContext))
         {
             steps.Enqueue((group.Key, group.Value));
@@ -155,6 +156,7 @@ public sealed class SoftDeleteInterceptor(
         }
 
         var steps = new Queue<(IForeignKey Relation, IReadOnlyCollection<Guid> PrincipalKeys)>();
+
         foreach (var group in CollectPrincipalKeys(dbContext))
         {
             steps.Enqueue((group.Key, group.Value));
@@ -181,9 +183,7 @@ public sealed class SoftDeleteInterceptor(
     }
 
     private static List<EntityEntry> FindDeletedPrincipals(DbContext dbContext) =>
-        dbContext.ChangeTracker.Entries()
-            .Where(entry => entry.Entity is ISoftDeletable && IsDeleted(entry))
-            .ToList();
+        [.. dbContext.ChangeTracker.Entries().Where(entry => entry.Entity is ISoftDeletable && IsDeleted(entry))];
 
     private static bool IsDeleted(EntityEntry entry)
     {
@@ -205,12 +205,14 @@ public sealed class SoftDeleteInterceptor(
     private static Dictionary<IForeignKey, List<Guid>> CollectPrincipalKeys(DbContext dbContext)
     {
         var keysByRelation = new Dictionary<IForeignKey, List<Guid>>();
+
         foreach (var entry in FindDeletedPrincipals(dbContext))
         {
             foreach (var relation in FindCascadeRelations(entry.Metadata))
             {
                 EnsureSupportedKeys(relation);
-                var key = (Guid)entry.Property(relation.PrincipalKey.Properties[index: 0].Name).CurrentValue!;
+                var key = (Guid)entry.Property(relation.PrincipalKey.Properties[0].Name).CurrentValue!;
+
                 if (!keysByRelation.TryGetValue(relation, out var keys))
                 {
                     keys = [];
@@ -229,7 +231,7 @@ public sealed class SoftDeleteInterceptor(
         if (!HasSupportedKeys(relation))
         {
             throw SoftDeleteCascadeErrors.UnsupportedKey(
-                $"{relation.DeclaringEntityType.ClrType.Name}.{relation.Properties[index: 0].Name}");
+                $"{relation.DeclaringEntityType.ClrType.Name}.{relation.Properties[0].Name}");
         }
     }
 
@@ -246,19 +248,23 @@ public sealed class SoftDeleteInterceptor(
     )
     {
         var dependent = relation.DeclaringEntityType;
-        var primaryKeyName = dependent.FindPrimaryKey()!.Properties[index: 0].Name;
+        var primaryKeyName = dependent.FindPrimaryKey()!.Properties[0].Name;
+
         var handler = Handlers.GetOrAdd(
             dependent.ClrType,
             clrType => (IDependentSoftDelete)Activator.CreateInstance(
                 typeof(DependentSoftDelete<>).MakeGenericType(clrType))!);
+
         var deletion = new DependentDeletionContext
         {
             Relation = relation,
             PrincipalKeys = principalKeys,
-            TrackedKeys = dbContext.ChangeTracker.Entries()
-                .Where(entry => dependent.IsAssignableFrom(entry.Metadata))
-                .Select(entry => (Guid)entry.Property(primaryKeyName).CurrentValue!)
-                .ToList(),
+            TrackedKeys =
+            [
+                .. dbContext.ChangeTracker.Entries()
+                    .Where(entry => dependent.IsAssignableFrom(entry.Metadata))
+                    .Select(entry => (Guid)entry.Property(primaryKeyName).CurrentValue!),
+            ],
             HasOwnCascade = FindCascadeRelations(dependent).Any(),
             DeletedAt = deletedAt,
             DeletedBy = deletedBy,
@@ -276,6 +282,7 @@ public sealed class SoftDeleteInterceptor(
         foreach (var next in FindCascadeRelations(relation.DeclaringEntityType))
         {
             EnsureSupportedKeys(next);
+
             if (keys.Count > 0)
             {
                 steps.Enqueue((next, keys));

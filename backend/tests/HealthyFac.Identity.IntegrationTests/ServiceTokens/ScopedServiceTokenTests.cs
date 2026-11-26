@@ -1,9 +1,11 @@
 using HealthyFac.Identity.IntegrationTests.Realm.Data;
 using HealthyFac.Identity.IntegrationTests.ServiceTokens.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Identity.IntegrationTests.ServiceTokens;
 
 [Collection(KeycloakRealmCollection.Name)]
+[Feature(TestFeatures.Identity)]
 public sealed class ScopedServiceTokenTests(KeycloakRealmCollectionFixture fixture)
 {
     private readonly ScopedServiceTokenFixture _fixture = fixture.ScopedServiceToken;

@@ -5,11 +5,13 @@ using HealthyFac.Core.IntegrationTests.Employees.Data;
 using HealthyFac.Core.Messaging.Employees;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.UseCases;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Core.IntegrationTests.Employees;
 
 [Collection(CoreEmployeesCollection.Name)]
+[Feature(TestFeatures.Companies)]
 public sealed class CreateEmployeeInviteTests(CoreDatabaseFixture fixture)
 {
     private readonly CoreDatabaseFixture _fixture = fixture;
@@ -26,6 +28,7 @@ public sealed class CreateEmployeeInviteTests(CoreDatabaseFixture fixture)
         invite.Email.Should().Be(InviteTestData.NormalizedEmail);
         invite.AcceptedAt.Should().BeNull();
         invite.TokenSalt.Should().HaveCount(InviteTestData.ExpectedSaltBytes);
+
         invite.ExpiresAt.Should()
             .BeCloseTo(
                 DateTime.UtcNow.AddHours(InviteTestData.ExpectedLifetimeHours),
@@ -42,8 +45,8 @@ public sealed class CreateEmployeeInviteTests(CoreDatabaseFixture fixture)
         var messages = await ReadInvitedMessagesAsync(inviteId);
 
         messages.Should().ContainSingle();
-        messages[index: 0].CompanyId.Should().Be(companyId);
-        messages[index: 0].Email.Should().Be(InviteTestData.OutboxEmail);
+        messages[0].CompanyId.Should().Be(companyId);
+        messages[0].Email.Should().Be(InviteTestData.OutboxEmail);
     }
 
     [Fact]
@@ -118,6 +121,7 @@ public sealed class CreateEmployeeInviteTests(CoreDatabaseFixture fixture)
 
         race.SaveCounts.Should().Equal(1, 1);
         failures.Count(failure => failure is null).Should().Be(expected: 1);
+
         failures.Single(failure => failure is not null)
             .Should()
             .BeOfType<ConflictException>()
@@ -143,7 +147,7 @@ public sealed class CreateEmployeeInviteTests(CoreDatabaseFixture fixture)
     {
         var messages = await _fixture.ReadOutboxMessagesAsync<EmployeeInvited>();
 
-        return messages.Where(message => message.InviteId == inviteId).ToList();
+        return [.. messages.Where(message => message.InviteId == inviteId)];
     }
 
     private async Task<Guid> CreateAsync(
@@ -154,6 +158,7 @@ public sealed class CreateEmployeeInviteTests(CoreDatabaseFixture fixture)
     )
     {
         using var scope = _fixture.CreateUserScope(companyId);
+
         var handler = scope.ServiceProvider
             .GetRequiredService<IRequestHandler<CreateEmployeeInviteRequest, CreateEmployeeInviteResponse>>();
 

@@ -70,8 +70,10 @@ public class AcceptEmployeeInviteRequestHandler(
     )
     {
         var invite = await _inviteResolver.GetAcceptableAsync(request.Token, cancellationToken);
+
         var isEmailEmployed = await _dbContext.Employees.AnyAsync(
             employee => employee.Email == invite.Email, cancellationToken);
+
         if (isEmailEmployed)
         {
             throw new ConflictException(EmployeeInviteErrors.Rejections.EmailAlreadyEmployed);
@@ -86,6 +88,7 @@ public class AcceptEmployeeInviteRequestHandler(
         invite.UpdateProfile(request.FirstName, request.LastName);
         var employee = invite.Accept(_timeProvider.GetUtcNow().UtcDateTime);
         _dbContext.Employees.Add(employee);
+
         _outbox.Add(
             new EmployeeAccepted
             {

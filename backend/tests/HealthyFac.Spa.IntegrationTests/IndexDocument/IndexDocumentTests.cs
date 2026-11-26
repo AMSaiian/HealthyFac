@@ -1,8 +1,10 @@
 using HealthyFac.Spa.IntegrationTests.IndexDocument.Data;
 using HealthyFac.Spa.Web.IndexDocument.Csp;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Spa.IntegrationTests.IndexDocument;
 
+[Feature(TestFeatures.Platform)]
 public sealed class IndexDocumentTests
 {
     private const string ApiBaseUrl = "https://api.healthyfac.test";

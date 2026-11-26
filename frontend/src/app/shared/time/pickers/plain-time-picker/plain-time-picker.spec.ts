@@ -4,7 +4,7 @@ import { Temporal } from '@shared/time/temporal';
 
 import { PlainTimePicker } from './plain-time-picker';
 
-describe('PlainTimePicker', () => {
+describe('PlainTimePicker', { tags: ['Platform'] }, () => {
   function setup(): { picker: PlainTimePicker; set: ReturnType<typeof vi.spyOn> } {
     const fixture = TestBed.createComponent(PlainTimePicker);
     fixture.componentRef.setInput('value', Temporal.PlainTime.from('08:00'));

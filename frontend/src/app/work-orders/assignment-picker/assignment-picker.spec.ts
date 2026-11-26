@@ -80,7 +80,7 @@ function openDayWithSpans(estimate: number): Setup {
   return result;
 }
 
-describe('AssignmentPicker', () => {
+describe('AssignmentPicker', { tags: ['WorkOrders'] }, () => {
   it.each([
     { name: 'WithoutEstimate', estimate: null, assigneeId: 'e1' },
     { name: 'WithoutAssignee', estimate: 60, assigneeId: null },

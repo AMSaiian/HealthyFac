@@ -66,6 +66,7 @@ public sealed class UnassignWorkOrderRequestHandler(ICoreDbContext dbContext, IR
             request.Id,
             request.RowVersion,
             cancellationToken);
+
         if (workOrder.Current.Status == WorkOrderStatus.Backlog)
         {
             throw new UnprocessableException(WorkOrderErrors.Rejections.NotScheduled);
@@ -77,9 +78,11 @@ public sealed class UnassignWorkOrderRequestHandler(ICoreDbContext dbContext, IR
         }
 
         var oldAssigneeId = workOrder.Current.AssigneeId;
+
         var oldAssigneeUserId = oldAssigneeId is { } oldId
             ? await _dbContext.FindIdentityUserIdAsync(oldId, cancellationToken)
             : null;
+
         var previousRevision = workOrder.CurrentRevision;
         workOrder.Unassign();
         _dbContext.AddNewHistoryRows(workOrder, previousRevision);

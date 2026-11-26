@@ -27,6 +27,7 @@ public static class ShiftFixtureExtensions
         public async Task<ShiftTenant> ArrangeShiftTenantAsync()
         {
             var companyId = await fixture.CreateCompanyAsync(ShiftTestData.CompanyName);
+
             var seed = await fixture.ArrangeEmployeeAsync(
                 companyId,
                 new EmployeeSeedOptions
@@ -47,6 +48,7 @@ public static class ShiftFixtureExtensions
         public async Task<ShiftTenant> ArrangeUnprovisionedShiftTenantAsync()
         {
             var companyId = await fixture.CreateCompanyAsync(ShiftTestData.CompanyName);
+
             var employeeId = await fixture.ArrangeUnprovisionedEmployeeAsync(
                 companyId,
                 new EmployeeSeedOptions
@@ -66,6 +68,7 @@ public static class ShiftFixtureExtensions
         )
         {
             using var scope = fixture.CreateUserScope(tenant.CompanyId);
+
             var response = await scope.ServiceProvider
                 .GetRequiredService<
                     IRequestHandler<CreateShiftTemplateVersionRequest, CreateShiftTemplateVersionResponse>>()
@@ -161,6 +164,7 @@ public static class ShiftFixtureExtensions
         {
             using var scope = fixture.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
+
             var workOrder = await dbContext.WorkOrders
                 .Include(candidate => candidate.History)
                 .SingleAsync(candidate => candidate.Id == workOrderId);
@@ -214,6 +218,7 @@ public static class ShiftFixtureExtensions
         {
             using var scope = fixture.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
+
             var workOrder = await dbContext.WorkOrders
                 .Include(candidate => candidate.History)
                 .SingleAsync(candidate => candidate.Id == workOrderId);
@@ -241,6 +246,7 @@ public static class ShiftFixtureExtensions
 
             dbContext.ShiftOverrides.Add(
                 new ShiftOverride(employeeId, date, ShiftTestData.Blocks(ranges).Select(block => block.ToTimes())));
+
             await dbContext.SaveChangesAsync();
         }
 
@@ -260,6 +266,7 @@ public static class ShiftFixtureExtensions
             using var scope = fixture.ScopeFactory.CreateScope();
             var reader = scope.ServiceProvider.GetRequiredService<DayScheduleReader>();
             var zone = await reader.GetZoneAsync(tenant.CompanyId, CancellationToken.None);
+
             var shifts = await reader.LoadAsync(
                 tenant.EmployeeId,
                 zone,
@@ -319,6 +326,7 @@ public static class ShiftFixtureExtensions
             using var scope = fixture.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
             var localStart = ShiftTestData.LocalStart(date, time);
+
             var workOrder = WorkOrder.Create(
                 tenant.CompanyId,
                 title: "Shift guard order",
@@ -327,6 +335,7 @@ public static class ShiftFixtureExtensions
                 WorkOrderCategory.Repair,
                 machineId: null,
                 TimeSpan.FromMinutes(minutes));
+
             workOrder.Assign(tenant.EmployeeId, localStart, LocalTimes.ToUtc(localStart, ShiftTestData.Zone));
 
             dbContext.WorkOrders.Add(workOrder);

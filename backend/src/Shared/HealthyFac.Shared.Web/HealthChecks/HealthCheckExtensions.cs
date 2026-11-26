@@ -102,6 +102,7 @@ public static class HealthCheckExtensions
         writer.WriteNumber(HealthCheckConstants.Properties.TotalDuration, report.TotalDuration.TotalMilliseconds);
 
         writer.WriteStartArray(HealthCheckConstants.Properties.Checks);
+
         foreach (var (name, entry) in report.Entries)
         {
             writer.WriteStartObject();
@@ -120,6 +121,7 @@ public static class HealthCheckExtensions
             }
 
             writer.WriteStartArray(HealthCheckConstants.Properties.Tags);
+
             foreach (var tag in entry.Tags)
             {
                 writer.WriteStringValue(tag);

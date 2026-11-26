@@ -24,6 +24,7 @@ public static class ProvisioningFixtureExtensions
             var invite = await fixture.ArrangeInviteAsync(
                 email,
                 DateTime.UtcNow.AddHours(value: 1));
+
             var employeeId = await fixture.AcceptInviteAsync(invite.Token);
 
             return new ProvisioningEmployee { CompanyId = invite.CompanyId, EmployeeId = employeeId };
@@ -62,6 +63,7 @@ public static class ProvisioningFixtureExtensions
         public async Task<RetryProvisioningResponse> RetryProvisioningAsync(Guid companyId, Guid employeeId)
         {
             using var scope = fixture.CreateUserScope(companyId);
+
             var handler = scope.ServiceProvider
                 .GetRequiredService<IRequestHandler<RetryProvisioningRequest, RetryProvisioningResponse>>();
 
@@ -79,6 +81,7 @@ public static class ProvisioningFixtureExtensions
                     UserId = actorUserId,
                     CompanyId = companyId,
                 });
+
             var handler = scope.ServiceProvider.GetRequiredService<IRequestHandler<DeactivateEmployeeRequest>>();
 
             await handler.HandleAsync(
@@ -90,14 +93,14 @@ public static class ProvisioningFixtureExtensions
         {
             var messages = await fixture.ReadOutboxMessagesAsync<EmployeeDeactivated>();
 
-            return messages.Where(message => message.EmployeeId == employeeId).ToList();
+            return [.. messages.Where(message => message.EmployeeId == employeeId)];
         }
 
         public async Task<IReadOnlyList<EmployeeAccepted>> ReadAcceptedMessagesAsync(Guid employeeId)
         {
             var messages = await fixture.ReadOutboxMessagesAsync<EmployeeAccepted>();
 
-            return messages.Where(message => message.EmployeeId == employeeId).ToList();
+            return [.. messages.Where(message => message.EmployeeId == employeeId)];
         }
     }
 }

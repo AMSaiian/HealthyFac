@@ -45,7 +45,7 @@ function rowIn(status: WorkOrderStatus): WorkOrderRow {
   };
 }
 
-describe('BoardStore', () => {
+describe('BoardStore', { tags: ['WorkOrders'] }, () => {
   const realtime = createFakeRealtimeConnection();
   const lastResult = signal<ActionResult | null>(null);
   const active = signal<AppAction | null>(null);

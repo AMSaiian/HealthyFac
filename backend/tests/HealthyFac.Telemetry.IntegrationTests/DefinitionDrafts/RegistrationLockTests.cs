@@ -5,11 +5,14 @@ using HealthyFac.Telemetry.Domain.DefinitionDrafts;
 using HealthyFac.Telemetry.IntegrationTests.Database.Data;
 using HealthyFac.Telemetry.IntegrationTests.DefinitionDrafts.Data;
 using HealthyFac.Telemetry.IntegrationTests.MachineRegistrations.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Telemetry.IntegrationTests.DefinitionDrafts;
 
 [Collection(TelemetryDefinitionDraftsCollection.Name)]
+[Feature(TestFeatures.Drafts)]
+[Feature(TestFeatures.Machines)]
 public sealed class RegistrationLockTests(TelemetryDatabaseFixture fixture)
 {
     private readonly TelemetryDatabaseFixture _fixture = fixture;
@@ -60,12 +63,14 @@ public sealed class RegistrationLockTests(TelemetryDatabaseFixture fixture)
     private async Task<FlowIds> ArrangeAwaitingChildrenOnRegisteredMachineAsync()
     {
         var ids = FlowIds.Create();
+
         await _fixture.RegisterMachineAsync(
             MachineRegistrationTestData.CreateMessage() with
             {
                 MachineId = ids.MachineId,
                 CompanyId = DefinitionDraftTestData.CompanyId,
             });
+
         await ProposalEntryFlowTestData.Proposed(_fixture, ids);
         await ProposalEntryFlowTestData.AcceptedOnMachineDraft(_fixture, ids);
 

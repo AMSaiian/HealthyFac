@@ -3,11 +3,13 @@ using HealthyFac.Shared.Application.Observability;
 using HealthyFac.Telemetry.Infrastructure.Evaluation;
 using HealthyFac.Telemetry.IntegrationTests.Evaluation.Data;
 using HealthyFac.Telemetry.IntegrationTests.MachineRegistrations.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.Diagnostics.Metrics.Testing;
 
 namespace HealthyFac.Telemetry.IntegrationTests.Evaluation;
 
 [Collection(TelemetryEvaluationCollection.Name)]
+[Feature(TestFeatures.Evaluation)]
 public sealed class EvaluationWorkerMetricsTests(TelemetryEvaluationFixture fixture)
 {
     private const int DueMachineCount = 3;
@@ -30,6 +32,7 @@ public sealed class EvaluationWorkerMetricsTests(TelemetryEvaluationFixture fixt
             .Which.Should()
             .Match<CollectedMeasurement<long>>(measurement =>
                 measurement.Value == 1 && HasResult(measurement.Tags, "completed"));
+
         durations.GetMeasurementSnapshot()
             .Should()
             .ContainSingle()

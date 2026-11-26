@@ -14,9 +14,10 @@ public static class BlockJoin
     /// <param name="blocks">The blocks of one day.</param>
     /// <returns>The joined blocks in start order.</returns>
     public static List<BlockTimes> Join(IEnumerable<BlockTimes> blocks) =>
-        JoinRanges(blocks.Select(block => (block.Start, block.End)))
-            .Select(range => new BlockTimes { Start = range.Start, End = range.End })
-            .ToList();
+    [
+        .. JoinRanges(blocks.Select(block => (block.Start, block.End)))
+            .Select(range => new BlockTimes { Start = range.Start, End = range.End }),
+    ];
 
     /// <summary>
     /// The one join rule for ranges of any point type (local times or UTC instants): sort by start, then join a range
@@ -29,6 +30,7 @@ public static class BlockJoin
         where T : struct, IComparable<T>
     {
         var joined = new List<(T Start, T End)>();
+
         foreach (var range in ranges.OrderBy(candidate => candidate.Start))
         {
             if (joined.Count > 0 && joined[^1].End.CompareTo(range.Start) == 0)
@@ -52,8 +54,9 @@ public static class BlockJoin
     public static List<(Weekday Weekday, BlockTimes Times)> JoinPerWeekday(
         IEnumerable<(Weekday Weekday, BlockTimes Times)> blocks
     ) =>
-        blocks.GroupBy(block => block.Weekday)
+    [
+        .. blocks.GroupBy(block => block.Weekday)
             .OrderBy(group => group.Key)
-            .SelectMany(group => Join(group.Select(block => block.Times)).Select(times => (group.Key, times)))
-            .ToList();
+            .SelectMany(group => Join(group.Select(block => block.Times)).Select(times => (group.Key, times))),
+    ];
 }

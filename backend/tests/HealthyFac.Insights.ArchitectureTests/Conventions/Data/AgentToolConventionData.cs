@@ -16,6 +16,7 @@ public static class AgentToolConventionData
             .Select(type => (Type: type, Attribute: type.GetCustomAttribute<AgentToolAttribute>()))
             .Where(tool => tool.Attribute is not null)
             .ToList();
+
         var violations = new List<string>();
 
         violations.AddRange(
@@ -23,6 +24,7 @@ public static class AgentToolConventionData
                 .Where(tool => tool.Type.GetCustomAttribute<DownstreamScopesAttribute>() is null
                     && tool.Type.GetCustomAttribute<LocalToolAttribute>() is null)
                 .Select(tool => $"{tool.Type.FullName} has neither [DownstreamScopes] nor [LocalTool]."));
+
         violations.AddRange(
             tools
                 .GroupBy(tool => tool.Attribute!.Name)

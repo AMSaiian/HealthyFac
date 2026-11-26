@@ -3,9 +3,11 @@ using HealthyFac.Telemetry.Domain.Evaluation.Statistics;
 using HealthyFac.Telemetry.Domain.MetricDefinitions;
 using HealthyFac.Telemetry.Domain.SignalEpisodes;
 using HealthyFac.Telemetry.UnitTests.Evaluation.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.UnitTests.Evaluation;
 
+[Feature(TestFeatures.Evaluation)]
 public sealed class DriftSpreadTests
 {
     private const int TwoHours = 7200;
@@ -46,10 +48,11 @@ public sealed class DriftSpreadTests
 
         pipeline.Run(SignalSeries.Noisy(mean: 55, count: 600, stepStart, seed: 8));
 
-        var opened = pipeline.DriftDecisions.First(entry => entry.Decision.Kind == RuleDecisionKind.Open);
+        var (time, _) = pipeline.DriftDecisions.First(entry => entry.Decision.Kind == RuleDecisionKind.Open);
 
         pipeline.FirstDriftConditionAt.Should().NotBeNull();
-        (opened.Time - pipeline.FirstDriftConditionAt!.Value).TotalSeconds
+
+        (time - pipeline.FirstDriftConditionAt.Value).TotalSeconds
             .Should()
             .BeGreaterThanOrEqualTo(DriftPipeline.Rules.DriftDurationSeconds);
     }
@@ -64,10 +67,11 @@ public sealed class DriftSpreadTests
         pipeline.Run(
             SignalSeries.Ramp(from: 10, perSecond: 0.1, count: 1000, SignalSeries.Start.AddSeconds(value: 600)));
 
-        var opened = pipeline.TrendDecisions.First(entry => entry.Decision.Kind == RuleDecisionKind.Open);
+        var (time, _) = pipeline.TrendDecisions.First(entry => entry.Decision.Kind == RuleDecisionKind.Open);
 
         pipeline.FirstTrendConditionAt.Should().NotBeNull();
-        (opened.Time - pipeline.FirstTrendConditionAt!.Value).TotalSeconds
+
+        (time - pipeline.FirstTrendConditionAt.Value).TotalSeconds
             .Should()
             .BeGreaterThanOrEqualTo(DriftPipeline.Rules.TrendDurationSeconds);
     }

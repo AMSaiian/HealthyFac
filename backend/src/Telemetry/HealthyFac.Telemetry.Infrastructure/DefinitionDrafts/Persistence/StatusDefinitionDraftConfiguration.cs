@@ -56,6 +56,7 @@ public class StatusDefinitionDraftConfiguration : IEntityTypeConfiguration<Statu
         builder.ToTable(table =>
         {
             table.HasCheckConstraint(DefinitionDraftCheckNames.StatusTarget, DefinitionDraftCheckNames.TargetSql);
+
             table.HasCheckConstraint(
                 DefinitionDraftCheckNames.StatusSeverity,
                 CheckConstraintSql.AllowedValues(column: "severity", DraftMessageLimits.Severities.All));

@@ -58,9 +58,13 @@ public sealed class ListMetricUnitsRequestHandler(ITelemetryDbContext dbContext)
             .Select(group => new QuantityKindResponse
             {
                 Name = group.Key,
-                Units = group
-                    .Select(unit => new MeasurementUnitResponse { Name = unit.Name, Abbreviation = unit.Abbreviation })
-                    .ToList(),
+                Units =
+                [
+                    .. group.Select(unit => new MeasurementUnitResponse
+                    {
+                        Name = unit.Name, Abbreviation = unit.Abbreviation,
+                    }),
+                ],
             })
             .ToList();
 

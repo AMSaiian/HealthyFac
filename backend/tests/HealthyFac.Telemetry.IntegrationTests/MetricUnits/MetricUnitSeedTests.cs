@@ -1,10 +1,12 @@
 using HealthyFac.Telemetry.IntegrationTests.Database.Data;
 using HealthyFac.Telemetry.IntegrationTests.MetricUnits.Data;
 using HealthyFac.Telemetry.IntegrationTests.StatusDefinitions;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.IntegrationTests.MetricUnits;
 
 [Collection(TelemetryDefinitionsCollection.Name)]
+[Feature(TestFeatures.SignalModel)]
 public sealed class MetricUnitSeedTests(TelemetryDatabaseFixture fixture)
 {
     private readonly TelemetryDatabaseFixture _fixture = fixture;
@@ -33,6 +35,7 @@ public sealed class MetricUnitSeedTests(TelemetryDatabaseFixture fixture)
     public async Task SeedRequiredDataAsync_WithChangedAbbreviation_StoresOneMoreMessageAndRestoresIt()
     {
         var before = await _fixture.CountMetricUnitsChangedAsync();
+
         await _fixture.ChangeAbbreviationAsync(
             MetricUnitTestData.CelsiusUnitName, MetricUnitTestData.WrongAbbreviation);
 

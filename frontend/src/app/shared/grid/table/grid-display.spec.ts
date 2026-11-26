@@ -1,6 +1,6 @@
 import { isEmptyResult, MAX_SKELETON_ROWS, skeletonRows } from './grid-display';
 
-describe('skeletonRows', () => {
+describe('skeletonRows', { tags: ['Persistence'] }, () => {
   it('skeletonRows_WithLimitAboveMaximum_CapsRowCount', () => {
     const rows = skeletonRows(100);
 
@@ -14,7 +14,7 @@ describe('skeletonRows', () => {
   });
 });
 
-describe('isEmptyResult', () => {
+describe('isEmptyResult', { tags: ['Persistence'] }, () => {
   it.each([
     ['NotLoadedYet', { rows: [], isLoading: false, hasLoaded: false }, false],
     ['Loading', { rows: [], isLoading: true, hasLoaded: true }, false],

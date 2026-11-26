@@ -3,11 +3,13 @@ using HealthyFac.Core.Application.Lookups;
 using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Employees.Data;
 using HealthyFac.Shared.Application.UseCases;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Core.IntegrationTests.Employees;
 
 [Collection(CoreEmployeesCollection.Name)]
+[Feature(TestFeatures.Companies)]
 public sealed class LookupEmployeesTests(CoreDatabaseFixture fixture)
 {
     private readonly CoreDatabaseFixture _fixture = fixture;
@@ -17,10 +19,13 @@ public sealed class LookupEmployeesTests(CoreDatabaseFixture fixture)
     {
         var companyId = await _fixture.CreateCompanyAsync(LookupEmployeesTestData.CompanyName);
         var otherCompanyId = await _fixture.CreateCompanyAsync(LookupEmployeesTestData.OtherCompanyName);
+
         var ann = await ArrangeAsync(
             companyId, LookupEmployeesTestData.AnnEmail, LookupEmployeesTestData.AnnFirstName, isDeactivated: false);
+
         await ArrangeAsync(
             companyId, LookupEmployeesTestData.BobEmail, LookupEmployeesTestData.BobFirstName, isDeactivated: true);
+
         await ArrangeAsync(
             otherCompanyId, LookupEmployeesTestData.CaraEmail, LookupEmployeesTestData.CaraFirstName,
             isDeactivated: false);
@@ -43,8 +48,10 @@ public sealed class LookupEmployeesTests(CoreDatabaseFixture fixture)
     public async Task Lookup_WithPartOfTheFullNameInAnotherCase_MatchesFirstAndLastName()
     {
         var companyId = await _fixture.CreateCompanyAsync(LookupEmployeesTestData.CompanyName);
+
         await ArrangeAsync(
             companyId, LookupEmployeesTestData.AnnEmail, LookupEmployeesTestData.AnnFirstName, isDeactivated: false);
+
         var cara = await ArrangeAsync(
             companyId, LookupEmployeesTestData.CaraEmail, LookupEmployeesTestData.CaraFirstName, isDeactivated: false);
 

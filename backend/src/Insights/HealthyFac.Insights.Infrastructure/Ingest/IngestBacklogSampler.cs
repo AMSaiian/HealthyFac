@@ -57,12 +57,12 @@ public sealed class IngestBacklogSampler(
         _metrics.UpdateBacklog(queued ?? IngestBacklog.Empty);
     }
 
-    protected override async Task ExecuteAsync(CancellationToken cancellationToken)
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        while (!cancellationToken.IsCancellationRequested)
+        while (!stoppingToken.IsCancellationRequested)
         {
-            await SampleSafelyAsync(cancellationToken);
-            await Task.Delay(SampleInterval, _timeProvider, cancellationToken);
+            await SampleSafelyAsync(stoppingToken);
+            await Task.Delay(SampleInterval, _timeProvider, stoppingToken);
         }
     }
 

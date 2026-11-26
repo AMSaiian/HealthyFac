@@ -43,10 +43,12 @@ public sealed class IngestAttemptClaims(
             async token =>
             {
                 claimed = null;
+
                 var attempt = await _dbContext.IngestAttempts.ClaimFirstAsync(
                     candidate => candidate.State == IngestState.Queued,
                     candidate => candidate.QueuedAt,
                     token);
+
                 if (attempt is null)
                 {
                     return;
@@ -57,6 +59,7 @@ public sealed class IngestAttemptClaims(
                 attempt.Claim(now, now + lease);
                 await AddStateMessageAsync(attempt, now, token);
                 await _dbContext.SaveChangesAsync(token);
+
                 claimed = new ClaimedAttempt
                 {
                     AttemptId = attempt.Id,
@@ -86,10 +89,12 @@ public sealed class IngestAttemptClaims(
             {
                 isInterrupted = false;
                 var now = _timeProvider.GetUtcNow().UtcDateTime;
+
                 var attempt = await _dbContext.IngestAttempts.ClaimFirstAsync(
                     candidate => candidate.State == IngestState.InProcess && candidate.LeaseUntil < now,
                     candidate => candidate.LeaseUntil,
                     token);
+
                 if (attempt is null)
                 {
                     return;
@@ -112,6 +117,7 @@ public sealed class IngestAttemptClaims(
                 && candidate.CompanyId == attempt.CompanyId
                 && candidate.State == IngestState.Failed,
             cancellationToken);
+
         _outbox.Add(IngestStateMessages.Create(attempt, failedCount, now));
     }
 }

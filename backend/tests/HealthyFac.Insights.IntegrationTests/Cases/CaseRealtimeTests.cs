@@ -10,11 +10,13 @@ using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.Realtime;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Telemetry.Messaging.Signals;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Insights.IntegrationTests.Cases;
 
 [Collection(SignalCaseCollection.Name)]
+[Feature(TestFeatures.Cases)]
 public sealed class CaseRealtimeTests(SignalCaseFixture fixture)
 {
     private const string CloseReason = "The machine was replaced.";
@@ -22,6 +24,7 @@ public sealed class CaseRealtimeTests(SignalCaseFixture fixture)
     private readonly SignalCaseFixture _fixture = fixture;
 
     [Fact]
+    [Feature(TestFeatures.Evaluation)]
     public async Task Receive_WithAnEpisodeThatOpensACase_RecordsCaseOpenedAndTheCasesHint()
     {
         var outcome = await _fixture.ReceiveSignalThroughInboxAsync(
@@ -30,14 +33,17 @@ public sealed class CaseRealtimeTests(SignalCaseFixture fixture)
         var caseId = (await _fixture.LoadCasesAsync()).Single().Id;
         var pushes = PushesOf();
         outcome.IsProcessed.Should().BeTrue(outcome.Error);
+
         var opened = pushes.Should()
             .ContainSingle(push => push.Group
                 == RealtimeGroups.ForKind(
                     CaseTestData.CompanyId,
                     RealtimeNotificationKind.MaintenanceCaseOpened))
             .Subject;
+
         opened.Notification!.Data.Should()
             .BeEquivalentTo(new MaintenanceCaseOpenedData { CaseId = caseId, Severity = SignalSeverity.Alarm });
+
         pushes.Should()
             .ContainSingle(push => push.Hint != null && push.Hint.Topic == RealtimeTopic.Cases)
             .Which.Hint!.CaseId.Should()
@@ -45,6 +51,7 @@ public sealed class CaseRealtimeTests(SignalCaseFixture fixture)
     }
 
     [Fact]
+    [Feature(TestFeatures.Evaluation)]
     public async Task Receive_WithAnEpisodeThatJoinsTheOpenCase_RecordsNoCaseOpened()
     {
         await _fixture.ReceiveSignalThroughInboxAsync(CaseTestData.Message(CaseTestData.FirstEpisodeId, sequence: 1));
@@ -58,6 +65,7 @@ public sealed class CaseRealtimeTests(SignalCaseFixture fixture)
     }
 
     [Fact]
+    [Feature(TestFeatures.Evaluation)]
     public async Task Receive_WithTheLastEpisodeResolved_RecordsTheCasesHintWithTheCase()
     {
         await _fixture.ReceiveSignalThroughInboxAsync(CaseTestData.Message(CaseTestData.FirstEpisodeId, sequence: 1));
@@ -96,6 +104,7 @@ public sealed class CaseRealtimeTests(SignalCaseFixture fixture)
         await _fixture.AddQueuedRunAsync(AgentRole.Planner, caseId);
         var chat = _fixture.Inner.Ingest.Chat;
         chat.ScriptToolCall(callId: "call-1", ListOpenWorkOrdersToolRequest.ToolName, CaseTestData.EmptyJson);
+
         chat.ScriptToolCall(
             callId: "call-2",
             ProposeWorkOrderToolRequest.ToolName,
@@ -103,6 +112,7 @@ public sealed class CaseRealtimeTests(SignalCaseFixture fixture)
               {"episodeIds":["{{CaseTestData.Encrypt(CaseTestData.FirstEpisodeId)}}"],"title":"Check the spindle",
                "priority":"high","category":"inspection","estimateMinutes":60}
               """);
+
         chat.ScriptText(text: "I proposed an inspection.");
         _fixture.Inner.RealtimeQueue.Clear();
 
@@ -116,7 +126,7 @@ public sealed class CaseRealtimeTests(SignalCaseFixture fixture)
     }
 
     private List<RealtimePush> PushesOf() =>
-        _fixture.Inner.RealtimeQueue.Items.Select(item => item.Push).ToList();
+        [.. _fixture.Inner.RealtimeQueue.Items.Select(item => item.Push)];
 
     private async Task CloseAsync(Guid caseId)
     {

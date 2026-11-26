@@ -44,6 +44,7 @@ public sealed class ChangeMachineStateRequestHandler(ITelemetryDbContext dbConte
         }
 
         var previousState = registration.State;
+
         var isChanged = registration.ChangeState(
             MachineRegistrationState.FromValue(request.State.Value),
             request.StartedAt);

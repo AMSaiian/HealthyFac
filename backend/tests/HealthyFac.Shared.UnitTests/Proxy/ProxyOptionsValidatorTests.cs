@@ -1,8 +1,10 @@
 using HealthyFac.Shared.UnitTests.Proxy.Data;
 using HealthyFac.Shared.Web.Proxy;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.UnitTests.Proxy;
 
+[Feature(TestFeatures.Gateway)]
 public sealed class ProxyOptionsValidatorTests
 {
     private readonly ProxyOptionsValidator _validator = new();

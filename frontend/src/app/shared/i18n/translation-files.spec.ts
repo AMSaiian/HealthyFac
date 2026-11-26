@@ -88,7 +88,7 @@ function templateKeysIn(sources: readonly string[]): string[] {
   return sources.flatMap((text) => text.match(TEMPLATE_KEY) ?? []);
 }
 
-describe('translation files', () => {
+describe('translation files', { tags: ['Platform'] }, () => {
   it('tooltipKeys_WithTheSameEnValue_AreReported', () => {
     const reported = tooltipKeysWithSameValue(flattenValues(en));
 

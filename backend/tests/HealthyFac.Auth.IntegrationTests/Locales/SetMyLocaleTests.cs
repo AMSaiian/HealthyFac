@@ -2,9 +2,11 @@ using HealthyFac.Auth.Application.Locales;
 using HealthyFac.Auth.IntegrationTests.Identities.Data;
 using HealthyFac.Auth.IntegrationTests.Locales.Data;
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Auth.IntegrationTests.Locales;
 
+[Feature(TestFeatures.Identity)]
 public sealed class SetMyLocaleTests
 {
     [Fact]
@@ -28,6 +30,7 @@ public sealed class SetMyLocaleTests
     {
         var identityAdmin = new FakeIdentityAdmin { IsUnavailable = true };
         var handler = new SetMyLocaleRequestHandler(identityAdmin, new FixedCurrentUserProvider(Guid.CreateVersion7()));
+
         var act = () => handler.HandleAsync(
             new SetMyLocaleRequest { Locale = Locale.Ukrainian },
             TestContext.Current.CancellationToken);

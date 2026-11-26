@@ -2,10 +2,13 @@ using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Employees.Data;
 using HealthyFac.Core.IntegrationTests.Machines.Data;
 using HealthyFac.Core.Messaging.Machines;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.IntegrationTests.Machines;
 
 [Collection(CoreMachinesCollection.Name)]
+[Feature(TestFeatures.Machines)]
+[Feature(TestFeatures.Messaging)]
 public sealed class MachineGoLiveMessageTests(CoreDatabaseFixture fixture)
 {
     private readonly CoreDatabaseFixture _fixture = fixture;
@@ -33,10 +36,12 @@ public sealed class MachineGoLiveMessageTests(CoreDatabaseFixture fixture)
     public async Task UpdateMachine_WithNewGoLiveDay_StoresOneGoLiveDateChangedMessage()
     {
         var tenant = await _fixture.ArrangeMachineTenantAsync();
+
         var machineId = await _fixture.CreateMachineAsync(
             tenant.CompanyId,
             MachineTestData.MachineName,
             MachineTestData.SerialNumber);
+
         _fixture.Clock.Freeze(MachineGoLiveTestData.LaterNow);
 
         await _fixture.UpdateMachineAsync(
@@ -50,16 +55,17 @@ public sealed class MachineGoLiveMessageTests(CoreDatabaseFixture fixture)
         var changed = messages.Where(candidate => candidate.MachineId == machineId).ToList();
 
         changed.Should().ContainSingle();
-        changed[index: 0].CompanyId.Should().Be(tenant.CompanyId);
-        changed[index: 0].ExpectedGoLiveOn.Should().Be(MachineTestData.SecondGoLiveOn);
-        changed[index: 0].GoLiveStartsAt.Should().Be(MachineTestData.SecondGoLiveStartsAt);
-        changed[index: 0].ChangedAt.Should().Be(MachineGoLiveTestData.LaterNow.UtcDateTime);
+        changed[0].CompanyId.Should().Be(tenant.CompanyId);
+        changed[0].ExpectedGoLiveOn.Should().Be(MachineTestData.SecondGoLiveOn);
+        changed[0].GoLiveStartsAt.Should().Be(MachineTestData.SecondGoLiveStartsAt);
+        changed[0].ChangedAt.Should().Be(MachineGoLiveTestData.LaterNow.UtcDateTime);
     }
 
     [Fact]
     public async Task UpdateMachine_WithSameGoLiveDay_StoresNoGoLiveDateChangedMessage()
     {
         var tenant = await _fixture.ArrangeMachineTenantAsync();
+
         var machineId = await _fixture.CreateMachineAsync(
             tenant.CompanyId,
             MachineTestData.MachineName,

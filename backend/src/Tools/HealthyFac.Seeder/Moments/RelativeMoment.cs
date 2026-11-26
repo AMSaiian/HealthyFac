@@ -67,27 +67,34 @@ public sealed partial record RelativeMoment
     public static RelativeMoment Parse(string text)
     {
         var match = MomentPattern().Match(text);
+
         if (!match.Success)
         {
             throw new MomentException(MomentErrors.InvalidForm(text));
         }
 
-        var isTimeGiven = match.Groups[groupname: "time"].Success;
-        var prefix = match.Groups[groupname: "prefix"].Value;
+        var isTimeGiven = match.Groups["time"].Success;
+        var prefix = match.Groups["prefix"].Value;
+
         var isNumberRead = int.TryParse(
-            match.Groups[groupname: "number"].Value, CultureInfo.InvariantCulture, out var number);
+            match.Groups["number"].Value, CultureInfo.InvariantCulture, out var number);
+
         var isTimeRead = TimeOnly.TryParseExact(
-            match.Groups[groupname: "time"].Value,
+            match.Groups["time"].Value,
             TimeFormat,
             CultureInfo.InvariantCulture,
             DateTimeStyles.None,
             out var time);
+
         var isWorkdayWithoutTime = prefix == WorkdayPrefix && !isTimeGiven;
         var isHourWithTime = prefix == HourPrefix && isTimeGiven;
-        var isMinutesGiven = match.Groups[groupname: "minutes"].Success;
+        var isMinutesGiven = match.Groups["minutes"].Success;
+
         var isMinutesRead = int.TryParse(
-            match.Groups[groupname: "minutes"].Value, CultureInfo.InvariantCulture, out var minutes);
+            match.Groups["minutes"].Value, CultureInfo.InvariantCulture, out var minutes);
+
         var isMinutesInvalid = isMinutesGiven && (prefix != HourPrefix || !isMinutesRead || minutes > MaxMinutes);
+
         if (!isNumberRead
             || (isTimeGiven && !isTimeRead)
             || isWorkdayWithoutTime
@@ -105,9 +112,9 @@ public sealed partial record RelativeMoment
                 HourPrefix => MomentForm.Hour,
                 _ => isTimeGiven ? MomentForm.Day : MomentForm.Date,
             },
-            Offset = match.Groups[groupname: "sign"].Value == "-" ? -number : number,
+            Offset = match.Groups["sign"].Value == "-" ? -number : number,
             Minutes = isMinutesGiven ? minutes : 0,
-            IsBefore = prefix == HourPrefix && match.Groups[groupname: "sign"].Value == "-",
+            IsBefore = prefix == HourPrefix && match.Groups["sign"].Value == "-",
             Time = isTimeGiven ? time : null,
         };
     }
@@ -120,7 +127,9 @@ public sealed partial record RelativeMoment
             MomentForm.Hour => HourPrefix,
             _ => DayPrefix,
         };
+
         var sign = Offset < 0 || IsBefore ? '-' : '+';
+
         var time = Time is { } timeOfDay
             ? $" {timeOfDay.ToString(TimeFormat, CultureInfo.InvariantCulture)}"
             : string.Empty;

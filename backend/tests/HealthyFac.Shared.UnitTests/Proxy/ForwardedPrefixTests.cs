@@ -1,8 +1,10 @@
 using HealthyFac.Shared.UnitTests.Proxy.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.AspNetCore.TestHost;
 
 namespace HealthyFac.Shared.UnitTests.Proxy;
 
+[Feature(TestFeatures.Gateway)]
 public sealed class ForwardedPrefixTests
 {
     private const string PublicPrefix = "/api/core";
@@ -27,6 +29,7 @@ public sealed class ForwardedPrefixTests
     {
         using var host = await ForwardedPrefixHostFactory.StartAsync(
             ForwardedPrefixHostFactory.UntrustedClientAddress);
+
         using var client = host.GetTestClient();
         using var request = new HttpRequestMessage(HttpMethod.Get, requestUri: "/v1/machines");
         request.Headers.Add(ForwardedPrefixHostFactory.ForwardedPrefixHeader, value: "/evil");

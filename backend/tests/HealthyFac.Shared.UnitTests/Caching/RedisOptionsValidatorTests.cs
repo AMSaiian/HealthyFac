@@ -1,8 +1,10 @@
 using HealthyFac.Shared.Infrastructure.Caching;
 using HealthyFac.Shared.UnitTests.Caching.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.UnitTests.Caching;
 
+[Feature(TestFeatures.Platform)]
 public sealed class RedisOptionsValidatorTests
 {
     private readonly RedisOptionsValidator _validator = new();

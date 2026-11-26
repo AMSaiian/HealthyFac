@@ -50,6 +50,7 @@ public sealed class AuditableEntityInterceptor(
             if (entry.State == EntityState.Added)
             {
                 entry.Property(auditable => auditable.CreatedAt).CurrentValue = utcNow;
+
                 if (userId != Guid.Empty)
                 {
                     entry.Property(auditable => auditable.CreatedBy).CurrentValue = userId;
@@ -59,6 +60,7 @@ public sealed class AuditableEntityInterceptor(
             if (entry.State == EntityState.Modified || entry.HasChangedOwnedEntities())
             {
                 entry.Property(auditable => auditable.UpdatedAt).CurrentValue = utcNow;
+
                 if (userId != Guid.Empty)
                 {
                     entry.Property(auditable => auditable.UpdatedBy).CurrentValue = userId;

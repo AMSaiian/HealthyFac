@@ -28,6 +28,7 @@ public sealed class RecordingSeedPart : ISeedPart
         var first = _clock.GetUtcNow();
         _log.Add($"run {seedEvent.Item} at {first:HH:mm}");
         Reads.Add((seedEvent.Item, first, _clock.GetUtcNow()));
+
         if (seedEvent.Item == FailingItem)
         {
             throw new InvalidOperationException(TimelineTestData.PartError);

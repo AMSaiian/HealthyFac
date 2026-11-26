@@ -35,7 +35,7 @@ function setupLazy(loadComponent: () => Promise<typeof Blank>): {
   return { router, navigation: TestBed.inject(PlatformNavigation) as FakePlatformNavigation };
 }
 
-describe('APP_ROUTER_FEATURES', () => {
+describe('APP_ROUTER_FEATURES', { tags: ['Platform'] }, () => {
   it('cancelledBrowserBack_WithComputedResolution_KeepsTheEntries', async () => {
     TestBed.configureTestingModule({
       providers: [

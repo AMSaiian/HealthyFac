@@ -5,10 +5,13 @@ using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Shifts.Data;
 using HealthyFac.Core.IntegrationTests.WorkOrders.Data;
 using HealthyFac.Shared.Application.Realtime;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.IntegrationTests.WorkOrders;
 
 [Collection(CoreWorkOrdersCollection.Name)]
+[Feature(TestFeatures.WorkOrders)]
+[Feature(TestFeatures.Realtime)]
 public sealed class WorkOrderStatusRealtimeTests(CoreDatabaseFixture fixture)
 {
     private readonly CoreDatabaseFixture _fixture = fixture;
@@ -25,6 +28,7 @@ public sealed class WorkOrderStatusRealtimeTests(CoreDatabaseFixture fixture)
         var pushes = PushesOf();
         var estimate = pushes.Should().ContainSingle(push => push.UserId == tenant.IdentityUserId).Subject;
         estimate.Notification!.Kind.Should().Be(RealtimeNotificationKind.WorkOrderEstimateChanged);
+
         estimate.Notification.Data.Should()
             .BeEquivalentTo(
                 new WorkOrderEstimateChangedData
@@ -34,6 +38,7 @@ public sealed class WorkOrderStatusRealtimeTests(CoreDatabaseFixture fixture)
                     OldEstimate = TimeSpan.FromMinutes(WorkOrderTestData.OneHour),
                     NewEstimate = TimeSpan.FromMinutes(WorkOrderTestData.LongerEstimate),
                 });
+
         pushes.Should().HaveCount(expected: 2);
     }
 
@@ -54,10 +59,12 @@ public sealed class WorkOrderStatusRealtimeTests(CoreDatabaseFixture fixture)
     public async Task UpdateWorkOrder_WithEstimateChangeOnABacklogOrder_RecordsOnlyTheHint()
     {
         var tenant = await ArrangeTenantAsync();
+
         var created = await _fixture.CreateWorkOrderAsync(
             tenant.CompanyId,
             RandomActor,
             WorkOrderTestData.NewRequest(tenant.CompanyId, AccessScope.Company));
+
         _fixture.RealtimeQueue.Clear();
 
         await UpdateAsync(tenant, created.Id, WorkOrderTestData.LongerEstimate);
@@ -101,11 +108,14 @@ public sealed class WorkOrderStatusRealtimeTests(CoreDatabaseFixture fixture)
         var pushes = PushesOf();
         var rescheduled = pushes.Where(push => push.UserId == tenant.IdentityUserId).ToList();
         rescheduled.Should().HaveCount(expected: 2);
+
         rescheduled.Should()
             .OnlyContain(push => push.Notification!.Kind == RealtimeNotificationKind.WorkOrderRescheduled);
+
         rescheduled.Select(push => ((WorkOrderRescheduledData)push.Notification!.Data).WorkOrderId)
             .Should()
             .BeEquivalentTo([next, afternoon]);
+
         pushes.Should().HaveCount(expected: 5);
     }
 
@@ -115,8 +125,10 @@ public sealed class WorkOrderStatusRealtimeTests(CoreDatabaseFixture fixture)
         var tenant = await ArrangeTenantAsync();
         var finishing = await CreateAssignedAsync(tenant, time: "10:00");
         var next = await CreateAssignedAsync(tenant, time: "11:00");
+
         await _fixture.ChangeStatusAsync(
             tenant.CompanyId, tenant.IdentityUserId, finishing, WorkOrderStatus.InProgress);
+
         _fixture.Clock.Freeze(ShiftTestData.NowOn(ShiftTestData.Tomorrow, time: "11:30"));
         _fixture.RealtimeQueue.Clear();
 
@@ -137,14 +149,17 @@ public sealed class WorkOrderStatusRealtimeTests(CoreDatabaseFixture fixture)
         await _fixture.ChangeStatusAsync(tenant.CompanyId, RandomActor, workOrderId, WorkOrderStatus.Blocked);
 
         var pushes = PushesOf();
+
         var blocked = pushes.Should()
             .ContainSingle(push => push.Group
                 == RealtimeGroups.ForKind(
                     tenant.CompanyId,
                     RealtimeNotificationKind.WorkOrderBlocked))
             .Subject;
+
         blocked.Notification!.Data.Should()
             .BeEquivalentTo(new WorkOrderBlockedData { WorkOrderId = workOrderId, Title = WorkOrderTestData.Title });
+
         pushes.Should().HaveCount(expected: 2);
     }
 
@@ -163,16 +178,18 @@ public sealed class WorkOrderStatusRealtimeTests(CoreDatabaseFixture fixture)
 
     private static Guid RandomActor => Guid.CreateVersion7();
 
-    private List<RealtimePush> PushesOf() => _fixture.RealtimeQueue.Items.Select(item => item.Push).ToList();
+    private List<RealtimePush> PushesOf() => [.. _fixture.RealtimeQueue.Items.Select(item => item.Push)];
 
     private async Task<ShiftTenant> ArrangeTenantAsync()
     {
         var tenant = await _fixture.ArrangeShiftTenantAsync();
+
         await _fixture.SeedVersionAsync(
             tenant.EmployeeId,
             ShiftTestData.Today.AddDays(value: -30),
             ShiftTestData.Morning,
             ShiftTestData.Afternoon);
+
         _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "07:00"));
 
         return tenant;

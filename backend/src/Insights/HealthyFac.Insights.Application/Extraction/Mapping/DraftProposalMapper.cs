@@ -30,6 +30,7 @@ public sealed class DraftProposalMapper
     public MappingResult Map(ExtractionBuffer buffer, MappingContext context)
     {
         var machines = buffer.Machines.Where(HasContent).ToList();
+
         if (machines.Count == 0)
         {
             return new MappingResult { DraftCount = 0 };
@@ -44,6 +45,7 @@ public sealed class DraftProposalMapper
             QueuedAt = context.QueuedAt,
             Machines = machines,
         };
+
         EnsureValid(message);
 
         return new MappingResult
@@ -65,6 +67,7 @@ public sealed class DraftProposalMapper
     private void EnsureValid(DraftsProposed message)
     {
         var validation = _validator.Validate(message);
+
         if (!validation.IsValid)
         {
             var errors = string.Join(separator: "; ", validation.Errors.Select(error => error.ErrorMessage).Distinct());

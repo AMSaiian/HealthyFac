@@ -28,6 +28,7 @@ public sealed class SeedFolder
     public T Read<T>(string relativePath)
     {
         var path = Path.Combine(_path, relativePath);
+
         if (!File.Exists(path))
         {
             throw new SeedFileException(SeedFileErrors.FileMissing(path));
@@ -66,6 +67,7 @@ public sealed class SeedFolder
         {
             UnmappedMemberHandling = System.Text.Json.Serialization.JsonUnmappedMemberHandling.Disallow,
         };
+
         options.Converters.Add(new RelativeMomentJsonConverter());
         options.MakeReadOnly();
 

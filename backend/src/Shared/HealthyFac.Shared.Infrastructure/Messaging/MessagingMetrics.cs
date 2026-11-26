@@ -105,6 +105,7 @@ internal sealed class MessagingMetrics
     private IEnumerable<Measurement<long>> ObservePending()
     {
         var backlog = _backlog;
+
         if (backlog is null)
         {
             return [];
@@ -124,6 +125,7 @@ internal sealed class MessagingMetrics
     private IEnumerable<Measurement<double>> ObserveOldestPendingAge()
     {
         var backlog = _backlog;
+
         if (backlog is null)
         {
             return [];

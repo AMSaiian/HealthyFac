@@ -3,11 +3,13 @@ using HealthyFac.Insights.Application.Agents;
 using HealthyFac.Insights.Application.Ingest.Processing.Failures;
 using HealthyFac.Insights.Infrastructure.Agents.Models;
 using HealthyFac.Insights.UnitTests.Agents.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
 
 namespace HealthyFac.Insights.UnitTests.Agents;
 
+[Feature(TestFeatures.Cases)]
 public sealed class AgentProviderCallsTests
 {
     private readonly FakeTimeProvider _time = new(AgentProviderCallsTestData.Start);
@@ -33,10 +35,12 @@ public sealed class AgentProviderCallsTests
                 throw AgentProviderCallsTestData.Transient();
             },
             TestContext.Current.CancellationToken);
+
         await DriveAsync(task);
 
         var act = () => task;
         await act.Should().ThrowAsync<ProviderUnavailableException>();
+
         callTimes.Select(time => (time - AgentProviderCallsTestData.Start).TotalSeconds)
             .Should()
             .Equal(0, 10, 40, 130);
@@ -55,6 +59,7 @@ public sealed class AgentProviderCallsTests
                 return calls < 3 ? throw AgentProviderCallsTestData.Transient() : Task.FromResult(calls);
             },
             TestContext.Current.CancellationToken);
+
         await DriveAsync(task);
 
         var result = await task;
@@ -76,6 +81,7 @@ public sealed class AgentProviderCallsTests
                     AgentProviderCallsTestData.ProviderText, inner: null, HttpStatusCode.Unauthorized);
             },
             TestContext.Current.CancellationToken);
+
         await DriveAsync(task);
 
         var act = () => task;

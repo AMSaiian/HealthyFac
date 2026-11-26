@@ -1,8 +1,10 @@
 using HealthyFac.Shared.UnitTests.Conventions.Data;
 using HealthyFac.Testing.Conventions;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.UnitTests.Conventions;
 
+[Feature(TestFeatures.Conventions)]
 public sealed class InboxHandlerConventionTests
 {
     [Fact]

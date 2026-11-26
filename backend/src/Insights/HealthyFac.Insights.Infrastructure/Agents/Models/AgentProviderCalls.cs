@@ -27,6 +27,7 @@ public sealed class AgentProviderCalls : IAgentProviderCalls
     {
         var delays = options.Value.ProviderRetryDelaysSeconds;
         _retryCount = delays.Count;
+
         _pipeline = new ResiliencePipelineBuilder { TimeProvider = timeProvider }
             .AddRetry(
                 new RetryStrategyOptions

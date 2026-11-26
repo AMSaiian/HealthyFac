@@ -36,7 +36,7 @@ function resolve(get: (id: string) => Observable<Machine>): Promise<unknown[]> {
   return firstValueFrom((result as Observable<unknown>).pipe(toArray()));
 }
 
-describe('machineFilesResolver', () => {
+describe('machineFilesResolver', { tags: ['Files'] }, () => {
   beforeEach(() => {
     messages.add.mockClear();
   });

@@ -52,6 +52,7 @@ internal sealed class MessageBacklogSampler(
                 OldestOn = pending.Min(message => (DateTime?)message.OccurredOn),
             })
             .SingleOrDefaultAsync(cancellationToken);
+
         var inbox = await inboxContext.InboxMessages
             .Where(message => message.ProcessedOn == null && message.FailedOn == null)
             .GroupBy(_ => 1)
@@ -94,6 +95,7 @@ internal sealed class MessageBacklogSampler(
         catch (Exception exception) when (!cancellationToken.IsCancellationRequested)
         {
             _metrics.UpdateBacklog(backlog: null);
+
             _logger.LogWarning(
                 exception, message: "The message backlog sample failed. The next sample runs after the interval.");
         }

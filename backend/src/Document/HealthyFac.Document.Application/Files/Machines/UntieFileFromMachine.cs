@@ -81,6 +81,7 @@ public sealed class UntieFileFromMachineRequestHandler(
         var changedAt = _timeProvider.GetUtcNow().UtcDateTime;
         _dbContext.Entry(file).Property(stored => stored.RowVersion).OriginalValue = request.RowVersion;
         file.Untie(changedAt);
+
         _outbox.Add(
             new FileMachineChanged
             {

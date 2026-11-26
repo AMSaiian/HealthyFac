@@ -1,3 +1,4 @@
+using HealthyFac.Gateway.Web.Composition;
 using HealthyFac.Gateway.Web.Composition.Drafts.Search;
 
 namespace HealthyFac.Gateway.UnitTests.Composition.Data;
@@ -58,6 +59,16 @@ public static class DraftPageMergerTestData
             StateRows(),
             ["c1", "c2", "c3"]
         },
+    };
+
+    public static TheoryData<string, string, string> InvalidRows => new()
+    {
+        {
+            "sort value of another kind",
+            """{"id":"c1","position":{"sortValue":"pending","id":"c1"}}""",
+            CompositionErrors.SortValueMismatch
+        },
+        { "row without a position", """{"id":"c1"}""", CompositionErrors.RowPositionMissing },
     };
 
     private static DraftPagingSimulator StateRows(params (string Value, string Id)[] rows) => new(rows);

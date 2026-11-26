@@ -1,3 +1,5 @@
+using Azure.Core;
+using Azure.Storage.Blobs;
 using HealthyFac.Document.Infrastructure.Database;
 using HealthyFac.Shared.Application.IdEncryption;
 using HealthyFac.Testing.Authentication;
@@ -52,6 +54,33 @@ public sealed class DocumentApiFixture : IAsyncLifetime, IResetBeforeEachTest
             Tokens,
             configureServices);
 
+    /// <summary>
+    /// Starts a second host whose blob client gives up after
+    /// <see cref="DocumentApiTestData.FailingStorageNetworkTimeout"/> and waits only
+    /// <see cref="DocumentApiTestData.FailingStorageRetryDelay"/> between retries. The exponential retry delay and the
+    /// default network timeout of the production client (about a minute against a hanging endpoint) make the start of
+    /// the host and each call slow. A test that needs the production failure path (an <c>AggregateException</c>
+    /// after more than one attempt) passes the production retry count.
+    /// </summary>
+    /// <param name="storageConnection">The storage connection string that the host uses.</param>
+    /// <param name="maxRetries">The number of retries of the blob client.</param>
+    /// <returns>The host. The caller disposes it.</returns>
+    public DocumentApiFactory CreateFactoryWithFailingStorage(string storageConnection, int maxRetries = 0) =>
+        CreateFactoryWithStorage(
+            storageConnection,
+            services => services.AddSingleton(_ => new BlobServiceClient(
+                storageConnection,
+                new BlobClientOptions
+                {
+                    Retry =
+                    {
+                        Mode = RetryMode.Fixed,
+                        MaxRetries = maxRetries,
+                        Delay = DocumentApiTestData.FailingStorageRetryDelay,
+                        NetworkTimeout = DocumentApiTestData.FailingStorageNetworkTimeout,
+                    },
+                })));
+
     public TestTokenFactory TokenFactory => Tokens;
 
     /// <summary>
@@ -79,6 +108,7 @@ public sealed class DocumentApiFixture : IAsyncLifetime, IResetBeforeEachTest
 
         await using var dbContext = new DocumentDbContext(
             new DbContextOptionsBuilder<DocumentDbContext>().UseNpgsql(_database.ConnectionString).Options);
+
         _resetter = await DatabaseResetter.CreateAsync(_database.ConnectionString, dbContext);
     }
 

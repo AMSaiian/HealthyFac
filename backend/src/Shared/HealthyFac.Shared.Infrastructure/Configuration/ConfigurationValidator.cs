@@ -25,6 +25,7 @@ public sealed class ConfigurationValidator<TOptions>(
         ArgumentNullException.ThrowIfNull(options);
 
         var validationResult = _validator.Validate(options);
+
         if (validationResult.IsValid)
         {
             return ValidateOptionsResult.Success;

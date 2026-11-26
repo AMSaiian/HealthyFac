@@ -17,7 +17,7 @@ const EMPTY_FILTER: FileFilter = {
   ingest: { states: [], isNeverIncluded: false },
 };
 
-describe('toSearchBody', () => {
+describe('toSearchBody', { tags: ['Files'] }, () => {
   it('toSearchBody_WithEmptyFilter_SendsNoActiveFilter', () => {
     const state: FileGridState = { offset: 0, limit: 25, sort: null, filter: EMPTY_FILTER };
 

@@ -58,6 +58,7 @@ public static class MachineFixtureExtensions
         )
         {
             using var scope = fixture.CreateUserScope(companyId);
+
             var handler = scope.ServiceProvider
                 .GetRequiredService<IRequestHandler<CreateMachineRequest, CreateMachineResponse>>();
 
@@ -116,6 +117,7 @@ public static class MachineFixtureExtensions
                     UserId = actorId ?? Guid.CreateVersion7(),
                     CompanyId = companyId,
                 });
+
             var handler = scope.ServiceProvider.GetRequiredService<IRequestHandler<ChangeMachineStateRequest>>();
 
             await handler.HandleAsync(
@@ -138,6 +140,7 @@ public static class MachineFixtureExtensions
         )
         {
             using var scope = fixture.CreateUserScope(companyId);
+
             var handler = scope.ServiceProvider
                 .GetRequiredService<IRequestHandler<GetMachineStateTimesRequest, MachineStateTimesResponse>>();
 
@@ -151,6 +154,7 @@ public static class MachineFixtureExtensions
         )
         {
             using var scope = fixture.CreateUserScope(companyId);
+
             var handler = scope.ServiceProvider
                 .GetRequiredService<IRequestHandler<GetMachineRequest, MachineResponse>>();
 
@@ -163,6 +167,7 @@ public static class MachineFixtureExtensions
         )
         {
             using var scope = fixture.CreateUserScope(companyId);
+
             var handler = scope.ServiceProvider
                 .GetRequiredService<IRequestHandler<SearchMachinesRequest, GridResponse<MachineResponse>>>();
 
@@ -188,7 +193,7 @@ public static class MachineFixtureExtensions
                     .ExecuteUpdateAsync(update => update.SetProperty(candidate => candidate.CreatedAt, seed.CreatedAt));
             }
 
-            return machines.Select(machine => machine.Id).ToList();
+            return [.. machines.Select(machine => machine.Id)];
         }
 
         public async Task AddMachineWithGatewayIdAsync(
@@ -209,6 +214,7 @@ public static class MachineFixtureExtensions
                     description: null,
                     MachineTestData.FutureGoLiveOn,
                     TimeProvider.System.GetUtcNow().UtcDateTime));
+
             await dbContext.SaveChangesAsync();
         }
 
@@ -225,6 +231,7 @@ public static class MachineFixtureExtensions
         {
             using var scope = fixture.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
+
             var row = await dbContext.MachineStateHistories.SingleAsync(candidate =>
                 candidate.MachineId == machineId && candidate.StartedAt == startedAt);
 

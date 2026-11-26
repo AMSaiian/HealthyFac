@@ -7,11 +7,13 @@ using HealthyFac.Insights.IntegrationTests.Documents.Data;
 using HealthyFac.Insights.IntegrationTests.Ingest.Data;
 using HealthyFac.Insights.Messaging.Drafts;
 using HealthyFac.Insights.Messaging.Ingest;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.Logging;
 
 namespace HealthyFac.Insights.IntegrationTests.Ingest;
 
 [Collection(InsightsCollection.Name)]
+[Feature(TestFeatures.Ingest)]
 public sealed class IngestWorkerTests(InsightsFixture fixture)
 {
     private const int ShortLimitSeconds = 1;
@@ -43,8 +45,11 @@ public sealed class IngestWorkerTests(InsightsFixture fixture)
         document.Should().NotBeNull();
         chunkCount.Should().Be(expected: 2);
         drafts.Should().ContainSingle().Which.Machines.Should().ContainSingle();
-        states.Select(message => message.State).Should().Equal(
-            IngestMessageStates.Queued, IngestMessageStates.InProcess, IngestMessageStates.Completed);
+
+        states.Select(message => message.State)
+            .Should()
+            .Equal(
+                IngestMessageStates.Queued, IngestMessageStates.InProcess, IngestMessageStates.Completed);
     }
 
     [Fact]
@@ -75,8 +80,8 @@ public sealed class IngestWorkerTests(InsightsFixture fixture)
         attempt.FinishedAt.Should().NotBeNull();
         document.Should().BeNull();
         drafts.Should().BeEmpty();
-        states.Last().State.Should().Be(IngestMessageStates.Failed);
-        states.Last().FailedCount.Should().Be(expected: 1);
+        states[^1].State.Should().Be(IngestMessageStates.Failed);
+        states[^1].FailedCount.Should().Be(expected: 1);
     }
 
     [Fact]
@@ -84,8 +89,9 @@ public sealed class IngestWorkerTests(InsightsFixture fixture)
     {
         _fixture.ArrangeFile();
         await _fixture.StartAttemptAsync();
+
         _fixture.Ingest.Embeddings.Failure =
-            new HttpRequestException("Embedding is down", inner: null, HttpStatusCode.ServiceUnavailable);
+            new HttpRequestException(message: "Embedding is down", inner: null, HttpStatusCode.ServiceUnavailable);
 
         await _fixture.RunWorkerAsync(TestContext.Current.CancellationToken);
 
@@ -99,7 +105,7 @@ public sealed class IngestWorkerTests(InsightsFixture fixture)
         _fixture.ArrangeFile();
         var attemptId = await _fixture.StartAttemptAsync();
         var texts = FakeDocumentConverter.DefaultDocument.Chunks;
-        _fixture.Ingest.Embeddings.TransientFailureText = texts[index: 0].Text;
+        _fixture.Ingest.Embeddings.TransientFailureText = texts[0].Text;
 
         await _fixture.RunWorkerAsync(TestContext.Current.CancellationToken);
 
@@ -138,10 +144,12 @@ public sealed class IngestWorkerTests(InsightsFixture fixture)
         await _fixture.RunWorkerAsync(TestContext.Current.CancellationToken);
 
         var attempt = await _fixture.LoadAttemptAsync(attemptId);
+
         var errors = _fixture.Logs.Entries
             .Where(entry => entry.Level == LogLevel.Error
                 && entry.Category == typeof(ProcessIngestAttemptRequestHandler).FullName)
             .ToList();
+
         attempt.State.Should().Be(IngestState.Failed);
         attempt.ErrorCode.Should().Be(IngestErrorCode.ProviderUnavailable);
         attempt.FinishedAt.Should().NotBeNull();
@@ -153,13 +161,15 @@ public sealed class IngestWorkerTests(InsightsFixture fixture)
     {
         _fixture.ArrangeFile();
         var attemptId = await _fixture.StartAttemptAsync();
-        _fixture.Ingest.Embeddings.Failure = new TaskCanceledException("Timeout", new TimeoutException());
+        _fixture.Ingest.Embeddings.Failure = new TaskCanceledException(message: "Timeout", new TimeoutException());
 
         await _fixture.RunWorkerAsync(TestContext.Current.CancellationToken);
 
         var attempt = await _fixture.LoadAttemptAsync(attemptId);
+
         _fixture.Ingest.Embeddings.CallCount.Should()
             .Be(IngestWorkerTestData.ProviderTryCount * FakeDocumentConverter.DefaultDocument.Chunks.Count);
+
         attempt.State.Should().Be(IngestState.Failed);
         attempt.ErrorCode.Should().Be(IngestErrorCode.ProviderUnavailable);
     }
@@ -169,11 +179,13 @@ public sealed class IngestWorkerTests(InsightsFixture fixture)
     {
         _fixture.ArrangeFile();
         var attemptId = await _fixture.StartAttemptAsync();
+
         _fixture.Ingest.Options.Value = new IngestProcessingOptions
         {
             RetryDelayMilliseconds = 1,
             TimeoutSeconds = ShortLimitSeconds,
         };
+
         _fixture.Ingest.Converter.Behavior = async cancellationToken =>
         {
             await Task.Delay(Timeout.Infinite, cancellationToken);
@@ -194,6 +206,7 @@ public sealed class IngestWorkerTests(InsightsFixture fixture)
     {
         _fixture.ArrangeFile();
         var attemptId = await _fixture.StartAttemptAsync();
+
         _fixture.Ingest.Converter.Behavior = async _ =>
         {
             await _fixture.CancelAttemptAsync(attemptId);
@@ -220,12 +233,14 @@ public sealed class IngestWorkerTests(InsightsFixture fixture)
     {
         _fixture.ArrangeFile();
         var attemptId = await _fixture.StartAttemptAsync();
+
         _fixture.Ingest.Options.Value = new IngestProcessingOptions
         {
             RetryDelayMilliseconds = 1,
             TimeoutSeconds = ShortLimitSeconds,
             LeaseMarginSeconds = ShortLimitSeconds,
         };
+
         await _fixture.ClaimAttemptAsync();
         await Task.Delay(LeaseWaitMilliseconds, TestContext.Current.CancellationToken);
 
@@ -243,6 +258,7 @@ public sealed class IngestWorkerTests(InsightsFixture fixture)
         _fixture.ArrangeFile();
         var attemptId = await _fixture.StartAttemptAsync();
         using var stop = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+
         _fixture.Ingest.Converter.Behavior = async cancellationToken =>
         {
             await stop.CancelAsync();

@@ -20,7 +20,7 @@ const DRAFT: WorkOrderDraft = {
   rowVersion: 7,
 };
 
-describe('draft apply dialog', () => {
+describe('draft apply dialog', { tags: ['WorkOrders', 'Drafts'] }, () => {
   it('toFormValue_DraftWithoutDescription_GivesAnEmptyTextNoFilesAndTheMachine', () => {
     expect(toFormValue(DRAFT)).toEqual({
       title: 'Replace the bearing',

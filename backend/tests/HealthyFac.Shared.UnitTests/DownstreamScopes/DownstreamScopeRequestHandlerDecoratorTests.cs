@@ -1,9 +1,11 @@
 using HealthyFac.Shared.Application.DownstreamScopes;
 using HealthyFac.Shared.Application.UseCases.Decorators;
 using HealthyFac.Shared.UnitTests.DownstreamScopes.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.UnitTests.DownstreamScopes;
 
+[Feature(TestFeatures.Identity)]
 public sealed class DownstreamScopeRequestHandlerDecoratorTests
 {
     private readonly DownstreamScopeHolder _holder = new();

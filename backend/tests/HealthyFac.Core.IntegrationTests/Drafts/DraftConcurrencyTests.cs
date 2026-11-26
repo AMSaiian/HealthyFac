@@ -7,10 +7,13 @@ using HealthyFac.Core.IntegrationTests.Machines;
 using HealthyFac.Core.IntegrationTests.Machines.Data;
 using HealthyFac.Core.Messaging.Drafts;
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.IntegrationTests.Drafts;
 
 [Collection(CoreMachinesCollection.Name)]
+[Feature(TestFeatures.Drafts)]
+[Feature(TestFeatures.Persistence)]
 public sealed class DraftConcurrencyTests(CoreDatabaseFixture fixture)
 {
     private const string FirstSerialNumber = "RACE-1";
@@ -35,11 +38,13 @@ public sealed class DraftConcurrencyTests(CoreDatabaseFixture fixture)
 
         race.SaveCounts.Should().Equal(1, 1);
         failures.Count(failure => failure is null).Should().Be(expected: 1);
+
         failures.Single(failure => failure is not null)
             .Should()
             .BeOfType<ConflictException>()
             .Which.Message.Should()
             .Be(DraftErrors.DraftChanged);
+
         machineCount.Should().Be(expected: 1);
         applied.Should().ContainSingle();
     }
@@ -59,11 +64,13 @@ public sealed class DraftConcurrencyTests(CoreDatabaseFixture fixture)
 
         race.SaveCounts.Should().Equal(1, 1);
         failures.Count(failure => failure is null).Should().Be(expected: 1);
+
         failures.Single(failure => failure is not null)
             .Should()
             .BeOfType<ConflictException>()
             .Which.Message.Should()
             .Be(DraftErrors.DraftChanged);
+
         drafts.Should().ContainSingle().Which.State.Should().NotBe(DraftState.Pending);
     }
 }

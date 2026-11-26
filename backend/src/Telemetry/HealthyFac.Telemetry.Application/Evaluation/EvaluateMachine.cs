@@ -85,8 +85,10 @@ public sealed class EvaluateMachineRequestHandler(
     private async Task<int> RunAsync(EvaluateMachineRequest request, CancellationToken cancellationToken)
     {
         var now = _timeProvider.GetUtcNow().UtcDateTime;
+
         var evaluation = await _dbContext.MachineEvaluations
             .SingleOrDefaultAsync(candidate => candidate.Id == request.MachineId, cancellationToken);
+
         var registration = await _dbContext.MachineRegistrations
             .AsNoTracking()
             .SingleOrDefaultAsync(candidate => candidate.Id == request.MachineId, cancellationToken);
@@ -107,6 +109,7 @@ public sealed class EvaluateMachineRequestHandler(
             var openInterval = await _dbContext.PhaseIntervals
                 .Where(interval => interval.MachineRegistrationId == registration.Id && interval.EndedAt == null)
                 .SingleOrDefaultAsync(cancellationToken);
+
             openInterval?.Close(evaluation.Watermark ?? now);
             evaluation.CompleteRun(newest, now, now.AddSeconds(_options.EvaluationIntervalSeconds));
             await _dbContext.SaveChangesAsync(cancellationToken);
@@ -116,15 +119,17 @@ public sealed class EvaluateMachineRequestHandler(
 
         var run = await MachineRun.LoadAsync(
             _dbContext, _outbox, _options, registration, evaluation, cancellationToken);
+
         var lateCount = await CountLateAsync(evaluation, cancellationToken);
         var maxSamples = Math.Max(val1: 1, _options.CatchUpBatchReadings / Math.Max(val1: 1, run.DefinitionCount));
+
         var samples = await _reader.ReadAsync(
             registration.Id,
             evaluation.Watermark,
             now.AddSeconds(-_options.SettleLagSeconds),
             maxSamples,
             run.Metrics,
-            run.Statuses.Select(status => status.Id).ToList(),
+            [.. run.Statuses.Select(status => status.Id)],
             cancellationToken);
 
         foreach (var sample in samples)
@@ -138,6 +143,7 @@ public sealed class EvaluateMachineRequestHandler(
             samples.Count > 0 ? samples[^1].SampledAt : null,
             now,
             now.AddSeconds(_options.EvaluationIntervalSeconds));
+
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return lateCount;

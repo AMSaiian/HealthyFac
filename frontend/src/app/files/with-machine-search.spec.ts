@@ -12,7 +12,7 @@ const DEBOUNCE_MARGIN = 100;
 
 const Store = signalStore(withMachineSearch());
 
-describe('withMachineSearch', () => {
+describe('withMachineSearch', { tags: ['Files', 'Machines'] }, () => {
   function setup(): { store: InstanceType<typeof Store>; http: HttpTestingController } {
     TestBed.configureTestingModule({
       providers: [Store, provideHttpClient(), provideHttpClientTesting()],

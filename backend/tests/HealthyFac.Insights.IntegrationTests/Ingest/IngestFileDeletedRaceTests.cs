@@ -4,10 +4,13 @@ using HealthyFac.Insights.IntegrationTests.Database.Data;
 using HealthyFac.Insights.IntegrationTests.Documents.Data;
 using HealthyFac.Insights.IntegrationTests.Ingest.Data;
 using HealthyFac.Insights.Messaging.Ingest;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Insights.IntegrationTests.Ingest;
 
 [Collection(InsightsCollection.Name)]
+[Feature(TestFeatures.Ingest)]
+[Feature(TestFeatures.Files)]
 public sealed class IngestFileDeletedRaceTests(InsightsFixture fixture)
 {
     private static readonly TimeSpan LockWaitLimit = TimeSpan.FromSeconds(seconds: 30);
@@ -22,11 +25,13 @@ public sealed class IngestFileDeletedRaceTests(InsightsFixture fixture)
         var claimed = await _fixture.ClaimAttemptAsync();
         var reached = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
         _fixture.SaveHook.RunBeforeNextSave(async () =>
         {
             reached.TrySetResult();
             await release.Task;
         });
+
         var run = _fixture.RunClaimedAttemptAsync(claimed!, TestContext.Current.CancellationToken);
         await reached.Task;
         var delete = _fixture.HandleFileDeletedAsync(IngestAttemptTestData.CompanyId, IngestAttemptTestData.FileId);
@@ -46,11 +51,13 @@ public sealed class IngestFileDeletedRaceTests(InsightsFixture fixture)
         var claimed = await _fixture.ClaimAttemptAsync();
         var reached = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
         _fixture.SaveHook.RunBeforeNextSave(async () =>
         {
             reached.TrySetResult();
             await release.Task;
         });
+
         var delete = _fixture.HandleFileDeletedAsync(IngestAttemptTestData.CompanyId, IngestAttemptTestData.FileId);
         await reached.Task;
         var run = _fixture.RunClaimedAttemptAsync(claimed!, TestContext.Current.CancellationToken);

@@ -45,6 +45,7 @@ public class InsightsDbInitializer(
         catch (Exception ex)
         {
             _logger.LogError(ex, DatabaseConstants.Errors.Migration);
+
             throw;
         }
     }

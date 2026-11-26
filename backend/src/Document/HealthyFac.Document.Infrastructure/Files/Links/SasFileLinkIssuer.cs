@@ -52,6 +52,7 @@ public sealed class SasFileLinkIssuer(
         var now = _timeProvider.GetUtcNow();
         var expiresOn = now.AddSeconds(_options.LinkLifetimeSeconds);
         var type = AllowedFileTypes.FindByExtension(file.Extension)!;
+
         var builder = new BlobSasBuilder(BlobSasPermissions.Read, expiresOn)
         {
             BlobContainerName = _options.ContainerName,
@@ -62,7 +63,9 @@ public sealed class SasFileLinkIssuer(
             ContentType = file.ContentType,
             ContentDisposition = FileContentDisposition.Build(type, file.FileName),
         };
+
         var signature = builder.ToSasQueryParameters(_credential);
+
         var baseUrl = (audience == FileLinkAudience.Internal
             ? _serviceClient.Uri.AbsoluteUri
             : _options.PublicBlobBaseUrl).TrimEnd(UrlSeparator);

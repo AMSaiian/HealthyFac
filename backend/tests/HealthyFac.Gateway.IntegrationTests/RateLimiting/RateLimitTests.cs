@@ -3,12 +3,14 @@ using System.Net.Http.Json;
 using HealthyFac.Gateway.IntegrationTests.Hosting;
 using HealthyFac.Gateway.IntegrationTests.RateLimiting.Data;
 using HealthyFac.Gateway.Web.Proxy;
+using HealthyFac.Testing.Features;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HealthyFac.Gateway.IntegrationTests.RateLimiting;
 
 [Collection(GatewayLimitsCollection.Name)]
+[Feature(TestFeatures.Gateway)]
 public sealed class RateLimitTests(GatewayEnvironment environment) : IAsyncLifetime
 {
     private readonly GatewayEnvironment _environment = environment;
@@ -48,11 +50,12 @@ public sealed class RateLimitTests(GatewayEnvironment environment) : IAsyncLifet
         {
             using var response = await client.GetAsync(
                 RateLimitTestData.BlobRoute, TestContext.Current.CancellationToken);
+
             statusCodes.Add(response.StatusCode);
         }
 
         statusCodes.Take(RateLimitTestData.BlobPermitLimit).Should().NotContain(HttpStatusCode.TooManyRequests);
-        statusCodes.Last().Should().Be(HttpStatusCode.TooManyRequests);
+        statusCodes[^1].Should().Be(HttpStatusCode.TooManyRequests);
     }
 
     [Fact]
@@ -75,14 +78,17 @@ public sealed class RateLimitTests(GatewayEnvironment environment) : IAsyncLifet
     public async Task StrictPolicy_AcrossTwoGatewayInstances_SharesOneLimit()
     {
         var clientAddress = _environment.NextClientAddress();
+
         await using var firstGateway = _environment.CreateGateway(
             _core,
             clientAddress,
             RateLimitTestData.StrictLimitOfThree);
+
         await using var secondGateway = _environment.CreateGateway(
             _core,
             clientAddress,
             RateLimitTestData.StrictLimitOfThree);
+
         using var firstClient = firstGateway.CreateClient();
         using var secondClient = secondGateway.CreateClient();
         using var firstResponse = await firstClient.PostVerifyInviteAsync();
@@ -118,6 +124,7 @@ public sealed class RateLimitTests(GatewayEnvironment environment) : IAsyncLifet
             [GatewaySettingKeys.SpaAddress] = _core.Address,
             [GatewaySettingKeys.SpaHealthCheckEnabled] = bool.FalseString,
         };
+
         await using var gateway = _environment.CreateGateway(_core, settings: settings);
         using var client = gateway.CreateClient();
         var statusCodes = new List<HttpStatusCode>();
@@ -126,6 +133,7 @@ public sealed class RateLimitTests(GatewayEnvironment environment) : IAsyncLifet
         {
             using var response = await client.GetAsync(
                 RateLimitTestData.SpaRoute, TestContext.Current.CancellationToken);
+
             statusCodes.Add(response.StatusCode);
         }
 
@@ -143,11 +151,12 @@ public sealed class RateLimitTests(GatewayEnvironment environment) : IAsyncLifet
         {
             using var response = await client.GetAsync(
                 RateLimitTestData.MachinesRoute, TestContext.Current.CancellationToken);
+
             statusCodes.Add(response.StatusCode);
         }
 
         statusCodes.Take(RateLimitTestData.DefaultApiPermitLimit).Should().NotContain(HttpStatusCode.TooManyRequests);
-        statusCodes.Last().Should().Be(HttpStatusCode.TooManyRequests);
+        statusCodes[^1].Should().Be(HttpStatusCode.TooManyRequests);
     }
 
     [Fact]

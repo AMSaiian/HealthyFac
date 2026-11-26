@@ -17,9 +17,11 @@ public static class CasesFixtureExtensions
         {
             using var scope = fixture.Hosts.Insights.CreateScope(SeederTestData.InitializationActor);
             var dbContext = scope.ServiceProvider.GetRequiredService<InsightsDbContext>();
+
             var maintenanceCase = await dbContext.MaintenanceCases
                 .AsNoTracking()
                 .SingleAsync(candidate => candidate.Id == CasesTestData.CaseId);
+
             var signal = await dbContext.MachineSignals
                 .AsNoTracking()
                 .SingleAsync(candidate => candidate.Id == CasesTestData.SignalId);

@@ -21,12 +21,15 @@ public static class SeedRunFixtureExtensions
         {
             var seedAnchor = anchor ?? PeopleTestData.Anchor;
             var zone = TimeZoneInfo.FindSystemTimeZoneById(PeopleTestData.ZoneId);
+
             var folder = new SeedFolder(
                 seedFolder ?? Path.Combine(AppContext.BaseDirectory, PeopleTestData.SeedFolder));
+
             var events = SeedPlan.Load(createParts(fixture), folder);
             fixture.TrackOrganization(PeopleTestData.CompanyId);
             var context = new SeedContext { Anchor = seedAnchor, Zone = zone };
             var relay = fixture.Hosts.CreateRelay();
+
             var runner = new TimelineRunner(
                 fixture.Clock,
                 seedAnchor,

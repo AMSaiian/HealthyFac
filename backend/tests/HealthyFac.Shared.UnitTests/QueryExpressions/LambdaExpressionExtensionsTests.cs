@@ -1,9 +1,11 @@
 using System.Linq.Expressions;
 using HealthyFac.Shared.Application.QueryExpressions;
 using HealthyFac.Shared.UnitTests.QueryExpressions.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.UnitTests.QueryExpressions;
 
+[Feature(TestFeatures.Persistence)]
 public sealed class LambdaExpressionExtensionsTests
 {
     [Fact]
@@ -23,6 +25,7 @@ public sealed class LambdaExpressionExtensionsTests
     {
         Expression<Func<string, int, bool, bool>> template = (text, length, isLong) => isLong && text.Length > length;
         Expression<Func<string, int>> trimmedLength = value => value.Trim().Length;
+
         Expression<Func<string, bool>> startsWithPrefix =
             value => value.StartsWith(LambdaExpressionExtensionsTestData.Prefix);
 

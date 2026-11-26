@@ -25,10 +25,13 @@ public sealed class RealtimeTestClient : IAsyncDisposable
     private RealtimeTestClient(HubConnection connection)
     {
         _connection = connection;
+
         _connection.On<JsonElement>(
             nameof(IRealtimeClient.Notification), message => _notifications.Writer.TryWrite(message));
+
         _connection.On<JsonElement>(nameof(IRealtimeClient.Hint), message => _hints.Writer.TryWrite(message));
         _connection.On(nameof(IRealtimeClient.SessionEnded), () => SessionEndedCount++);
+
         _connection.Closed += error =>
         {
             IsClosed = true;
@@ -77,6 +80,7 @@ public sealed class RealtimeTestClient : IAsyncDisposable
     public async Task<bool> WaitForCloseAsync(TimeSpan timeout)
     {
         var deadline = DateTimeOffset.UtcNow + timeout;
+
         while (!IsClosed && DateTimeOffset.UtcNow < deadline)
         {
             await Task.Delay(TimeSpan.FromMilliseconds(milliseconds: 100), TestContext.Current.CancellationToken);
@@ -99,6 +103,7 @@ public sealed class RealtimeTestClient : IAsyncDisposable
                 {
                     options.Transports = HttpTransportType.WebSockets;
                     options.SkipNegotiation = true;
+
                     options.WebSocketFactory = (context, cancellationToken) =>
                         new ValueTask<WebSocket>(
                             webSocketClient.ConnectAsync(WithToken(context.Uri, token), cancellationToken));
@@ -117,10 +122,12 @@ public sealed class RealtimeTestClient : IAsyncDisposable
     private static async Task<JsonElement?> PushUntilReceivedAsync(Func<Task> push, Channel<JsonElement> channel)
     {
         var deadline = DateTimeOffset.UtcNow + ReceiveTimeout;
+
         while (DateTimeOffset.UtcNow < deadline)
         {
             await push();
             var received = await ReceiveAsync(channel, PushRetryInterval);
+
             if (received is not null)
             {
                 return received;

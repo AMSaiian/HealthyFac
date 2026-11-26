@@ -93,31 +93,37 @@ code without a test proving it is unneeded.
 
 ## Execution
 - After each step, run its verification, then tick it off in plan.md. Run only the `Verify`
-  of the step (its filtered tests). The last step before a checkpoint also runs the
-  changed test projects. The last step of the cycle does not: the full run follows.
-- Full run, per test area. At the end of the run, compare each area with the base:
+  of the step (its filtered tests: `run-tests.ps1 -Project <path> -Filter <filter>` or `-Feature <names>`).
+  The last step before a checkpoint also runs the changed test projects. The last step of the cycle
+  does not: the run of the areas follows.
+- Test runs, per test area. At the end of the run, compare each area with the base:
   `pwsh .claude/tree-id.ps1 -Area <area>` (`backend`, `frontend`, `tooling`) and the same with
-  `-Ref <base>`. For each area that differs, and that has no `Full run <area>:` line
-  with its current ID in plan.md, run `pwsh .claude/run-area.ps1 -Area <area>` once (add
-  `-Base <SHA>` when plan.md has a `Base:` line). For `backend` and `frontend`, it formats the
-  changed files of the area, checks the line length, and runs the full commands of `CLAUDE.md`,
-  **Build and Test**. For `tooling`, it runs the script test suites of the changed tool files.
+  `-Ref <base>`. For each area that differs and has no passed stored result with its current tree
+  (`pwsh .claude/run-tests.ps1 -ShowResults`):
+  - A cycle that is not the last one (plan.md has a `### Cycle <N+1>` section): run
+    `pwsh .claude/run-tests.ps1 -Area <area> -Changed`. It runs the tests of the features that the
+    changed files select (`tooling`: the script test suites of the changed tool files).
+  - The last cycle: run `pwsh .claude/run-area.ps1 -Area <area>` for `backend` and `frontend`
+    (the full commands of `CLAUDE.md`, **Build and Test**), and `run-tests.ps1 -Area tooling -Changed`
+    for `tooling`.
+  - Add `-Base <SHA>` to each run when plan.md has a `Base:` line.
   - Run it in the foreground with `timeout` 600000, never with `run_in_background` (a hook
     denies it). When the harness moves it to the background, wait with one foreground loop on
-    its output file until a line starts with `Full run` or `RUN FAILED`.
-  - A report never says that a full run is still going: wait for the last line first.
+    its output file until a line starts with `Full run`, `Affected run`, or `RUN FAILED`.
+  - A report never says that a run is still going: wait for the last line first.
   - `RUN FAILED`: fix the cause (the failing tests and the log paths are in its output), then
     run it again.
-  - Success: copy its last line (`Full run <area>: tree <tree-id>; ...`) under the cycle with
-    the Edit tool. A later change in an area means a new run of that area only.
+  - Success: copy no run line into plan.md. The script stores the result (`check-handoff.ps1`
+    reads it), and the report names the last line. A later change in an area means a new run of
+    that area only.
 - Test output: send long output to a log file in the scratchpad, and print only the summary
   and the failures (e.g., `... > <log> 2>&1; Select-String -Path <log> -Pattern
   'failed|error' | Select-Object -First 40`).
 - Checkpoint: a cycle with a `Checkpoints: after Step <x>.` line has one at each named
-  step. After that step, write `Checkpoint <x>: tree <tree-id>, base <tree-id>` under the
-  cycle (the base is the tree ID of the previous checkpoint, or of the run start). Send
-  `SendMessage` to `main`: `CHECKPOINT <x>: tree <tree-id>, base <tree-id>`, and continue.
-  Before the next step, read review.md again and fix each open checkpoint finding.
+  step. After that step, send `SendMessage` to `main`: `CHECKPOINT <x>: tree <tree-id>, base <tree-id>`,
+  and continue (the base is the tree ID of the previous checkpoint, or of the run start). Write no
+  `Checkpoint` line in plan.md. Before the next step, read review.md again and fix each open
+  checkpoint finding.
 - Never delete, skip, or weaken a test to make it pass.
 - Never commit inside a run. When `commit-cycle.ps1` stops on a conflict, resolve it (`git add`, `git -c core.editor=true rebase --continue`, then
   `pwsh .claude/commit-cycle.ps1 <feature folder> -Verify`). The history rules are in
@@ -137,7 +143,7 @@ code without a test proving it is unneeded.
     **Extra Proof**).
   A compile error is not a proof.
 - Lines under a step: write only the `Red:` and `Proof:` lines, the browser flow lines,
-  the `Full run` and `Checkpoint` lines, and the `[!]` reasons. Add a `Note:` line only
+  and the `[!]` reasons. Add a `Note:` line only
   for a fact that the step and the diff do not show (a measured value, a found version).
   Never restate the change, the files, or the test output: the tick means it passed.
 - Deviations: one entry per change under `#### Deviations` of the cycle, with the step,
@@ -243,8 +249,8 @@ If any step is still `[!]` at the end of the run, except a browser check step ma
 When no `[!]` steps remain (a waiting browser check step does not count) and builds and tests pass, run
 `pwsh .claude/check-handoff.ps1 <feature folder>` in the worktree (its base is the `Base:`
 line of plan.md, else the merge base with `origin/develop`; pass no `-Base`). It runs
-the text checks first, then the formatters on the changed files, so it can change files.
-Fix each line it prints; hand off only when it passes (a change after a full run means a
+the text checks first, then reads the stored run results. It formats nothing.
+Fix each line it prints; hand off only when it passes (a change after a run means a
 new run of that area). Then remove the `STATUS: BLOCKED` line from plan.md, report
 `READY FOR REVIEW: ...` (with a waiting browser check step: `READY FOR REVIEW: cycle C, browser
 waiting (<error>)`), and end your turn.

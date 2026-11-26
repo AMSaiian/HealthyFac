@@ -72,7 +72,7 @@ function setup(options: SetupOptions = {}): Setup {
   return { updates, stateChanges, grid: fixture.componentInstance as unknown as GridAccess };
 }
 
-describe('MachineGrid', () => {
+describe('MachineGrid', { tags: ['Machines'] }, () => {
   afterEach(() => {
     vi.unstubAllGlobals();
   });

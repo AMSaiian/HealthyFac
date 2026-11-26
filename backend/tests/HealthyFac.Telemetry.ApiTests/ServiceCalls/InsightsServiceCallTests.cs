@@ -7,10 +7,13 @@ using HealthyFac.Telemetry.ApiTests.MetricDefinitions.Data;
 using HealthyFac.Telemetry.ApiTests.MetricUnits.Data;
 using HealthyFac.Telemetry.ApiTests.StatusDefinitions.Data;
 using HealthyFac.Testing.Authentication;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.ApiTests.ServiceCalls;
 
 [Collection(TelemetryApiCollection.Name)]
+[Feature(TestFeatures.Identity)]
+[Feature(TestFeatures.SignalModel)]
 public sealed class InsightsServiceCallTests(TelemetryApiFixture fixture)
 {
     private const string SearchBody = "{\"offset\":0,\"limit\":100,\"filter\":{}}";
@@ -30,6 +33,7 @@ public sealed class InsightsServiceCallTests(TelemetryApiFixture fixture)
     public async Task ListMetricDefinitions_WithInsightsServiceToken_Returns200ForTheActorCompany()
     {
         var machineId = await _fixture.ArrangeMachineAsync();
+
         var path = $"{MetricDefinitionApiTestData.MachinesPath}/{machineId}/"
             + MetricDefinitionApiTestData.DefinitionsSegment;
 
@@ -43,6 +47,7 @@ public sealed class InsightsServiceCallTests(TelemetryApiFixture fixture)
     public async Task SearchStatusDefinitions_WithInsightsServiceToken_Returns200ForTheActorCompany()
     {
         var machineId = await _fixture.ArrangeMachineAsync();
+
         var path = $"{MetricDefinitionApiTestData.MachinesPath}/{machineId}/"
             + $"{StatusDefinitionApiTestData.StatusDefinitionsSegment}/search";
 
@@ -56,6 +61,7 @@ public sealed class InsightsServiceCallTests(TelemetryApiFixture fixture)
     public async Task ListMetricDefinitions_WithActorOfAnotherCompany_Returns404()
     {
         var machineId = await _fixture.ArrangeMachineAsync();
+
         var path = $"{MetricDefinitionApiTestData.MachinesPath}/{machineId}/"
             + MetricDefinitionApiTestData.DefinitionsSegment;
 
@@ -69,6 +75,7 @@ public sealed class InsightsServiceCallTests(TelemetryApiFixture fixture)
     public async Task SearchStatusDefinitions_WithActorOfAnotherCompany_Returns404()
     {
         var machineId = await _fixture.ArrangeMachineAsync();
+
         var path = $"{MetricDefinitionApiTestData.MachinesPath}/{machineId}/"
             + $"{StatusDefinitionApiTestData.StatusDefinitionsSegment}/search";
 
@@ -97,13 +104,16 @@ public sealed class InsightsServiceCallTests(TelemetryApiFixture fixture)
     {
         using var client = _fixture.CreateClient();
         using var request = new HttpRequestMessage(method, path);
+
         var claims = new TestServiceTokenClaims
         {
             ClientId = TelemetryApiTestData.InsightsClientId,
             Permissions = permission is null ? [] : [permission],
         };
+
         request.Headers.Authorization = new AuthenticationHeaderValue(
             scheme: "Bearer", _fixture.Tokens.CreateServiceToken(claims));
+
         request.Headers.Add(ActorHeaderNames.ActorId, Guid.CreateVersion7().ToString());
         request.Headers.Add(ActorHeaderNames.CompanyId, actorCompanyId.ToString());
 

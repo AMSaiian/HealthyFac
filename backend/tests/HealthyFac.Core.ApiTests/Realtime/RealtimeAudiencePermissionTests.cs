@@ -1,7 +1,9 @@
 using HealthyFac.Core.ApiTests.Realtime.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.ApiTests.Realtime;
 
+[Feature(TestFeatures.Realtime)]
 public sealed class RealtimeAudiencePermissionTests
 {
     [Theory]

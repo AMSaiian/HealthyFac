@@ -35,40 +35,51 @@ public sealed class HistoryEvents
         TimeZoneInfo zone
     )
     {
-        _drains = drains
-            .Select(drain => new DrainStart
-            {
-                At = Resolve(drain.From, anchor, zone),
-                Module = ModuleName.FromValue(drain.Module),
-                Duration = TimeSpan.FromHours(drain.DrainHours),
-            })
-            .OrderBy(drain => drain.At)
-            .ToList();
-        _steps = steps
-            .Select(step => new StepWindow
-            {
-                Metric = step.Metric,
-                Offset = step.Offset,
-                From = Resolve(step.From, anchor, zone),
-                Until = Resolve(step.Until, anchor, zone),
-            })
-            .ToList();
-        _gaps = gaps
-            .Select(gap => new GapWindow
-            {
-                From = Resolve(gap.From, anchor, zone),
-                Until = Resolve(gap.Until, anchor, zone),
-            })
-            .ToList();
-        _overrides = overrides
-            .Select(overrideSeed => new OverrideWindow
-            {
-                Values = overrideSeed.Values.ToDictionary(pair => pair.Key, pair => ToValue(pair.Value)),
-                Codes = overrideSeed.Codes,
-                From = Resolve(overrideSeed.From, anchor, zone),
-                Until = Resolve(overrideSeed.Until, anchor, zone),
-            })
-            .ToList();
+        _drains =
+        [
+            .. drains
+                .Select(drain => new DrainStart
+                {
+                    At = Resolve(drain.From, anchor, zone),
+                    Module = ModuleName.FromValue(drain.Module),
+                    Duration = TimeSpan.FromHours(drain.DrainHours),
+                })
+                .OrderBy(drain => drain.At),
+        ];
+
+        _steps =
+        [
+            .. steps
+                .Select(step => new StepWindow
+                {
+                    Metric = step.Metric,
+                    Offset = step.Offset,
+                    From = Resolve(step.From, anchor, zone),
+                    Until = Resolve(step.Until, anchor, zone),
+                }),
+        ];
+
+        _gaps =
+        [
+            .. gaps
+                .Select(gap => new GapWindow
+                {
+                    From = Resolve(gap.From, anchor, zone),
+                    Until = Resolve(gap.Until, anchor, zone),
+                }),
+        ];
+
+        _overrides =
+        [
+            .. overrides
+                .Select(overrideSeed => new OverrideWindow
+                {
+                    Values = overrideSeed.Values.ToDictionary(pair => pair.Key, pair => ToValue(pair.Value)),
+                    Codes = overrideSeed.Codes,
+                    From = Resolve(overrideSeed.From, anchor, zone),
+                    Until = Resolve(overrideSeed.Until, anchor, zone),
+                }),
+        ];
     }
 
     /// <summary>Starts every drain whose moment has come and that did not start yet.</summary>
@@ -96,18 +107,21 @@ public sealed class HistoryEvents
     {
         var activeSteps = _steps.Where(step => step.Contains(at)).ToList();
         var activeOverrides = _overrides.Where(overrideWindow => overrideWindow.Contains(at)).ToList();
+
         if (activeSteps.Count == 0 && activeOverrides.Count == 0)
         {
             return sample;
         }
 
         var values = new Dictionary<string, object>(sample.Values);
+
         foreach (var step in activeSteps.Where(step => values.GetValueOrDefault(step.Metric) is double))
         {
             values[step.Metric] = (double)values[step.Metric] + step.Offset;
         }
 
         var codes = sample.StatusCodes;
+
         foreach (var overrideWindow in activeOverrides)
         {
             foreach (var (key, value) in overrideWindow.Values)

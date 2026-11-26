@@ -1,10 +1,12 @@
 using HealthyFac.Shared.IntegrationTests.ServiceTokens.Data;
 using HealthyFac.Shared.IntegrationTests.SharedRedis;
 using HealthyFac.Shared.IntegrationTests.SharedRedis.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.IntegrationTests.ServiceTokens;
 
 [Collection(SharedRedisCollection.Name)]
+[Feature(TestFeatures.Identity)]
 public sealed class RedisTokenCacheStorageTests(SharedRedisFixture fixture)
 {
     private readonly SharedRedisFixture _fixture = fixture;
@@ -13,6 +15,7 @@ public sealed class RedisTokenCacheStorageTests(SharedRedisFixture fixture)
     public async Task RedisTokenCacheStorage_SetThenGet_ReturnsValue()
     {
         var key = TokenStorageTestData.NewKey();
+
         await _fixture.Storage.SetAsync(
             key,
             TokenStorageTestData.StoredValue,
@@ -38,13 +41,14 @@ public sealed class RedisTokenCacheStorageTests(SharedRedisFixture fixture)
         var timeToLive = await _fixture.ReadTimeToLiveAsync(key);
 
         timeToLive.Should().NotBeNull();
-        timeToLive!.Value.Should().BePositive().And.BeLessThanOrEqualTo(TokenStorageTestData.TimeToLive);
+        timeToLive.Value.Should().BePositive().And.BeLessThanOrEqualTo(TokenStorageTestData.TimeToLive);
     }
 
     [Fact]
     public async Task RedisTokenCacheStorage_TryAcquireLock_SecondOwnerFails()
     {
         var key = TokenStorageTestData.NewKey();
+
         var isFirstAcquired = await _fixture.Storage.TryAcquireLockAsync(
             key,
             TokenStorageTestData.FirstOwner,
@@ -65,6 +69,7 @@ public sealed class RedisTokenCacheStorageTests(SharedRedisFixture fixture)
     public async Task RedisTokenCacheStorage_ReleaseLock_OtherOwnerKeepsLock()
     {
         var key = TokenStorageTestData.NewKey();
+
         await _fixture.Storage.TryAcquireLockAsync(
             key,
             TokenStorageTestData.FirstOwner,
@@ -86,6 +91,7 @@ public sealed class RedisTokenCacheStorageTests(SharedRedisFixture fixture)
     public async Task RedisTokenCacheStorage_ReleaseLock_OwnerRemovesLock()
     {
         var key = TokenStorageTestData.NewKey();
+
         await _fixture.Storage.TryAcquireLockAsync(
             key,
             TokenStorageTestData.FirstOwner,

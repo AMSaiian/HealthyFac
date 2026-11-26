@@ -42,8 +42,10 @@ public static class CorsHostFactory
                 {
                     services.AddRouting();
                     services.AddSharedCors(context.Configuration);
+
                     services.AddAuthentication(DenyScheme)
                         .AddScheme<AuthenticationSchemeOptions, DenyHandler>(DenyScheme, configureOptions: null);
+
                     services.AddAuthorizationBuilder()
                         .SetAuthenticatedFallbackPolicy();
                 })
@@ -53,10 +55,12 @@ public static class CorsHostFactory
                     app.UseSharedCors();
                     app.UseAuthentication();
                     app.UseAuthorization();
+
                     app.UseEndpoints(endpoints =>
                     {
                         endpoints.MapPost(EndpointWithPolicy, () => Results.Ok())
                             .RequireCors(CorsConstants.PolicyName);
+
                         endpoints.MapPost(EndpointWithoutPolicy, () => Results.Ok());
                     });
                 }))

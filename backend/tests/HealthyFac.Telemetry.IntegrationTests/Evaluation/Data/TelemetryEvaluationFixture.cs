@@ -33,7 +33,7 @@ public sealed class TelemetryEvaluationFixture : IAsyncLifetime, IResetBeforeEac
     public async ValueTask InitializeAsync()
     {
         _database = new TelemetryDatabaseFixture(
-            settings => settings[key: "Telemetry:Detection:IsWorkerEnabled"] = bool.FalseString,
+            settings => settings["Telemetry:Detection:IsWorkerEnabled"] = bool.FalseString,
             services =>
             {
                 services.AddSingleton<TimeProvider>(Time);

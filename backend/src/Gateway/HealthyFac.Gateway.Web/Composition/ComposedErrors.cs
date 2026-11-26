@@ -91,7 +91,7 @@ public static class ComposedErrors
             [ErrorsProperty] = new JsonObject(
                 errors.Select(error => KeyValuePair.Create(
                     error.Key,
-                    (JsonNode?)new JsonArray([.. error.Value.Select(message => JsonValue.Create(message)!)])))),
+                    (JsonNode?)new JsonArray([.. error.Value.Select(message => JsonValue.Create(message))])))),
         };
 
     private static int PriorityOf(int status)
@@ -103,7 +103,7 @@ public static class ComposedErrors
 
     private static JsonObject MergeValidation(IReadOnlyList<DownstreamResult.ClientError> errors)
     {
-        var merged = errors[index: 0].Problem is JsonObject first ? (JsonObject)first.DeepClone() : new JsonObject();
+        var merged = errors[0].Problem is JsonObject first ? (JsonObject)first.DeepClone() : [];
         var union = new JsonObject();
 
         foreach (var error in errors)

@@ -2,8 +2,8 @@ namespace HealthyFac.Seeder.UnitTests.Moments.Data;
 
 public static class RelativeMomentTestData
 {
-    public static TheoryData<string> InvalidTexts => new()
-    {
+    public static TheoryData<string> InvalidTexts =>
+    [
         "wd+x 09:00",
         "d-1 25:00",
         "d-1 09:60",
@@ -19,10 +19,10 @@ public static class RelativeMomentTestData
         "d-1:30",
         "wd-1:30 10:00",
         "h-1:30 10:00",
-    };
+    ];
 
-    public static TheoryData<string> ValidTexts => new()
-    {
+    public static TheoryData<string> ValidTexts =>
+    [
         "wd+0 09:00",
         "wd-12 23:59",
         "d+2 03:30",
@@ -33,5 +33,5 @@ public static class RelativeMomentTestData
         "h+48",
         "h-22:05",
         "h+0:30",
-    };
+    ];
 }

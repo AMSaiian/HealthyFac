@@ -12,7 +12,7 @@ import { IngestHistoryStore } from './ingest-history.store';
 
 const URL = '/api/insights/v1/files/file-id/ingest-attempts';
 
-describe('IngestHistoryStore', () => {
+describe('IngestHistoryStore', { tags: ['Ingest'] }, () => {
   function setup(): {
     store: InstanceType<typeof IngestHistoryStore>;
     http: HttpTestingController;

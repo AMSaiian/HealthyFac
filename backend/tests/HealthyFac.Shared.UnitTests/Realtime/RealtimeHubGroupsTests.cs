@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using HealthyFac.Shared.UnitTests.Realtime.Data;
 using HealthyFac.Shared.Web.Realtime;
+using HealthyFac.Testing.Features;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
@@ -9,6 +10,7 @@ using StackExchange.Redis;
 
 namespace HealthyFac.Shared.UnitTests.Realtime;
 
+[Feature(TestFeatures.Realtime)]
 public sealed class RealtimeHubGroupsTests
 {
     [Fact]
@@ -66,6 +68,7 @@ public sealed class RealtimeHubGroupsTests
     public async Task OnConnectedAsync_WhenRedisFailsOnAJoin_KeepsTheConnectionAndLogsAWarning()
     {
         var logger = new FakeLogger<RealtimeHub>();
+
         var groups = new ThrowingGroupManager(
             new RedisConnectionException(
                 ConnectionFailureType.UnableToConnect,
@@ -73,6 +76,7 @@ public sealed class RealtimeHubGroupsTests
                 message: "down",
                 innerException: null,
                 CommandStatus.Unknown));
+
         var hub = CreateHub(groups, RealtimeHubTestData.SupervisorPermissions, RealtimeHubTestData.CompanyText, logger);
 
         await hub.OnConnectedAsync();

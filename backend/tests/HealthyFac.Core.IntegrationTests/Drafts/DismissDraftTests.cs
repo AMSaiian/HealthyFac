@@ -5,10 +5,12 @@ using HealthyFac.Core.IntegrationTests.Machines;
 using HealthyFac.Core.IntegrationTests.Machines.Data;
 using HealthyFac.Core.Messaging.Drafts;
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.IntegrationTests.Drafts;
 
 [Collection(CoreMachinesCollection.Name)]
+[Feature(TestFeatures.Drafts)]
 public sealed class DismissDraftTests(CoreDatabaseFixture fixture)
 {
     private readonly CoreDatabaseFixture _fixture = fixture;
@@ -24,7 +26,7 @@ public sealed class DismissDraftTests(CoreDatabaseFixture fixture)
         var messages = await _fixture.ReadOutboxMessagesAsync<MachineDraftDismissed>();
 
         messages.Should().ContainSingle().Which.DraftId.Should().Be(draftId);
-        messages[index: 0].CompanyId.Should().Be(tenant.CompanyId);
+        messages[0].CompanyId.Should().Be(tenant.CompanyId);
     }
 
     [Fact]

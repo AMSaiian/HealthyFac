@@ -3,9 +3,12 @@ using System.Text.Json.Nodes;
 using HealthyFac.Gateway.UnitTests.Composition.Data;
 using HealthyFac.Gateway.Web.Composition;
 using HealthyFac.Gateway.Web.Composition.Drafts.Search;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Gateway.UnitTests.Composition;
 
+[Feature(TestFeatures.Gateway)]
+[Feature(TestFeatures.Drafts)]
 public sealed class DraftPageMergerTests
 {
     [Theory]
@@ -34,7 +37,7 @@ public sealed class DraftPageMergerTests
         var page = DraftPageMerger.Merge(
             core, telemetry, DraftSortComparers.State, isDescending: false, limit: 5, previous: null);
 
-        page.Items.Select(item => item[propertyName: "id"]!.GetValue<string>()).Should().Equal("c1", "t1");
+        page.Items.Select(item => item["id"]!.GetValue<string>()).Should().Equal("c1", "t1");
     }
 
     [Fact]
@@ -54,6 +57,7 @@ public sealed class DraftPageMergerTests
     {
         var previousTelemetry = new KeysetPositionDto
             { SortValue = JsonDocument.Parse(json: "0").RootElement, Id = "t0" };
+
         var previous = new ComposedPosition { Telemetry = previousTelemetry };
         var core = new[] { Row(sortValueJson: "0", id: "c1"), Row(sortValueJson: "1", id: "c2") };
 
@@ -61,41 +65,35 @@ public sealed class DraftPageMergerTests
             core, [], DraftSortComparers.State, isDescending: false, limit: 2, previous);
 
         page.NextPosition.Should().NotBeNull();
-        page.NextPosition!.Telemetry.Should().Be(previousTelemetry);
+        page.NextPosition.Telemetry.Should().Be(previousTelemetry);
         page.NextPosition.IsTelemetryFinished.Should().BeTrue();
         page.NextPosition.IsCoreFinished.Should().BeFalse();
     }
 
-    [Fact]
-    public void Merge_WithASortValueOfAnotherKind_ThrowsACompositionException()
+    [Theory]
+    [MemberData(nameof(DraftPageMergerTestData.InvalidRows), MemberType = typeof(DraftPageMergerTestData))]
+    public void Merge_WithAnInvalidRow_ThrowsACompositionException(
+        string caseName,
+        string rowJson,
+        string expectedMessage
+    )
     {
-        var core = new[] { Row(sortValueJson: "\"pending\"", id: "c1") };
+        var core = new[] { (JsonObject)JsonNode.Parse(rowJson)! };
 
         var act = () => DraftPageMerger.Merge(
             core, [], DraftSortComparers.State, isDescending: false, limit: 5, previous: null);
 
-        act.Should().Throw<CompositionException>().WithMessage(CompositionErrors.SortValueMismatch);
-    }
-
-    [Fact]
-    public void Merge_WithARowWithoutAPosition_ThrowsACompositionException()
-    {
-        var core = new[] { new JsonObject { [propertyName: "id"] = "c1" } };
-
-        var act = () => DraftPageMerger.Merge(
-            core, [], DraftSortComparers.State, isDescending: false, limit: 5, previous: null);
-
-        act.Should().Throw<CompositionException>().WithMessage(CompositionErrors.RowPositionMissing);
+        act.Should().Throw<CompositionException>(caseName).WithMessage(expectedMessage);
     }
 
     private static JsonObject Row(string sortValueJson, string id) =>
         new()
         {
-            [propertyName: "id"] = id,
-            [propertyName: "position"] = new JsonObject
+            ["id"] = id,
+            ["position"] = new JsonObject
             {
-                [propertyName: "sortValue"] = JsonNode.Parse(sortValueJson),
-                [propertyName: "id"] = id,
+                ["sortValue"] = JsonNode.Parse(sortValueJson),
+                ["id"] = id,
             },
         };
 }

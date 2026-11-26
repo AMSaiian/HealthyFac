@@ -23,7 +23,7 @@ function stateWith(filter: Partial<WorkOrderGridState['filter']>): WorkOrderGrid
   };
 }
 
-describe('toSearchBody', () => {
+describe('toSearchBody', { tags: ['WorkOrders'] }, () => {
   it('toSearchBody_WithEmptyFilter_LeavesEveryFilterOut', () => {
     const body = toSearchBody(stateWith({}), ZONE);
 

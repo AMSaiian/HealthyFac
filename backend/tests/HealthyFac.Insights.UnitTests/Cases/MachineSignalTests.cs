@@ -1,8 +1,10 @@
 using HealthyFac.Insights.Domain.Cases.Signals;
 using HealthyFac.Insights.UnitTests.Cases.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Insights.UnitTests.Cases;
 
+[Feature(TestFeatures.Cases)]
 public sealed class MachineSignalTests
 {
     private const double CrossingValue = 91;
@@ -12,6 +14,7 @@ public sealed class MachineSignalTests
     public void Apply_WithAResolveThatHasNoLimit_KeepsTheValueAndTheLimitOfTheCrossing()
     {
         var signal = CaseTestData.CreateSignalWithValues(CrossingValue, CrossingLimit);
+
         var resolve = new SignalChange
         {
             Rule = SignalRule.Threshold,
@@ -36,6 +39,7 @@ public sealed class MachineSignalTests
     public void Apply_WithAnEscalationOfAnOpenSignal_TakesTheNewValueAndLimit()
     {
         var signal = CaseTestData.CreateSignalWithValues(CrossingValue, CrossingLimit);
+
         var escalation = new SignalChange
         {
             Rule = SignalRule.Threshold,

@@ -1,8 +1,11 @@
 using System.Text.Json.Nodes;
 using HealthyFac.Gateway.IntegrationTests.Composition.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Gateway.IntegrationTests.Composition;
 
+[Feature(TestFeatures.Gateway)]
+[Feature(TestFeatures.Drafts)]
 public sealed class ComposedClusterConfigurationTests
 {
     [Theory]
@@ -11,7 +14,7 @@ public sealed class ComposedClusterConfigurationTests
     {
         var text = File.ReadAllText(FindRepositoryFile(relativePath));
 
-        var clusters = JsonNode.Parse(text)![propertyName: "ReverseProxy"]![propertyName: "Clusters"]!.AsObject();
+        var clusters = JsonNode.Parse(text)!["ReverseProxy"]!["Clusters"]!.AsObject();
 
         clusters.Select(cluster => cluster.Key).Should().Contain(CompositionTestData.ComposedClusterIds);
     }

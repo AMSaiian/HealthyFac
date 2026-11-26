@@ -18,6 +18,7 @@ public static class DefinitionDraftInputFixtureExtensions
             var encryptedMachineId = await fixture.ArrangeMachineAsync();
             var machineId = fixture.IdEncryptor.Decrypt(encryptedMachineId);
             var entry = new ProposalEntry(Guid.CreateVersion7(), fixture.CompanyId);
+
             var draft = MetricDefinitionDraft.Propose(
                 Guid.CreateVersion7(),
                 fixture.CompanyId,
@@ -26,6 +27,7 @@ public static class DefinitionDraftInputFixtureExtensions
                 entry.Id,
                 machineId,
                 new MetricDraftValues { Key = "spindle.temperature", Name = "Spindle temperature" });
+
             entry.AcceptOnMachine(machineId);
             draft.Follow(entry, isTargetRegistrationDeleted: false);
             draft.Dismiss();
@@ -42,7 +44,7 @@ public static class DefinitionDraftInputFixtureExtensions
         public string ApplyBodyWithDraft(string encryptedDraftId)
         {
             var body = JsonNode.Parse(MetricDefinitionApiTestData.CreateBody)!;
-            body[propertyName: "created"]![index: 0]![propertyName: "draftId"] = encryptedDraftId;
+            body["created"]![0]!["draftId"] = encryptedDraftId;
 
             return body.ToJsonString();
         }

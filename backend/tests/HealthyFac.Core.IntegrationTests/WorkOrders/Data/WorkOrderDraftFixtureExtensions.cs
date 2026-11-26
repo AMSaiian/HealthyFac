@@ -27,6 +27,7 @@ public static class WorkOrderDraftFixtureExtensions
         {
             using var scope = fixture.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<CoreDbContext>();
+
             var draft = new WorkOrderDraft(
                 Guid.CreateVersion7(),
                 companyId,
@@ -80,6 +81,7 @@ public static class WorkOrderDraftFixtureExtensions
         )
         {
             var messageId = Guid.CreateVersion7();
+
             using (var scope = fixture.ScopeFactory.CreateScope())
             {
                 await scope.ServiceProvider.GetRequiredService<IInbox>()
@@ -88,6 +90,7 @@ public static class WorkOrderDraftFixtureExtensions
 
             var processor = fixture.GetSingleton<IEnumerable<IHostedService>>()
                 .Single(service => service.GetType().Name == "InboxProcessor");
+
             await processor.StartAsync(CancellationToken.None);
 
             try
@@ -115,6 +118,7 @@ public static class WorkOrderDraftFixtureExtensions
         public async Task<InboxRowOutcome> LoadInboxRowAsync(Guid messageId)
         {
             using var scope = fixture.ScopeFactory.CreateScope();
+
             var row = await scope.ServiceProvider.GetRequiredService<CoreDbContext>()
                 .InboxMessages
                 .AsNoTracking()
@@ -163,15 +167,18 @@ public static class WorkOrderDraftFixtureExtensions
         {
             using var scope = fixture.ScopeFactory.CreateScope();
             var messageType = TMessage.MessageType;
+
             var payloads = await scope.ServiceProvider.GetRequiredService<CoreDbContext>()
                 .OutboxMessages
                 .Where(message => message.Type == messageType)
                 .Select(message => message.Payload)
                 .ToListAsync();
 
-            return payloads
-                .Select(payload => JsonSerializer.Deserialize<TMessage>(payload, MessagingJsonOptions.Instance)!)
-                .ToList();
+            return
+            [
+                .. payloads.Select(payload =>
+                    JsonSerializer.Deserialize<TMessage>(payload, MessagingJsonOptions.Instance)!),
+            ];
         }
 
         public async Task SetWorkOrderDraftColumnAsync(Guid draftId, string column, string sqlValue)

@@ -58,6 +58,7 @@ public sealed class ConcurrentSaveGate : SaveChangesInterceptor
     )
     {
         var participant = _participant.Value;
+
         if (participant is not null)
         {
             await participant.Value.Race.ArriveAsync(participant.Value.Index, cancellationToken);

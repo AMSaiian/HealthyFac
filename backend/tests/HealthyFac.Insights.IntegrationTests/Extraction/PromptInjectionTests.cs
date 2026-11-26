@@ -5,10 +5,12 @@ using HealthyFac.Insights.IntegrationTests.Database.Data;
 using HealthyFac.Insights.IntegrationTests.Documents.Data;
 using HealthyFac.Insights.IntegrationTests.Ingest.Data;
 using HealthyFac.Insights.Messaging.Drafts;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Insights.IntegrationTests.Extraction;
 
 [Collection(InsightsCollection.Name)]
+[Feature(TestFeatures.Ingest)]
 public sealed class PromptInjectionTests(InsightsFixture fixture)
 {
     private const string ForeignCompanyId = "00000000-0000-0000-0000-000000000001";
@@ -29,6 +31,7 @@ public sealed class PromptInjectionTests(InsightsFixture fixture)
     {
         _fixture.ArrangeFile();
         await _fixture.StartAttemptAsync();
+
         _fixture.Ingest.Converter.Behavior = _ => Task.FromResult(
             new ConvertedDocument
             {
@@ -52,6 +55,7 @@ public sealed class PromptInjectionTests(InsightsFixture fixture)
     {
         _fixture.ArrangeFile();
         await _fixture.StartAttemptAsync();
+
         _fixture.Ingest.Converter.Behavior = _ => Task.FromResult(
             new ConvertedDocument
             {
@@ -74,6 +78,7 @@ public sealed class PromptInjectionTests(InsightsFixture fixture)
     {
         _fixture.ArrangeFile();
         var attemptId = await _fixture.StartAttemptAsync();
+
         _fixture.Ingest.Chat.ScriptToolCall(
             callId: "machine-1", functionName: "propose_machine", MachineWithForeignTarget);
 

@@ -13,41 +13,45 @@ public static class DoclingTestData
     /// converter drops, and 3 pages in the converted document.
     /// </summary>
     public const string ThreePageResult = """
-        {
-          "chunks": [
-            {
-              "text": "Operating limits.",
-              "headings": ["Manual", "Limits"],
-              "page_numbers": [2, 1, 2]
-            },
-            {
-              "text": "Maximum pressure is 6 bar.",
-              "headings": ["Manual", "Pressure"],
-              "page_numbers": []
-            },
-            { "text": "   ", "headings": [], "page_numbers": [3] }
-          ],
-          "documents": [
-            { "content": { "json_content": { "pages": { "1": {}, "2": {}, "3": {} } } } }
-          ]
-        }
-        """;
+                                          {
+                                            "chunks": [
+                                              {
+                                                "text": "Operating limits.",
+                                                "headings": ["Manual", "Limits"],
+                                                "page_numbers": [2, 1, 2]
+                                              },
+                                              {
+                                                "text": "Maximum pressure is 6 bar.",
+                                                "headings": ["Manual", "Pressure"],
+                                                "page_numbers": []
+                                              },
+                                              { "text": "   ", "headings": [], "page_numbers": [3] }
+                                            ],
+                                            "documents": [
+                                              {
+                                                "content": {
+                                                  "json_content": { "pages": { "1": {}, "2": {}, "3": {} } }
+                                                }
+                                              }
+                                            ]
+                                          }
+                                          """;
 
     public const string NoPagesResult = """
-        {
-          "chunks": [ { "text": "Plain text.", "headings": [], "page_numbers": [] } ],
-          "documents": [ { "content": { "json_content": { "pages": {} } } } ]
-        }
-        """;
+                                        {
+                                          "chunks": [ { "text": "Plain text.", "headings": [], "page_numbers": [] } ],
+                                          "documents": [ { "content": { "json_content": { "pages": {} } } } ]
+                                        }
+                                        """;
 
     public const string SlideResult = """
-        {
-          "chunks": [
-            { "text": "Slide text.", "headings": ["Deck"], "page_numbers": [4] }
-          ],
-          "documents": [
-            { "content": { "json_content": { "pages": { "4": {} } } } }
-          ]
-        }
-        """;
+                                      {
+                                        "chunks": [
+                                          { "text": "Slide text.", "headings": ["Deck"], "page_numbers": [4] }
+                                        ],
+                                        "documents": [
+                                          { "content": { "json_content": { "pages": { "4": {} } } } }
+                                        ]
+                                      }
+                                      """;
 }

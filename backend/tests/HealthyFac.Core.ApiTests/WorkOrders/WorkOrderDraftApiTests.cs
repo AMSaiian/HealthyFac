@@ -4,10 +4,13 @@ using System.Text.Json.Nodes;
 using HealthyFac.Core.ApiTests.Hosting;
 using HealthyFac.Core.ApiTests.Shifts.Data;
 using HealthyFac.Core.ApiTests.WorkOrders.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.ApiTests.WorkOrders;
 
 [Collection(CoreApiCollection.Name)]
+[Feature(TestFeatures.WorkOrders)]
+[Feature(TestFeatures.Drafts)]
 public sealed class WorkOrderDraftApiTests(CoreApiFixture fixture)
 {
     private readonly CoreApiFixture _fixture = fixture;
@@ -16,6 +19,7 @@ public sealed class WorkOrderDraftApiTests(CoreApiFixture fixture)
     public async Task Apply_WithBothPermissions_Returns200AndCreatesTheWorkOrder()
     {
         var draftId = await _fixture.ArrangeWorkOrderDraftAsync();
+
         var claims = _fixture.CreateDraftClaims(
             WorkOrderDraftApiTestData.DraftsWrite,
             WorkOrderDraftApiTestData.DraftsRead,
@@ -27,10 +31,10 @@ public sealed class WorkOrderDraftApiTests(CoreApiFixture fixture)
 
         var body = (await response.Content.ReadFromJsonAsync<JsonObject>(TestContext.Current.CancellationToken))!;
         var draft = await _fixture.ReadDraftAsync(claims, draftId);
-        var order = await _fixture.ReadOrderAsync(claims, body[propertyName: "workOrderId"]!.GetValue<string>());
+        var order = await _fixture.ReadOrderAsync(claims, body["workOrderId"]!.GetValue<string>());
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        draft[propertyName: "state"]!.GetValue<string>().Should().Be(expected: "applied");
-        order[propertyName: "title"]!.GetValue<string>().Should().Be(WorkOrderApiTestData.Title);
+        draft["state"]!.GetValue<string>().Should().Be(expected: "applied");
+        order["title"]!.GetValue<string>().Should().Be(WorkOrderApiTestData.Title);
     }
 
     [Theory]
@@ -51,6 +55,7 @@ public sealed class WorkOrderDraftApiTests(CoreApiFixture fixture)
     public async Task Apply_WithAStaleRowVersion_Returns409()
     {
         var draftId = await _fixture.ArrangeWorkOrderDraftAsync();
+
         var claims = _fixture.CreateDraftClaims(
             WorkOrderDraftApiTestData.DraftsWrite,
             WorkOrderDraftApiTestData.WorkOrdersWrite,
@@ -73,6 +78,7 @@ public sealed class WorkOrderDraftApiTests(CoreApiFixture fixture)
 
         var first = await _fixture.PostDraftAsync(
             claims, draftId, action: "dismiss", WorkOrderDraftApiTestData.EmptyObject);
+
         var second = await _fixture.PostDraftAsync(
             claims, draftId, action: "dismiss", WorkOrderDraftApiTestData.EmptyObject);
 
@@ -102,15 +108,18 @@ public sealed class WorkOrderDraftApiTests(CoreApiFixture fixture)
 
         var allowed = await _fixture.SendShiftRequestAsync(
             HttpMethod.Post, WorkOrderDraftApiTestData.SearchPath, readClaims, body);
+
         var forbidden = await _fixture.SendShiftRequestAsync(
             HttpMethod.Post, WorkOrderDraftApiTestData.SearchPath, otherClaims, body);
 
         var page = (await allowed.Content.ReadFromJsonAsync<JsonObject>(TestContext.Current.CancellationToken))!;
         allowed.StatusCode.Should().Be(HttpStatusCode.OK);
-        page[propertyName: "items"]!.AsArray()
-            .Select(item => item![propertyName: "id"]!.GetValue<string>())
+
+        page["items"]!.AsArray()
+            .Select(item => item!["id"]!.GetValue<string>())
             .Should()
             .Contain(draftId);
+
         forbidden.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
 }

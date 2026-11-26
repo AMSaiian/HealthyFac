@@ -2,10 +2,12 @@ using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Machines.Data;
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.IntegrationTests.Machines;
 
 [Collection(CoreMachinesCollection.Name)]
+[Feature(TestFeatures.Machines)]
 public sealed class GetMachineStateTimesTests(CoreDatabaseFixture fixture)
 {
     private const int RangeHours = 2;
@@ -16,9 +18,11 @@ public sealed class GetMachineStateTimesTests(CoreDatabaseFixture fixture)
     public async Task GetMachineStateTimes_WithStatesThatCrossTheRange_ClipsEachStateAtTheRangeBounds()
     {
         var tenant = await _fixture.ArrangeMachineTenantAsync();
+
         var machineId = await _fixture.CreateMachineAsync(
             tenant.CompanyId, MachineTestData.MachineName, MachineTestData.SerialNumber,
             MachineTestData.LinkDescription);
+
         var created = (await _fixture.LoadStateHistoryAsync(machineId)).Min(row => row.StartedAt);
         var from = created.AddHours(value: 1);
         await _fixture.AddStateRowAsync(machineId, MachineState.InMaintenance, from.AddMinutes(value: 30));
@@ -36,9 +40,11 @@ public sealed class GetMachineStateTimesTests(CoreDatabaseFixture fixture)
     public async Task GetMachineStateTimes_WithARangeThatStartsBeforeTheCreation_CountsTheTimeBeforeTheCreation()
     {
         var tenant = await _fixture.ArrangeMachineTenantAsync();
+
         var machineId = await _fixture.CreateMachineAsync(
             tenant.CompanyId, MachineTestData.MachineName, MachineTestData.SerialNumber,
             MachineTestData.LinkDescription);
+
         var created = (await _fixture.LoadStateHistoryAsync(machineId)).Min(row => row.StartedAt);
 
         var times = await _fixture.GetMachineStateTimesAsync(
@@ -52,9 +58,11 @@ public sealed class GetMachineStateTimesTests(CoreDatabaseFixture fixture)
     public async Task GetMachineStateTimes_WithAnotherCompany_ThrowsNotFoundException()
     {
         var tenant = await _fixture.ArrangeMachineTenantAsync();
+
         var machineId = await _fixture.CreateMachineAsync(
             tenant.CompanyId, MachineTestData.MachineName, MachineTestData.SerialNumber,
             MachineTestData.LinkDescription);
+
         var otherTenant = await _fixture.ArrangeMachineTenantAsync(companyName: "Other company");
         var from = MachineTestData.FirstCreatedAt;
 

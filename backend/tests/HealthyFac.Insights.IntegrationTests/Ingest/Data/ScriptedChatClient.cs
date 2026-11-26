@@ -111,6 +111,7 @@ public sealed class ScriptedChatClient : IChatClient
         SentMessageCounts.Add(sentMessages.Count);
         SentOptions.Add(options);
         SentTexts.Add(string.Join(Environment.NewLine, [options?.Instructions, .. messages.Select(m => m.Text)]));
+
         if (Failure is not null)
         {
             throw Failure;
@@ -158,6 +159,7 @@ public sealed class ScriptedChatClient : IChatClient
         foreach (var call in response.Messages.SelectMany(message => message.Contents).OfType<FunctionCallContent>())
         {
             var arguments = call.Arguments;
+
             if (arguments is null || machineId is null)
             {
                 continue;
@@ -189,7 +191,7 @@ public sealed class ScriptedChatClient : IChatClient
             .Select(result => System.Text.RegularExpressions.Regex.Match(
                 result.Result?.ToString() ?? string.Empty, MachineIdPattern))
             .LastOrDefault(match => match.Success)
-            ?.Groups[groupnum: 1]
+            ?.Groups[1]
             .Value;
 
     private static ChatResponse PlayDefault(IReadOnlyList<ChatMessage> messages)

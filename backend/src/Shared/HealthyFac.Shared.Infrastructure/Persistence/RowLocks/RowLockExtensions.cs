@@ -68,19 +68,22 @@ public static class RowLockExtensions
                 .Take(count: 1)
                 .ToLinqToDB()
                 .AsPostgreSQL();
+
             var lockedIds = await (isSkippingLocked
                     ? query.SubQueryTableHint(PostgreSQLHints.ForUpdate, PostgreSQLHints.SkipLocked)
                     : query.SubQueryTableHint(PostgreSQLHints.ForUpdate))
                 .ToListAsyncLinqToDB(cancellationToken);
+
             if (lockedIds.Count == 0)
             {
                 return null;
             }
 
-            var lockedId = lockedIds[index: 0];
+            var lockedId = lockedIds[0];
             var context = set.GetService<ICurrentDbContext>().Context;
             var isTracked = context.ChangeTracker.Entries<TEntity>().Any(entry => entry.Entity.Id == lockedId);
             var locked = await set.SingleAsync(entity => entity.Id == lockedId, cancellationToken);
+
             if (isTracked)
             {
                 await context.Entry(locked).ReloadAsync(cancellationToken);

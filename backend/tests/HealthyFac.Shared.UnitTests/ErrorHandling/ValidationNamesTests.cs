@@ -1,8 +1,10 @@
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.UnitTests.ErrorHandling.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.UnitTests.ErrorHandling;
 
+[Feature(TestFeatures.Platform)]
 public sealed class ValidationNamesTests
 {
     public ValidationNamesTests()

@@ -2,8 +2,9 @@
 # Stop and SubagentStop hook: formats the backend changed files, builds the solution, and reports build
 # warnings and errors in those files back to the agent that stops. The diagnostics come from the SARIF files of the
 # build (Get-SarifDiagnostics), so a changed file of a project that MSBuild skipped as up to date still reports its
-# warnings. Build text warnings (NU and MSB) are left out; restore and MSBuild errors count. It also reports
-# C# lines longer than max_line_length in .editorconfig (Migrations excluded). Exit code 2 blocks the stop and sends stderr to
+# warnings. Build text warnings (NU and MSB) are left out; restore and MSBuild errors count. A line over
+# max_line_length is the build warning S103 (backend/SonarLint.xml). It also reports a named index argument
+# (NAMED_INDEX, Get-NamedIndexArguments). Exit code 2 blocks the stop and sends stderr to
 # that agent, so a subagent fixes its own diagnostics before it reports to the main session.
 # The hook uses git only. It verifies the checkout (the main one or a git worktree) that holds this script file:
 # "git -C <script folder> rev-parse --show-toplevel". Claude Code runs the script of the project root in which the
@@ -16,7 +17,8 @@
 # paths of "git diff --name-only <that tree> <current tree>" that match its patterns, so uncommitted changes that an
 # earlier stop verified do not trigger a new run. Without a state tree (or when git gc pruned it), they are the files
 # changed since HEAD plus the untracked files. A failed step keeps its old tree, so the next stop checks every file that
-# changed since its last clean run again. Limit: sessions that share one checkout share this state and these files.
+# changed since its last clean run again. A passing run of run-area.ps1 or run-tests.ps1 writes the state of its area too
+# (Write-HookState), so the hook skips what the run verified. Limit: sessions that share one checkout share this state and these files.
 # Give each session its own worktree to separate them.
 # One verification or cleanup per checkout runs at a time (named mutex), and the cleanup never overwrites a file
 # that another writer changed or deleted during the run (cleanup-changed.ps1).
@@ -42,8 +44,8 @@ $isExecutorInFlight = $hookInput.hook_event_name -eq 'Stop' -and
   @($hookInput.background_tasks | Where-Object { $_.type -eq 'subagent' -and $_.agent_type -eq 'executor' }).Count -gt 0
 if ($isExecutorInFlight) { exit 0 }
 $solutionPath = 'backend/HealthyFac.slnx'
-$BackendPatterns = @('*.cs', '*.csproj', '*.props', '*.targets')
-$WebPatterns = @('*.ts', '*.html', '*.css', '*.json', '*.webmanifest')
+$BackendPatterns = $script:BackendPatterns
+$WebPatterns = $script:WebPatterns
 
 # The checkout (main or worktree) that holds the directory, in the backslash form that the build diagnostics use,
 # or nothing when the directory is not inside a checkout.
@@ -52,29 +54,6 @@ function Get-WorktreeRoot([string] $directory) {
   $root = git -C $directory rev-parse --show-toplevel 2>$null
   if ($LASTEXITCODE -ne 0 -or -not $root) { return }
   [IO.Path]::GetFullPath($root).TrimEnd([char]92, [char]47)
-}
-
-# The paths of one step (folder $step/, or backend/) that changed since the last clean run of the step, deleted paths
-# included. See the header for the state tree and the fallback.
-function Get-StepChanges([string] $repo, [string] $step, [string] $currentTree, [string[]] $patterns) {
-  $statePath = Get-GitStatePath $repo "claude-verify-$step-tree.txt"
-  $stateTree = if (Test-Path -LiteralPath $statePath) { (Get-Content -LiteralPath $statePath -Raw).Trim() }
-  $paths = $null
-  if ($stateTree) {
-    $diff = Get-GitLines $repo (@('diff', '--name-only', '--no-renames', $stateTree, $currentTree, '--') + $patterns)
-    if ($diff.ExitCode -eq 0) { $paths = $diff.Lines }
-  }
-  if ($null -eq $paths) {
-    $paths = @((Get-GitLines $repo (@('diff', '--name-only', '--no-renames', 'HEAD', '--') + $patterns)).Lines) +
-      @((Get-GitLines $repo (@('ls-files', '-o', '--exclude-standard', '--') + $patterns)).Lines)
-  }
-  @($paths | Where-Object { $_ -like "$step/*" -and $_ -notlike '*/package-lock.json' } | Sort-Object -Unique)
-}
-
-function Save-StepState([string] $repo, [string] $step, [string] $tree) {
-  $path = Get-GitStatePath $repo "claude-verify-$step-tree.txt"
-  New-Item -ItemType Directory -Force (Split-Path $path) | Out-Null
-  Set-Content -LiteralPath $path -Value $tree -Encoding utf8NoBOM
 }
 
 function Get-ExistingFiles([string] $repo, [string[]] $paths) {
@@ -165,13 +144,9 @@ function Invoke-Verification([string] $repo, [string] $currentTree) {
           Where-Object { $_ -match '\): error ' }) | Sort-Object -Unique)
     }
 
-    $longLines = @(Get-LongLines -Repo $repo -Files $touchedCode | ForEach-Object {
-        "$($_.File.Replace('/', '\'))($($_.Line),$($_.Limit + 1)): error LINE_LENGTH: the line has $($_.Length) " +
-        "characters; .editorconfig max_line_length is $($_.Limit). Split the line."
-      })
-
     if ($buildFailed -and $diagnostics.Count -eq 0) { $diagnostics = @($output | Select-Object -Last 20) }
-    $result.Problems = @($diagnostics + $longLines)
+    $namedIndexes = @(Get-NamedIndexArguments -Repo $repo -Files $touchedCode)
+    $result.Problems = @($diagnostics + $namedIndexes)
     return $result
   }
   finally {
@@ -233,7 +208,7 @@ $results | Where-Object Notice | ForEach-Object { Write-Output $_.Notice }
 if ($failed.Count -eq 0) { exit 0 }
 
 $report = @(
-  'The build, the line length check, or the frontend lint reports problems in the changed files of the checkout. ' +
+  'The build, the named index check, or the frontend lint reports problems in the changed files of the checkout. ' +
     'Fix every item before you finish.'
   foreach ($result in $failed) {
     "Changed files in $($result.Repo):"

@@ -2,10 +2,12 @@ using HealthyFac.Document.IntegrationTests.Database;
 using HealthyFac.Document.IntegrationTests.Database.Data;
 using HealthyFac.Document.IntegrationTests.MachineRegistrations.Data;
 using HealthyFac.Shared.Domain.Gateways;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Document.IntegrationTests.MachineRegistrations;
 
 [Collection(DocumentDatabaseCollection.Name)]
+[Feature(TestFeatures.Machines)]
 public sealed class RegisterMachineTests(DocumentDatabaseFixture fixture)
 {
     private readonly DocumentDatabaseFixture _fixture = fixture;
@@ -20,7 +22,7 @@ public sealed class RegisterMachineTests(DocumentDatabaseFixture fixture)
         var registration = await _fixture.LoadRegistrationAsync(message.MachineId);
 
         registration.Should().NotBeNull();
-        registration!.CompanyId.Should().Be(message.CompanyId);
+        registration.CompanyId.Should().Be(message.CompanyId);
         registration.Name.Should().Be(message.Name);
         registration.DeletedAt.Should().BeNull();
     }
@@ -30,6 +32,7 @@ public sealed class RegisterMachineTests(DocumentDatabaseFixture fixture)
     {
         var message = MachineRegistrationTestData.CreateMessage();
         await _fixture.RegisterMachineAsync(message);
+
         var changed = message with
         {
             GatewayId = GatewayIds.Create(),

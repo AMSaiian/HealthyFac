@@ -11,9 +11,11 @@ using HealthyFac.Core.Infrastructure.Machines.Seeding;
 using HealthyFac.Core.Infrastructure.WorkOrders.Seeding;
 using HealthyFac.Core.UnitTests.Fakers.Data;
 using HealthyFac.Shared.Infrastructure.RichText;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.UnitTests.Fakers;
 
+[Feature(TestFeatures.Seeding)]
 public sealed class FakerInvariantTests
 {
     private readonly HtmlSanitizerRichTextPolicy _richTextPolicy = new();
@@ -27,10 +29,11 @@ public sealed class FakerInvariantTests
             .OnlyContain(company => !string.IsNullOrWhiteSpace(company.Name)
                 && company.Name.Length <= CompanyValidationConstants.NameMaxLength
                 && company.TimeZoneId.Length <= CompanyValidationConstants.TimeZoneIdMaxLength);
+
         companies.Select(company => TimeZoneInfo.FindSystemTimeZoneById(company.TimeZoneId))
-            .ToList()
             .Should()
-            .NotBeEmpty();
+            .NotBeEmpty()
+            .And.OnlyContain(zone => zone != null);
     }
 
     [Fact]
@@ -67,6 +70,7 @@ public sealed class FakerInvariantTests
         var machines = CreateMachines();
 
         var validator = new CreateMachineRequestValidator(_richTextPolicy);
+
         var failures = machines
             .SelectMany(machine => validator.Validate(
                     new CreateMachineRequest
@@ -79,6 +83,7 @@ public sealed class FakerInvariantTests
                     })
                 .Errors)
             .ToList();
+
         failures.Should().BeEmpty();
         machines.Select(machine => machine.SerialNumber).Should().OnlyHaveUniqueItems();
     }
@@ -89,10 +94,13 @@ public sealed class FakerInvariantTests
         var machines = CreateMachines();
 
         var zone = TimeZoneInfo.FindSystemTimeZoneById(FakerInvariantTestData.CompanyZone);
+
         var historyRows = machines
             .SelectMany(machine => machine.StateHistory.Select(row => (machine.ExpectedGoLiveOn, row.StartedAt)))
             .ToList();
+
         historyRows.Should().NotBeEmpty();
+
         historyRows.Should()
             .OnlyContain(row => DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(row.StartedAt, zone))
                 >= row.ExpectedGoLiveOn
@@ -108,6 +116,7 @@ public sealed class FakerInvariantTests
         var orders = faker.Generate(FakerInvariantTestData.ItemCount);
 
         var validator = new CreateWorkOrderRequestValidator(_richTextPolicy);
+
         var failures = orders
             .SelectMany(order => validator.Validate(
                     new CreateWorkOrderRequest
@@ -124,7 +133,9 @@ public sealed class FakerInvariantTests
                     })
                 .Errors)
             .ToList();
+
         failures.Should().BeEmpty();
+
         orders.Should()
             .OnlyContain(order => order.Title.Length <= WorkOrderValidationConstants.TitleMaxLength
                 && order.Description!.StartsWith("<p>")
@@ -134,6 +145,7 @@ public sealed class FakerInvariantTests
     private static void AssertInvitesAreValid(List<EmployeeInvite> invites)
     {
         var validator = new CreateEmployeeInviteRequestValidator();
+
         var failures = invites
             .SelectMany(invite => validator.Validate(
                     new CreateEmployeeInviteRequest

@@ -79,6 +79,7 @@ public sealed class DatabaseRelayEndpoint : IRelayEndpoint
             .Where(message => message.Id == rowId)
             .Select(message => new { message.Error, message.AttemptCount, message.ProcessedOn })
             .FirstOrDefaultAsync(cancellationToken);
+
         if (row is null)
         {
             return null;

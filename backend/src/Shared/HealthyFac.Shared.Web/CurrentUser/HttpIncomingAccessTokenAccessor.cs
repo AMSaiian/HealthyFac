@@ -19,6 +19,7 @@ internal sealed class HttpIncomingAccessTokenAccessor(IHttpContextAccessor httpC
     public string? TryGetUserAccessToken()
     {
         var context = _httpContextAccessor.HttpContext;
+
         if (context is null || !UserTokenShape.Matches(context.User))
         {
             return null;

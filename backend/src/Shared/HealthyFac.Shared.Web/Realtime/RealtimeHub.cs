@@ -28,6 +28,7 @@ public sealed class RealtimeHub(ILogger<RealtimeHub> logger) : Hub<IRealtimeClie
     public override async Task OnConnectedAsync()
     {
         var user = Context.User;
+
         if (user is null)
         {
             await base.OnConnectedAsync();

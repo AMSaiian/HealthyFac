@@ -9,6 +9,8 @@ namespace HealthyFac.Insights.Application.Agents.Prompts;
 /// </summary>
 public static class AgentDataBlocks
 {
+    private static readonly TimeSpan PatternMatchTimeout = TimeSpan.FromSeconds(1);
+
     /// <summary>
     /// Wraps the text in <c>&lt;tag&gt;</c> and <c>&lt;/tag&gt;</c>.
     /// </summary>
@@ -26,5 +28,8 @@ public static class AgentDataBlocks
     }
 
     private static Regex TagPattern(string tag) =>
-        new($"</?{Regex.Escape(tag)}>", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+        new(
+            $"</?{Regex.Escape(tag)}>",
+            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant,
+            PatternMatchTimeout);
 }

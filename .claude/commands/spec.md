@@ -75,7 +75,7 @@ ACs take the next free numbers (`check-plan.ps1` fails on a duplicate).
   base takes in the files of that feature. After a rebase, change or remove the line.
 - A step that corrects code of an earlier commit of the branch gets a line
   `Fixup: <subject of that commit>`. The rules are in `.claude/rules/git-commits.md`,
-  **History**. `check-plan.ps1` checks the line.
+  **History** (also for the target commit of a fixup that adds a shared helper). `check-plan.ps1` checks the line.
 - Split the feature into functional cycles. Each cycle is one review and one commit group.
   Plan every cycle before the handoff when you can; my approval of plan.md covers every
   planned cycle. The `Cycle:` line names the open cycle; the scripts read it.
@@ -98,10 +98,15 @@ ACs take the next free numbers (`check-plan.ps1` fails on a duplicate).
   rename). `check-plan.ps1` checks the marker, and `check-handoff.ps1` checks the line.
 - The executor reads the plan only. Copy into each step every fact from the spec that it
   needs (names, tags, values, cases); never write "as in the spec". Each `Files:` line
-  names every file by its repo path, a new file too; never by prose or by folder. Each
-  step's `Verify` names a test filter, never a whole project, unless the step changes
-  shared fixtures. A `Verify` never asks for a full run: the executor runs the full run of
-  each area once per cycle (`run-area.ps1`), and `check-plan.ps1` fails on it.
+  names every file by its repo path, a new file too; never by prose or by folder. Prefer
+  exact paths. Use a backticked glob (`**` any path, `*` a name part, e.g.
+  `backend/src/**/*.cs`) only for a group of files too large to list, such as a bulk tool
+  fix; it may stand in a `Files:` line or a Deviations entry, and `check-handoff.ps1`
+  matches it. Each step's `Verify` names a test filter, never a whole project, unless the step changes
+  shared fixtures. A `Verify` names `run-tests.ps1 -Project <path> -Filter <filter>` or `-Feature <names>`,
+  never a full run: the last cycle of a plan holds the full run of each changed area (`run-area.ps1`),
+  every cycle before it ends with the affected run (`run-tests.ps1 -Area <area> -Changed`), the scripts
+  store the results, and `check-plan.ps1` fails on a full run in a `Verify`.
 - Write only facts in a step (names, paths, values, cases, the order). The reasons stay in
   spec.md. Never ask the executor for a log that the diff shows (e.g., the changed members).
 - Run `pwsh .claude/check-plan.ps1 <feature folder> -Cycle <N>` once for each planned cycle

@@ -15,6 +15,7 @@ public static class PermissionPoliciesTestData
     {
         var services = new ServiceCollection();
         services.AddLogging();
+
         services.AddAuthorizationBuilder()
             .AddPermissionPolicies(new HashSet<string> { InvitePermission, MachinesPermission });
 

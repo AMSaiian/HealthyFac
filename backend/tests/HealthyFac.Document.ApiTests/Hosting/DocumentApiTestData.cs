@@ -24,6 +24,15 @@ public static class DocumentApiTestData
     /// </summary>
     public static readonly TimeSpan ReadinessProbeTimeout = TimeSpan.FromSeconds(seconds: 3);
 
+    /// <summary>
+    /// The network timeout of the blob client in the outage tests. It stays above the timeout of the readiness probe
+    /// (3 s) and the timeout of the storage health check (2 s), so a hanging endpoint is cut by the health check.
+    /// </summary>
+    public static readonly TimeSpan FailingStorageNetworkTimeout = TimeSpan.FromSeconds(seconds: 5);
+
+    /// <summary>The fixed delay between the retries of the blob client in the outage tests.</summary>
+    public static readonly TimeSpan FailingStorageRetryDelay = TimeSpan.FromMilliseconds(value: 10);
+
     public const string IdEncryptionKey = "dGVzdC1pZC1lbmNyeXB0aW9uLWtleS0zMmJ5dGVzISE=";
 
     public static IReadOnlyDictionary<string, string?> CreateSettings(
@@ -33,13 +42,13 @@ public static class DocumentApiTestData
     )
         => new Dictionary<string, string?>(TestTokenFactory.JwtSettings)
         {
-            [key: "ConnectionStrings:Database"] = databaseConnection,
-            [key: "ConnectionStrings:RabbitMq"] = brokerConnection,
-            [key: "FileStorage:ConnectionString"] = storageConnection,
-            [key: "FileStorage:PublicBlobBaseUrl"] = PublicBlobBaseUrl,
-            [key: "Messaging:QueueName"] = $"{QueueNamePrefix}{Guid.NewGuid():N}",
-            [key: "IdEncryption:Keys:0:Prefix"] = "v1_",
-            [key: "IdEncryption:Keys:0:Key"] = IdEncryptionKey,
-            [key: "IdEncryption:Keys:0:IsDefault"] = bool.TrueString,
+            ["ConnectionStrings:Database"] = databaseConnection,
+            ["ConnectionStrings:RabbitMq"] = brokerConnection,
+            ["FileStorage:ConnectionString"] = storageConnection,
+            ["FileStorage:PublicBlobBaseUrl"] = PublicBlobBaseUrl,
+            ["Messaging:QueueName"] = $"{QueueNamePrefix}{Guid.NewGuid():N}",
+            ["IdEncryption:Keys:0:Prefix"] = "v1_",
+            ["IdEncryption:Keys:0:Key"] = IdEncryptionKey,
+            ["IdEncryption:Keys:0:IsDefault"] = bool.TrueString,
         };
 }

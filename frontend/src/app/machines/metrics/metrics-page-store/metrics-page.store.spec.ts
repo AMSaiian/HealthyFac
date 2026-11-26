@@ -200,7 +200,7 @@ function stageNew(store: Setup['store']): void {
   store.done();
 }
 
-describe('MetricsPageStore', () => {
+describe('MetricsPageStore', { tags: ['SignalModel'] }, () => {
   it('descriptionLinks_WithImageInTheSelectedDescription_ResolvesLinksOnceForThatDefinition', async () => {
     const withImage: MetricDefinitionsResponse = {
       revision: 3,

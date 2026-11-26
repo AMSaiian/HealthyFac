@@ -2,10 +2,12 @@ using HealthyFac.Core.Domain.Roles;
 using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Employees.Data;
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.IntegrationTests.Employees;
 
 [Collection(CoreEmployeesCollection.Name)]
+[Feature(TestFeatures.Companies)]
 public sealed class GetCurrentEmployeeTests(CoreDatabaseFixture fixture)
 {
     private readonly CoreDatabaseFixture _fixture = fixture;
@@ -14,6 +16,7 @@ public sealed class GetCurrentEmployeeTests(CoreDatabaseFixture fixture)
     public async Task GetCurrentEmployee_WithEmployeeOfTheActor_ReturnsOwnData()
     {
         var companyId = await _fixture.CreateCompanyAsync(InviteTestData.CompanyName);
+
         var seed = await _fixture.ArrangeEmployeeAsync(
             companyId,
             new EmployeeSeedOptions
@@ -47,6 +50,7 @@ public sealed class GetCurrentEmployeeTests(CoreDatabaseFixture fixture)
     {
         var companyId = await _fixture.CreateCompanyAsync(InviteTestData.CompanyName);
         var otherCompanyId = await _fixture.CreateCompanyAsync(EmployeeSearchTestData.OtherCompanyName);
+
         var seed = await _fixture.ArrangeEmployeeAsync(
             otherCompanyId,
             new EmployeeSeedOptions

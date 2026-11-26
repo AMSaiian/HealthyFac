@@ -11,5 +11,7 @@ public static class DraftScopeTestData
         { "AttemptOnly", null, Id, true },
         { "Both", Id, Id, false },
         { "Neither", null, null, false },
+        { "empty machine id", Guid.Empty, null, false },
+        { "empty attempt id", null, Guid.Empty, false },
     };
 }

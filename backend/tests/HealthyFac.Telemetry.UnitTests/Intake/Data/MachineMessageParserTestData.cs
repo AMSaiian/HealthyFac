@@ -11,11 +11,11 @@ public static class MachineMessageParserTestData
     public static readonly DateTime SampledAt =
         new(year: 2026, month: 11, day: 6, hour: 10, minute: 14, second: 55, DateTimeKind.Utc);
 
-    public static TheoryData<string> LenientSampledAtValues => new()
-    {
+    public static TheoryData<string> LenientSampledAtValues =>
+    [
         "2026-11-06T10:14:55Z",
         "2026-11-06t10:14:55Z",
         "2026-11-06T10:14:55z",
         "2026-11-06T12:14:55+02:00",
-    };
+    ];
 }

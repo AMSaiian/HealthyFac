@@ -86,26 +86,30 @@ public sealed class GetCompanyDayScheduleRequestHandler(
             .ThenBy(employee => employee.Id)
             .Select(employee => new { employee.Id, employee.FirstName, employee.LastName })
             .ToListAsync(cancellationToken);
+
         var days = await _builder.BuildAsync(
             request.CompanyId,
-            employees.Select(employee => employee.Id).ToList(),
+            [.. employees.Select(employee => employee.Id)],
             request.Date,
             cancellationToken);
+
         var zone = await _reader.GetZoneAsync(request.CompanyId, cancellationToken);
 
         return new CompanyDayScheduleResponse
         {
             Date = request.Date,
             TimeZoneId = zone.Id,
-            Employees = employees
-                .Select(employee => new CompanyDayScheduleEmployeeResponse
-                {
-                    EmployeeId = employee.Id,
-                    FirstName = employee.FirstName,
-                    LastName = employee.LastName,
-                    Day = days[employee.Id],
-                })
-                .ToList(),
+            Employees =
+            [
+                .. employees
+                    .Select(employee => new CompanyDayScheduleEmployeeResponse
+                    {
+                        EmployeeId = employee.Id,
+                        FirstName = employee.FirstName,
+                        LastName = employee.LastName,
+                        Day = days[employee.Id],
+                    }),
+            ],
         };
     }
 }

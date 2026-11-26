@@ -11,7 +11,7 @@ public static class IntakeObservabilityTestData
 
     public static readonly TimeSpan Lag = TimeSpan.FromMinutes(minutes: 5);
 
-    public static readonly string LongGatewayId = new('a', LongTopicSegmentLength);
+    public static readonly string LongGatewayId = new(c: 'a', LongTopicSegmentLength);
 
     public static readonly HashSet<string> AllowedTagKeys =
     [
@@ -21,8 +21,8 @@ public static class IntakeObservabilityTestData
 
     public static string EnvelopeFailureJson => """{"metrics":{},"statuses":[]}""";
 
-    public static TheoryData<IntakeResultCase> Results => new()
-    {
+    public static TheoryData<IntakeResultCase> Results =>
+    [
         new IntakeResultCase { Result = ObservabilityConstants.Intake.Results.Stored },
         new IntakeResultCase
         {
@@ -38,5 +38,5 @@ public static class IntakeObservabilityTestData
         new IntakeResultCase { Result = ObservabilityConstants.Intake.Results.Duplicate, IsRepeated = true },
         new IntakeResultCase { Result = ObservabilityConstants.Intake.Results.Invalid, IsLongTopic = true },
         new IntakeResultCase { Result = ObservabilityConstants.Intake.Results.Failed, IsFailureArmed = true },
-    };
+    ];
 }

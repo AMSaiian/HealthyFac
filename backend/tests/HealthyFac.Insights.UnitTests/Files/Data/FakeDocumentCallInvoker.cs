@@ -21,9 +21,10 @@ public sealed class FakeDocumentCallInvoker(IDownstreamScopeHolder downstreamSco
         TRequest request
     )
     {
-        ScopesAtCall.Add(_downstreamScopes.Current.ToList());
+        ScopesAtCall.Add([.. _downstreamScopes.Current]);
 
         Task<TResponse> response;
+
         try
         {
             response = Task.FromResult((TResponse)Respond(request));

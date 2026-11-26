@@ -16,6 +16,7 @@ public static class OperatingPhaseUseCaseFixtureExtensions
         public async Task<Guid> CreatePhaseUseCaseAsync(CreateOperatingPhaseRequest request)
         {
             using var scope = fixture.CreateUserScope(request.CompanyId);
+
             var handler = scope.ServiceProvider
                 .GetRequiredService<IRequestHandler<CreateOperatingPhaseRequest, CreateOperatingPhaseResponse>>();
 
@@ -44,6 +45,7 @@ public static class OperatingPhaseUseCaseFixtureExtensions
         public async Task<OperatingPhaseResponse> GetPhaseUseCaseAsync(Guid companyId, Guid machineId, Guid phaseId)
         {
             using var scope = fixture.CreateUserScope(companyId);
+
             var handler = scope.ServiceProvider
                 .GetRequiredService<IRequestHandler<GetOperatingPhaseRequest, OperatingPhaseResponse>>();
 
@@ -54,6 +56,7 @@ public static class OperatingPhaseUseCaseFixtureExtensions
         public async Task<IReadOnlyList<OperatingPhaseResponse>> ListPhasesUseCaseAsync(Guid companyId, Guid machineId)
         {
             using var scope = fixture.CreateUserScope(companyId);
+
             var handler = scope.ServiceProvider
                 .GetRequiredService<IRequestHandler<ListOperatingPhasesRequest, ListOperatingPhasesResponse>>();
 

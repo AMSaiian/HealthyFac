@@ -32,6 +32,7 @@ public sealed class EmployeeShifts
     public IReadOnlyList<DaySchedule> Resolve(DateOnly from, DateOnly to)
     {
         var days = new List<DaySchedule>();
+
         for (var date = from; date <= to; date = date.AddDays(value: 1))
         {
             var shiftOverride = Overrides.SingleOrDefault(candidate => candidate.Date == date);

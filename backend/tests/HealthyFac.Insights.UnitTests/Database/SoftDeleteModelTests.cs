@@ -1,10 +1,12 @@
 using HealthyFac.Insights.UnitTests.Database.Data;
 using HealthyFac.Shared.Domain.Entities;
+using HealthyFac.Testing.Features;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace HealthyFac.Insights.UnitTests.Database;
 
+[Feature(TestFeatures.Persistence)]
 public sealed class SoftDeleteModelTests
 {
     [Fact]
@@ -34,7 +36,8 @@ public sealed class SoftDeleteModelTests
     }
 
     private static List<IEntityType> GetSoftDeletableEntityTypes() =>
-        InsightsModelFactory.GetEntityTypes()
-            .Where(entity => typeof(ISoftDeletable).IsAssignableFrom(entity.ClrType))
-            .ToList();
+    [
+        .. InsightsModelFactory.GetEntityTypes()
+            .Where(entity => typeof(ISoftDeletable).IsAssignableFrom(entity.ClrType)),
+    ];
 }

@@ -63,6 +63,7 @@ public sealed class RecordingHandler<TItem>(HandlerLog log, ScopedProbe probe) :
     public async Task HandleAsync(TItem item, ActivityContext parentContext, CancellationToken cancellationToken)
     {
         _log.Started.TrySetResult();
+
         if (_log.IsFailing(item.Number))
         {
             throw new InvalidOperationException(message: "The test handler fails.");
@@ -122,6 +123,7 @@ public static class BackgroundQueueTestHost
     )
     {
         var services = new ServiceCollection();
+
         services.AddLogging(builder =>
         {
             if (loggerProvider is not null)
@@ -129,8 +131,10 @@ public static class BackgroundQueueTestHost
                 builder.AddProvider(loggerProvider);
             }
         });
+
         services.AddSingleton(log);
         services.AddScoped<ScopedProbe>();
+
         if (hasDropObserver)
         {
             services.AddSingleton<IBackgroundItemDropObserver<QueueTestItem>, RecordingDropObserver>();
@@ -165,6 +169,7 @@ public static class BackgroundQueueTestHost
     public static async Task WaitUntilAsync(Func<bool> condition, CancellationToken cancellationToken)
     {
         var deadline = DateTimeOffset.UtcNow + Wait;
+
         while (!condition() && DateTimeOffset.UtcNow < deadline)
         {
             await Task.Delay(TimeSpan.FromMilliseconds(milliseconds: 20), cancellationToken);

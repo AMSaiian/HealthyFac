@@ -63,6 +63,7 @@ public sealed class FileUploader(IFileInspector inspector, IFileStorage storage,
         }
 
         var baseName = FileNames.ToBaseName(upload.ClientFileName)!;
+
         var fileRef = new FileRef(
             companyId,
             machineId,

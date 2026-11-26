@@ -22,7 +22,7 @@ function changeTab(page: EmployeesPage, tab: string): void {
   Reflect.apply(Reflect.get(page, 'onTabChange'), page, [tab]);
 }
 
-describe('EmployeesPage', () => {
+describe('EmployeesPage', { tags: ['Companies'] }, () => {
   const lastResult = signal<ActionResult | null>(null);
   const searchEmployees = vi.fn();
   const searchInvites = vi.fn();

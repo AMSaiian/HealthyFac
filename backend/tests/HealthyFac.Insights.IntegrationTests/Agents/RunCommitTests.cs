@@ -6,10 +6,12 @@ using HealthyFac.Insights.IntegrationTests.Cases;
 using HealthyFac.Insights.IntegrationTests.Cases.Data;
 using HealthyFac.Insights.Messaging.WorkOrders;
 using HealthyFac.Telemetry.Messaging.Signals;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Insights.IntegrationTests.Agents;
 
 [Collection(SignalCaseCollection.Name)]
+[Feature(TestFeatures.Cases)]
 public sealed class RunCommitTests(SignalCaseFixture fixture)
 {
     private readonly SignalCaseFixture _fixture = fixture;
@@ -42,9 +44,11 @@ public sealed class RunCommitTests(SignalCaseFixture fixture)
         await _fixture.RunAgentWorkerOnceAsync();
 
         var runs = await _fixture.LoadRunsAsync();
+
         runs.Single(candidate => candidate.Role == AgentRole.Planner)
             .ErrorCode.Should()
             .Be(AgentRunErrorCode.CaseChanged);
+
         runs.Should().NotContain(candidate => candidate.State == AgentRunState.Queued);
     }
 
@@ -81,6 +85,7 @@ public sealed class RunCommitTests(SignalCaseFixture fixture)
         await _fixture.AddQueuedRunAsync(AgentRole.Planner, (await _fixture.LoadCasesAsync()).Single().Id);
         var chat = _fixture.Inner.Ingest.Chat;
         var isChanged = false;
+
         chat.Before = async () =>
         {
             if (isChanged || chat.CallCount < 2)
@@ -92,6 +97,7 @@ public sealed class RunCommitTests(SignalCaseFixture fixture)
             await _fixture.HandleSignalAsync(change);
             await _fixture.DeleteQueuedRunsAsync();
         };
+
         chat.ScriptToolCall(
             callId: "call-1",
             ProposeWorkOrderToolRequest.ToolName,
@@ -100,6 +106,7 @@ public sealed class RunCommitTests(SignalCaseFixture fixture)
                "priority":"high",
               "category":"inspection","estimateMinutes":60}
               """);
+
         chat.ScriptText(text: "Done.");
     }
 }

@@ -4,10 +4,13 @@ using HealthyFac.Telemetry.IntegrationTests.Evaluation;
 using HealthyFac.Telemetry.IntegrationTests.Evaluation.Data;
 using HealthyFac.Telemetry.IntegrationTests.MachineRegistrations.Data;
 using HealthyFac.Telemetry.IntegrationTests.SignalEpisodes.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.IntegrationTests.SignalEpisodes;
 
 [Collection(TelemetryEvaluationCollection.Name)]
+[Feature(TestFeatures.Evaluation)]
+[Feature(TestFeatures.SignalModel)]
 public sealed class PhaseTimesReadTests(TelemetryEvaluationFixture fixture)
 {
     private const int HourSeconds = 3600;
@@ -18,14 +21,19 @@ public sealed class PhaseTimesReadTests(TelemetryEvaluationFixture fixture)
     public async Task GetPhaseTimes_WithIntervalsThatCrossTheRange_ClipsThemAndAddsUpToTheRangeWithUnknownAndNoData()
     {
         var arrangement = await _fixture.ArrangeEvaluationMachineAsync();
+
         var cutting = await _fixture.AddEvaluationPhaseAsync(
             arrangement, code: "cutting", priority: 0, arrangement.CuttingStatusId, isTracked: true, limits: null);
+
         await _fixture.AddPhaseIntervalAsync(
             arrangement.MachineId, cutting, _fixture.At(seconds: -600), _fixture.At(seconds: 600));
+
         await _fixture.AddPhaseIntervalAsync(
             arrangement.MachineId, phaseId: null, _fixture.At(seconds: 600), _fixture.At(seconds: 900));
+
         await _fixture.AddPhaseIntervalAsync(
             arrangement.MachineId, cutting, _fixture.At(seconds: 1800), _fixture.At(HourSeconds + 600));
+
         _fixture.Time.SetUtcNow(_fixture.At(HourSeconds * 2));
 
         var times = await _fixture.GetPhaseTimesUseCaseAsync(RangeRequest(arrangement.MachineId));
@@ -33,6 +41,7 @@ public sealed class PhaseTimesReadTests(TelemetryEvaluationFixture fixture)
         times.Phases.Single(phase => phase.PhaseId == cutting).Seconds.Should().Be(600 + (HourSeconds - 1800));
         times.UnknownModeSeconds.Should().Be(expected: 300);
         times.NoDataSeconds.Should().Be(expected: 900);
+
         (times.Phases.Sum(phase => phase.Seconds) + times.UnknownModeSeconds + times.NoDataSeconds)
             .Should()
             .Be(HourSeconds);
@@ -42,10 +51,13 @@ public sealed class PhaseTimesReadTests(TelemetryEvaluationFixture fixture)
     public async Task GetPhaseTimes_WithADeletedPhaseThatHasTime_KeepsItsNameWithTheDeletedFlag()
     {
         var arrangement = await _fixture.ArrangeEvaluationMachineAsync();
+
         var cutting = await _fixture.AddEvaluationPhaseAsync(
             arrangement, code: "cutting", priority: 0, arrangement.CuttingStatusId, isTracked: true, limits: null);
+
         await _fixture.AddPhaseIntervalAsync(
             arrangement.MachineId, cutting, _fixture.At(seconds: 0), _fixture.At(seconds: 300));
+
         await _fixture.SoftDeletePhaseAsync(cutting);
         _fixture.Time.SetUtcNow(_fixture.At(HourSeconds * 2));
 

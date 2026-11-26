@@ -2,6 +2,7 @@ using System.Net.WebSockets;
 using HealthyFac.Gateway.IntegrationTests.Hosting;
 using HealthyFac.Gateway.IntegrationTests.Realtime.Data;
 using HealthyFac.Shared.Web.Realtime;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Gateway.IntegrationTests.Realtime;
 
@@ -10,6 +11,8 @@ namespace HealthyFac.Gateway.IntegrationTests.Realtime;
 /// check of <c>WebSocketOptions.AllowedOrigins</c> runs only when the server has none.
 /// </remarks>
 [Collection(GatewayProxyCollection.Name)]
+[Feature(TestFeatures.Gateway)]
+[Feature(TestFeatures.Realtime)]
 public sealed class RealtimeOriginTests(GatewayEnvironment environment) : IAsyncLifetime
 {
     private const string ForeignOrigin = "http://evil.healthyfac.test:4200";
@@ -32,24 +35,15 @@ public sealed class RealtimeOriginTests(GatewayEnvironment environment) : IAsync
         await act.Should().ThrowAsync<WebSocketException>().WithMessage(expectedWildcardPattern: "*403*");
     }
 
-    [Fact]
-    public async Task Connect_FromListedOrigin_Succeeds()
+    [Theory]
+    [MemberData(nameof(RealtimeTestData.AcceptedOrigins), MemberType = typeof(RealtimeTestData))]
+    public async Task Connect_FromAcceptedOrigin_Succeeds(string caseName, string? origin)
     {
         await using var gateway = _environment.CreateGateway(_core);
 
-        using var socket = await ConnectAsync(gateway, GatewayFactory.DefaultCorsOrigin);
+        using var socket = await ConnectAsync(gateway, origin);
 
-        socket.State.Should().Be(WebSocketState.Open);
-    }
-
-    [Fact]
-    public async Task Connect_WithoutOrigin_Succeeds()
-    {
-        await using var gateway = _environment.CreateGateway(_core);
-
-        using var socket = await ConnectAsync(gateway, origin: null);
-
-        socket.State.Should().Be(WebSocketState.Open);
+        socket.State.Should().Be(WebSocketState.Open, caseName);
     }
 
     private static async Task<ClientWebSocket> ConnectAsync(GatewayFactory gateway, string? origin)
@@ -57,11 +51,14 @@ public sealed class RealtimeOriginTests(GatewayEnvironment environment) : IAsync
         gateway.UseKestrel(port: 0);
         using var client = gateway.CreateClient();
         var token = gateway.Tokens.CreateToken(RealtimeTestData.Claims(Guid.NewGuid()));
+
         var uri = new UriBuilder(new Uri(client.BaseAddress!, RealtimeConstants.HubPath))
         {
             Scheme = Uri.UriSchemeWs,
         }.Uri;
+
         var socket = new ClientWebSocket();
+
         if (origin is not null)
         {
             socket.Options.SetRequestHeader(headerName: "Origin", origin);

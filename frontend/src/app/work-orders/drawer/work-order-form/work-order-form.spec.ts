@@ -35,7 +35,7 @@ function setup(isEstimateReadOnly: boolean): { estimateReadOnly: () => boolean; 
   };
 }
 
-describe('WorkOrderForm', () => {
+describe('WorkOrderForm', { tags: ['WorkOrders'] }, () => {
   afterEach(() => {
     vi.unstubAllGlobals();
   });

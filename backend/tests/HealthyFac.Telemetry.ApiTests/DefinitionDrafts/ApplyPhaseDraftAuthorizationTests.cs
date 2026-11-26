@@ -1,10 +1,13 @@
 using System.Net;
 using HealthyFac.Telemetry.ApiTests.DefinitionDrafts.Data;
 using HealthyFac.Telemetry.ApiTests.Hosting;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.ApiTests.DefinitionDrafts;
 
 [Collection(TelemetryApiCollection.Name)]
+[Feature(TestFeatures.Drafts)]
+[Feature(TestFeatures.SignalModel)]
 public sealed class ApplyPhaseDraftAuthorizationTests(TelemetryApiFixture fixture)
 {
     private const string Path =

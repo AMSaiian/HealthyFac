@@ -69,6 +69,7 @@ internal sealed class InboxMessageRunner(
                 }
 
                 var message = await ClaimNextAsync(token);
+
                 if (message is null)
                 {
                     return null;
@@ -95,6 +96,7 @@ internal sealed class InboxMessageRunner(
             message: "Inbox message {MessageId} of type {MessageType} handled.",
             handled.Value.Id,
             handled.Value.Type);
+
         _metrics.RecordHandled(handled.Value.Type);
 
         return true;
@@ -119,6 +121,7 @@ internal sealed class InboxMessageRunner(
     private async Task HandleAsync(InboxMessage message, CancellationToken cancellationToken)
     {
         var startedAt = _timeProvider.GetTimestamp();
+
         using var activity = MessagingActivitySource.Instance
             .StartMessagingActivity(
                 ObservabilityConstants.Messaging.Operations.Process,

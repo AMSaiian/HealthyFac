@@ -29,20 +29,23 @@ public sealed class CapturingGeminiHandler : HttpMessageHandler, IHttpClientFact
         Paths.Add(request.RequestUri!.AbsolutePath);
         Bodies.Add(request.Content is null ? string.Empty : await request.Content.ReadAsStringAsync(cancellationToken));
 
-        var escaped = _answerText.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\n", "\\n");
+        var escaped = _answerText.Replace(oldValue: "\\", newValue: "\\\\")
+            .Replace(oldValue: "\"", newValue: "\\\"")
+            .Replace(oldValue: "\n", newValue: "\\n");
+
         var json = $$"""
-            {
-              "candidates": [
-                { "content": { "role": "model", "parts": [ { "text": "{{escaped}}" } ] },
-                  "finishReason": "STOP", "index": 0 }
-              ],
-              "usageMetadata": { "promptTokenCount": 1, "candidatesTokenCount": 1, "totalTokenCount": 2 }
-            }
-            """;
+                     {
+                       "candidates": [
+                         { "content": { "role": "model", "parts": [ { "text": "{{escaped}}" } ] },
+                           "finishReason": "STOP", "index": 0 }
+                       ],
+                       "usageMetadata": { "promptTokenCount": 1, "candidatesTokenCount": 1, "totalTokenCount": 2 }
+                     }
+                     """;
 
         return new HttpResponseMessage(HttpStatusCode.OK)
         {
-            Content = new StringContent(json, Encoding.UTF8, "application/json"),
+            Content = new StringContent(json, Encoding.UTF8, mediaType: "application/json"),
         };
     }
 }

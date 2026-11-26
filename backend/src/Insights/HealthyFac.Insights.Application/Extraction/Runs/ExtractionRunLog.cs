@@ -22,6 +22,7 @@ public sealed class ExtractionRunLog
     {
         Run = new AgentRun(AgentRole.Extractor, caseId: null, attemptId, startedAt);
         Run.Claim(startedAt, startedAt);
+
         Recorder = new ToolCallRecorder(
             Run.Id,
             (createRow, _) =>

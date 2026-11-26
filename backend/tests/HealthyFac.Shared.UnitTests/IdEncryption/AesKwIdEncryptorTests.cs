@@ -2,9 +2,11 @@ using System.Buffers.Text;
 using System.Security.Cryptography;
 using HealthyFac.Shared.Infrastructure.IdEncryption;
 using HealthyFac.Shared.UnitTests.IdEncryption.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.UnitTests.IdEncryption;
 
+[Feature(TestFeatures.Platform)]
 public sealed class AesKwIdEncryptorTests
 {
     [Theory]
@@ -33,7 +35,7 @@ public sealed class AesKwIdEncryptorTests
         var id = Guid.CreateVersion7();
         var encrypted = encryptor.Encrypt(id);
 
-        var token = encrypted.Substring(AesKwIdEncryptorTestData.VersionPrefixLength);
+        var token = encrypted[AesKwIdEncryptorTestData.VersionPrefixLength..];
         var rawBytes = Base64Url.DecodeFromChars(token);
 
         rawBytes[byteIndex] ^= 0x01;
@@ -101,8 +103,9 @@ public sealed class AesKwIdEncryptorTests
         var encryptor = new AesKwIdEncryptor(key);
 
         var encryptedToken = encryptor.Encrypt(plaintextGuid);
+
         var rawCiphertext = Base64Url.DecodeFromChars(
-            encryptedToken.Substring(AesKwIdEncryptorTestData.VersionPrefixLength)
+            encryptedToken.AsSpan(AesKwIdEncryptorTestData.VersionPrefixLength)
         );
 
         rawCiphertext.Should().Equal(expectedCiphertext);

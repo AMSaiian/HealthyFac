@@ -4,10 +4,12 @@ using HealthyFac.Insights.ApiTests.Hosting;
 using HealthyFac.Insights.ApiTests.Ingest.Data;
 using HealthyFac.Insights.Application.Ingest;
 using HealthyFac.Insights.Domain.Ingest;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Insights.ApiTests.Ingest;
 
 [Collection(InsightsApiCollection.Name)]
+[Feature(TestFeatures.Ingest)]
 public sealed class ReadIngestAttemptsApiTests(InsightsApiFixture fixture)
 {
     private const string ItemsProperty = "items";
@@ -20,8 +22,10 @@ public sealed class ReadIngestAttemptsApiTests(InsightsApiFixture fixture)
     {
         var oldest = await _fixture.ArrangeAttemptAsync(
             IngestState.Interrupted, queuedAt: StartIngestAttemptTestData.ChangedAt);
+
         var newest = await _fixture.ArrangeAttemptAsync(
             IngestState.Interrupted, queuedAt: StartIngestAttemptTestData.ChangedAt.AddHours(value: 2));
+
         var middle = await _fixture.ArrangeAttemptAsync(
             IngestState.Interrupted, queuedAt: StartIngestAttemptTestData.ChangedAt.AddHours(value: 1));
 
@@ -64,11 +68,13 @@ public sealed class ReadIngestAttemptsApiTests(InsightsApiFixture fixture)
             HttpMethod.Get,
             ReadIngestAttemptsTestData.AttemptPath(_fixture.IdEncryptor.Encrypt(attemptId)),
             _fixture.CreateIngestClaims(StartIngestAttemptTestData.ReadPermission));
+
         var content = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
         using var document = JsonDocument.Parse(content);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         document.RootElement.GetProperty(propertyName: "state").GetString().Should().Be(IngestState.Failed.Value);
+
         document.RootElement.GetProperty(propertyName: "errorCode")
             .GetString()
             .Should()
@@ -96,16 +102,17 @@ public sealed class ReadIngestAttemptsApiTests(InsightsApiFixture fixture)
     public async Task Read_WithoutReadPermission_Returns403(string caseName, string pathTemplate)
     {
         var attemptId = await _fixture.ArrangeAttemptAsync(IngestState.Queued);
+
         var path = pathTemplate
-            .Replace("{fileId}", _fixture.IdEncryptor.Encrypt(StartIngestAttemptTestData.FileId))
-            .Replace("{attemptId}", _fixture.IdEncryptor.Encrypt(attemptId));
+            .Replace(oldValue: "{fileId}", _fixture.IdEncryptor.Encrypt(StartIngestAttemptTestData.FileId))
+            .Replace(oldValue: "{attemptId}", _fixture.IdEncryptor.Encrypt(attemptId));
 
         var response = await _fixture.SendRequestAsync(
             HttpMethod.Get,
             path,
             _fixture.CreateIngestClaims(StartIngestAttemptTestData.WritePermission));
 
-        response.StatusCode.Should().Be(HttpStatusCode.Forbidden, because: caseName);
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden, caseName);
     }
 
     private Task<HttpResponseMessage> GetFileAttemptsAsync() =>
@@ -119,9 +126,11 @@ public sealed class ReadIngestAttemptsApiTests(InsightsApiFixture fixture)
         var content = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
         using var document = JsonDocument.Parse(content);
 
-        return document.RootElement.GetProperty(ItemsProperty)
-            .EnumerateArray()
-            .Select(item => _fixture.IdEncryptor.Decrypt(item.GetProperty(IdProperty).GetString()!))
-            .ToList();
+        return
+        [
+            .. document.RootElement.GetProperty(ItemsProperty)
+                .EnumerateArray()
+                .Select(item => _fixture.IdEncryptor.Decrypt(item.GetProperty(IdProperty).GetString()!)),
+        ];
     }
 }

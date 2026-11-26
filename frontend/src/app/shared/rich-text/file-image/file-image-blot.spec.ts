@@ -15,7 +15,7 @@ async function settle(): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, 0));
 }
 
-describe('FileImageBlot', () => {
+describe('FileImageBlot', { tags: ['Platform'] }, () => {
   it('value_OfAnInsertedImage_ReturnsTheIdAndTheAltWithoutSrc', () => {
     const quill = createQuill();
 

@@ -32,14 +32,16 @@ public sealed class RealtimePusherHost : IAsyncDisposable
     {
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions { EnvironmentName = TestEnvironment });
         builder.WebHost.UseTestServer();
+
         builder.Configuration.AddInMemoryCollection(
             new Dictionary<string, string?>
             {
                 [GatewaySettingKeys.RedisConnectionString] = redisConnectionString,
-                [key: "IdEncryption:Keys:0:Prefix"] = "v1_",
-                [key: "IdEncryption:Keys:0:Key"] = IdEncryptionKey,
-                [key: "IdEncryption:Keys:0:IsDefault"] = bool.TrueString,
+                ["IdEncryption:Keys:0:Prefix"] = "v1_",
+                ["IdEncryption:Keys:0:Key"] = IdEncryptionKey,
+                ["IdEncryption:Keys:0:IsDefault"] = bool.TrueString,
             });
+
         builder.Services.AddSharedTime();
         builder.Services.AddIdEncryption(builder.Configuration);
         builder.Services.AddSharedRealtime(builder.Configuration);

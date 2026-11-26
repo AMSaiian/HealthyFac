@@ -38,6 +38,7 @@ public sealed class AgentFakes
         services.AddKeyedSingleton<IChatClient>(AiClientKeys.Triage, TriageChat);
         services.AddSingleton<ITelemetrySignals>(Telemetry);
         services.AddScoped<IAgentRunner, ThrowingScreenerRunner>();
+
         services.AddScoped<IWorkOrderCatalog>(provider => new ScopedWorkOrderCatalog(
             WorkOrders, provider.GetRequiredService<IDownstreamScopeHolder>()));
     }
@@ -51,7 +52,8 @@ public sealed class AgentFakes
             CancellationToken cancellationToken
         )
         {
-            shared.Calls.Add(new WorkOrderCall(machineId, limit, scopes.Current.ToList()));
+            shared.Calls.Add(new WorkOrderCall(machineId, limit, [.. scopes.Current]));
+
             if (shared.Failure is not null)
             {
                 throw shared.Failure;
@@ -140,6 +142,6 @@ public sealed class FakeTelemetrySignals : ITelemetrySignals
     {
         EpisodeCalls.Add((machineId, from, to));
 
-        return Task.FromResult<IReadOnlyList<SignalEpisodeInfo>>(Episodes.ToList());
+        return Task.FromResult<IReadOnlyList<SignalEpisodeInfo>>([.. Episodes]);
     }
 }

@@ -32,6 +32,7 @@ public sealed class AgentRunLease(
     public async Task RenewAsync(AgentRun run, CancellationToken cancellationToken)
     {
         var leaseUntil = _timeProvider.GetUtcNow().UtcDateTime.AddSeconds(_options.RunLeaseSeconds);
+
         var rowCount = await _dbContext.AgentRuns
             .Where(candidate => candidate.Id == run.Id && candidate.State == AgentRunState.Running)
             .ExecuteUpdateAsync(
@@ -48,6 +49,7 @@ public sealed class AgentRunLease(
             .Where(candidate => candidate.Id == run.Id)
             .Select(candidate => candidate.RowVersion)
             .SingleAsync(cancellationToken);
+
         var entry = _dbContext.Entry(run);
         entry.Property(candidate => candidate.RowVersion).OriginalValue = rowVersion;
         entry.Property(candidate => candidate.LeaseUntil).OriginalValue = leaseUntil;

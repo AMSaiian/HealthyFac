@@ -18,7 +18,7 @@ function run(input: string, expected: string): void {
   });
 }
 
-describe('delayedVisibility', () => {
+describe('delayedVisibility', { tags: ['Platform'] }, () => {
   it('delayedVisibility_WithBusyShorterThanShowAfter_NeverShows', () => {
     run('t 99ms f', 'f');
   });

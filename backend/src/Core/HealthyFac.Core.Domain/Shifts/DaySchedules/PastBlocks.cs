@@ -24,8 +24,10 @@ public static class PastBlocks
     {
         var oldBlocks = JoinTouching(before);
         var newBlocks = JoinTouching(after);
+
         var isPastKept = oldBlocks.Where(block => block.Start <= nowUtc)
             .All(block => HasPastTwin(block, newBlocks, nowUtc));
+
         var isNewStartLate = newBlocks.Where(block => block.Start < nowUtc)
             .All(block => HasPastTwin(block, oldBlocks, nowUtc));
 

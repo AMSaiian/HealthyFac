@@ -13,6 +13,7 @@ public static class CompanyApiFixtureExtensions
         public async Task<HttpResponseMessage> GetCompanyAsync(TestTokenClaims? claims)
         {
             using var client = fixture.CreateClient();
+
             if (claims is not null)
             {
                 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(

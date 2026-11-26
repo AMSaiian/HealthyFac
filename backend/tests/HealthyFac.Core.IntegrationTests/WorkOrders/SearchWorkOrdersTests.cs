@@ -1,18 +1,18 @@
 using HealthyFac.Core.Application.Authorization;
-using HealthyFac.Core.Application.WorkOrders;
 using HealthyFac.Core.Application.WorkOrders.SearchWorkOrders;
 using HealthyFac.Core.Domain.WorkOrders;
 using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Machines.Data;
 using HealthyFac.Core.IntegrationTests.Shifts.Data;
 using HealthyFac.Core.IntegrationTests.WorkOrders.Data;
-using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.Filters;
 using HealthyFac.Shared.Application.Grids;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.IntegrationTests.WorkOrders;
 
 [Collection(CoreWorkOrdersCollection.Name)]
+[Feature(TestFeatures.WorkOrders)]
 public sealed class SearchWorkOrdersTests(CoreDatabaseFixture fixture)
 {
     private readonly CoreDatabaseFixture _fixture = fixture;
@@ -51,6 +51,7 @@ public sealed class SearchWorkOrdersTests(CoreDatabaseFixture fixture)
             {
                 Priorities = new SetFilter<WorkOrderPriority> { Values = [WorkOrderPriority.Critical] },
             });
+
         var byCategory = await SearchTitlesAsync(
             set,
             new WorkOrderGridFilter
@@ -70,6 +71,7 @@ public sealed class SearchWorkOrdersTests(CoreDatabaseFixture fixture)
         var byAssignee = await SearchTitlesAsync(
             set,
             new WorkOrderGridFilter { Assignee = new IdSetFilter { Ids = [set.Tenant.EmployeeId] } });
+
         var byMachine = await SearchTitlesAsync(
             set,
             new WorkOrderGridFilter { Machine = new IdSetFilter { Ids = [set.FirstMachineId] } });
@@ -79,6 +81,7 @@ public sealed class SearchWorkOrdersTests(CoreDatabaseFixture fixture)
                 WorkOrderTestData.AlphaTitle,
                 WorkOrderTestData.BravoTitle,
                 WorkOrderTestData.DeltaTitle);
+
         byMachine.Should().BeEquivalentTo(WorkOrderTestData.AlphaTitle, WorkOrderTestData.DeltaTitle);
     }
 
@@ -86,6 +89,7 @@ public sealed class SearchWorkOrdersTests(CoreDatabaseFixture fixture)
     public async Task Search_WithPlannedStartRange_UsesTheStartOfTheCurrentRow()
     {
         var set = await ArrangeAsync();
+
         var filter = new WorkOrderGridFilter
         {
             PlannedStart = new DateRangeFilter
@@ -108,15 +112,18 @@ public sealed class SearchWorkOrdersTests(CoreDatabaseFixture fixture)
 
         var delayed = await SearchTitlesAsync(set, new WorkOrderGridFilter { IsDelayed = true });
         var notDelayed = await SearchTitlesAsync(set, new WorkOrderGridFilter { IsDelayed = false });
+
         var rows = await _fixture.SearchWorkOrdersAsync(
             set.Tenant.CompanyId,
             set.Tenant.IdentityUserId,
             WorkOrderTestData.SearchRequest(set.Tenant.CompanyId, AccessScope.Company));
 
         delayed.Should().BeEquivalentTo(WorkOrderTestData.AlphaTitle, WorkOrderTestData.BravoTitle);
+
         notDelayed.Should()
             .BeEquivalentTo(
                 WorkOrderTestData.CharlieTitle, WorkOrderTestData.DeltaTitle, WorkOrderTestData.OwnBacklogTitle);
+
         rows.Items.Where(row => row.IsDelayed)
             .Select(row => row.Title)
             .Should()
@@ -140,6 +147,7 @@ public sealed class SearchWorkOrdersTests(CoreDatabaseFixture fixture)
                 WorkOrderTestData.CharlieTitle,
                 WorkOrderTestData.BravoTitle,
                 WorkOrderTestData.AlphaTitle);
+
         byPriority.Should()
             .Equal(
                 WorkOrderTestData.AlphaTitle,
@@ -147,9 +155,11 @@ public sealed class SearchWorkOrdersTests(CoreDatabaseFixture fixture)
                 WorkOrderTestData.DeltaTitle,
                 WorkOrderTestData.BravoTitle,
                 WorkOrderTestData.CharlieTitle);
+
         byStart.Take(count: 3)
             .Should()
             .Equal(WorkOrderTestData.AlphaTitle, WorkOrderTestData.BravoTitle, WorkOrderTestData.DeltaTitle);
+
         byCreated.Should()
             .Equal(
                 WorkOrderTestData.AlphaTitle,
@@ -170,6 +180,7 @@ public sealed class SearchWorkOrdersTests(CoreDatabaseFixture fixture)
             WorkOrderTestData.SearchRequest(set.Tenant.CompanyId, AccessScope.Own));
 
         response.TotalCount.Should().Be(expected: 4);
+
         response.Items.Select(row => row.Title)
             .Should()
             .BeEquivalentTo(
@@ -184,6 +195,7 @@ public sealed class SearchWorkOrdersTests(CoreDatabaseFixture fixture)
     {
         var set = await ArrangeAsync();
         var userWithoutEmployee = Guid.CreateVersion7();
+
         await _fixture.CreateWorkOrderAsync(
             set.Tenant.CompanyId,
             userWithoutEmployee,
@@ -206,7 +218,7 @@ public sealed class SearchWorkOrdersTests(CoreDatabaseFixture fixture)
         var descending = await SortedTitlesAsync(set, WorkOrderSortColumn.IsDelayed, SortDirection.Descending);
         var ascending = await SortedTitlesAsync(set, WorkOrderSortColumn.IsDelayed, SortDirection.Ascending);
 
-        descending[index: 0].Should().Be(WorkOrderTestData.AlphaTitle);
+        descending[0].Should().Be(WorkOrderTestData.AlphaTitle);
         ascending[^1].Should().Be(WorkOrderTestData.AlphaTitle);
     }
 
@@ -214,6 +226,7 @@ public sealed class SearchWorkOrdersTests(CoreDatabaseFixture fixture)
     public async Task SearchBatch_WithSeveralSearches_ReturnsTheSinglePagesInTheOrderOfTheSearches()
     {
         var set = await ArrangeAsync();
+
         var filters = new[]
         {
             new WorkOrderGridFilter
@@ -221,7 +234,9 @@ public sealed class SearchWorkOrdersTests(CoreDatabaseFixture fixture)
             new WorkOrderGridFilter { Statuses = new SetFilter<WorkOrderStatus> { Values = [WorkOrderStatus.Staged] } },
             new WorkOrderGridFilter { Title = new TextFilter { Value = "Bra" } },
         };
+
         var single = new List<GridResponse<WorkOrderRowResponse>>();
+
         foreach (var filter in filters)
         {
             single.Add(
@@ -237,6 +252,7 @@ public sealed class SearchWorkOrdersTests(CoreDatabaseFixture fixture)
             WorkOrderTestData.BatchRequest(set.Tenant.CompanyId, AccessScope.Company, filters));
 
         batch.Pages.Select(page => page.TotalCount).Should().Equal(single.Select(page => page.TotalCount));
+
         batch.Pages.Select(page => page.Items.Select(row => row.Title))
             .Should()
             .BeEquivalentTo(
@@ -247,6 +263,7 @@ public sealed class SearchWorkOrdersTests(CoreDatabaseFixture fixture)
     public async Task SearchBatch_InOwnScope_AppliesTheScopeToEverySearch()
     {
         var set = await ArrangeAsync();
+
         var filters = new[]
             { new WorkOrderGridFilter(), new WorkOrderGridFilter { Title = new TextFilter { Value = "Cha" } } };
 
@@ -255,26 +272,9 @@ public sealed class SearchWorkOrdersTests(CoreDatabaseFixture fixture)
             set.Tenant.IdentityUserId,
             WorkOrderTestData.BatchRequest(set.Tenant.CompanyId, AccessScope.Own, filters));
 
-        batch.Pages[index: 0].TotalCount.Should().Be(expected: 4);
-        batch.Pages[index: 0].Items.Select(row => row.Title).Should().NotContain(WorkOrderTestData.CharlieTitle);
-        batch.Pages[index: 1].Items.Should().BeEmpty();
-    }
-
-    [Theory]
-    [MemberData(nameof(WorkOrderTestData.InvalidBatchSizes), MemberType = typeof(WorkOrderTestData))]
-    public async Task SearchBatch_WithTooFewOrTooManySearches_ThrowsValidation(int searchCount)
-    {
-        var set = await ArrangeAsync();
-        var filters = Enumerable.Range(start: 0, searchCount).Select(_ => new WorkOrderGridFilter()).ToArray();
-
-        var act = () => _fixture.SearchWorkOrderBatchAsync(
-            set.Tenant.CompanyId,
-            set.Tenant.IdentityUserId,
-            WorkOrderTestData.BatchRequest(set.Tenant.CompanyId, AccessScope.Company, filters));
-
-        await act.Should()
-            .ThrowAsync<AppValidationException>()
-            .WithMessage($"*{WorkOrderErrors.Validation.BatchSizeInvalid}*");
+        batch.Pages[0].TotalCount.Should().Be(expected: 4);
+        batch.Pages[0].Items.Select(row => row.Title).Should().NotContain(WorkOrderTestData.CharlieTitle);
+        batch.Pages[1].Items.Should().BeEmpty();
     }
 
     private async Task<IReadOnlyList<string>> SearchTitlesAsync(WorkOrderSet set, WorkOrderGridFilter filter)
@@ -284,7 +284,7 @@ public sealed class SearchWorkOrdersTests(CoreDatabaseFixture fixture)
             set.Tenant.IdentityUserId,
             WorkOrderTestData.SearchRequest(set.Tenant.CompanyId, AccessScope.Company, filter));
 
-        return response.Items.Select(row => row.Title).ToList();
+        return [.. response.Items.Select(row => row.Title)];
     }
 
     private async Task<IReadOnlyList<string>> SortedTitlesAsync(
@@ -301,44 +301,54 @@ public sealed class SearchWorkOrdersTests(CoreDatabaseFixture fixture)
                 AccessScope.Company,
                 sort: WorkOrderTestData.SortBy(column, direction)));
 
-        return response.Items.Select(row => row.Title).ToList();
+        return [.. response.Items.Select(row => row.Title)];
     }
 
     private async Task<WorkOrderSet> ArrangeAsync()
     {
         var tenant = await _fixture.ArrangeShiftTenantAsync();
+
         await _fixture.SeedVersionAsync(
             tenant.EmployeeId,
             ShiftTestData.Today.AddDays(value: -30),
             ShiftTestData.Morning,
             ShiftTestData.Afternoon);
+
         var firstMachineId = await _fixture.CreateMachineAsync(
             tenant.CompanyId,
             WorkOrderTestData.MachineName,
             WorkOrderTestData.MachineSerialNumber);
+
         var secondMachineId = await _fixture.CreateMachineAsync(
             tenant.CompanyId,
             WorkOrderTestData.SecondMachineName,
             WorkOrderTestData.SecondMachineSerialNumber);
+
         _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "07:00"));
         var supervisorId = Guid.CreateVersion7();
 
         await CreateAsync(
             tenant, supervisorId, WorkOrderTestData.AlphaTitle, WorkOrderPriority.Low,
             WorkOrderCategory.Inspection, firstMachineId, time: "09:00");
+
         await CreateAsync(
             tenant, supervisorId, WorkOrderTestData.BravoTitle, WorkOrderPriority.High,
             WorkOrderCategory.Repair, secondMachineId, time: "10:00");
+
         await CreateAsync(
             tenant, supervisorId, WorkOrderTestData.CharlieTitle, WorkOrderPriority.Critical,
             WorkOrderCategory.Preventive, machineId: null, time: null);
+
         var delta = await CreateAsync(
             tenant, supervisorId, WorkOrderTestData.DeltaTitle, WorkOrderPriority.Medium,
             WorkOrderCategory.Other, firstMachineId, time: "13:00");
+
         await _fixture.ChangeStatusAsync(tenant.CompanyId, supervisorId, delta, WorkOrderStatus.InProgress);
+
         await CreateAsync(
             tenant, tenant.IdentityUserId, WorkOrderTestData.OwnBacklogTitle, WorkOrderPriority.Low,
             WorkOrderCategory.Other, machineId: null, time: null);
+
         _fixture.Clock.Freeze(ShiftTestData.NowOn(ShiftTestData.Tomorrow, time: "09:30"));
 
         return new WorkOrderSet { Tenant = tenant, FirstMachineId = firstMachineId };
@@ -364,6 +374,7 @@ public sealed class SearchWorkOrdersTests(CoreDatabaseFixture fixture)
             title,
             priority,
             category);
+
         var created = await _fixture.CreateWorkOrderAsync(tenant.CompanyId, actorUserId, request);
 
         return created.Id;

@@ -201,6 +201,7 @@ public class WorkOrder : IEntity, IAuditable, ISoftDeletable, IVersioned
     public void Assign(Guid assigneeId, DateTime plannedStartLocal, DateTime plannedStartUtc)
     {
         var status = Current.Status;
+
         if (status != WorkOrderStatus.Backlog)
         {
             throw WorkOrderStateErrors.NotInBacklog(Id, status);
@@ -244,6 +245,7 @@ public class WorkOrder : IEntity, IAuditable, ISoftDeletable, IVersioned
     public void ChangeStatus(WorkOrderStatus status)
     {
         var current = Current;
+
         if (status == WorkOrderStatus.Backlog)
         {
             throw WorkOrderStateErrors.StatusIsBacklog(Id);
@@ -278,6 +280,7 @@ public class WorkOrder : IEntity, IAuditable, ISoftDeletable, IVersioned
         var removedLinks = _files.Where(link => !wantedIds.Contains(link.FileId)).ToList();
         _files.RemoveAll(removedLinks.Contains);
         var existingIds = _files.Select(link => link.FileId).ToHashSet();
+
         _files.AddRange(
             wantedIds.Where(fileId => !existingIds.Contains(fileId)).Select(fileId => new WorkOrderFile(Id, fileId)));
 
@@ -299,8 +302,10 @@ public class WorkOrder : IEntity, IAuditable, ISoftDeletable, IVersioned
     )
     {
         var revision = CurrentRevision + 1;
+
         _history.Add(
             new WorkOrderHistory(Id, revision, status, assigneeId, plannedStartLocal, plannedStartUtc, Estimate));
+
         CurrentRevision = revision;
     }
 }

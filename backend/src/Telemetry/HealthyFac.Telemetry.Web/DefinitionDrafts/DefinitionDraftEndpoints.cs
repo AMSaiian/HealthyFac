@@ -38,24 +38,32 @@ public static class DefinitionDraftEndpoints
             app.MapGroup(DefinitionDraftRoutes.MachineDraftsRoute)
                 .MapPost(DefinitionDraftRoutes.Search, SearchMachineDraftsAsync)
                 .RequireAuthorization(TelemetryPermissions.DefinitionDrafts.Read);
+
             app.MapGroup(DefinitionDraftRoutes.AttemptDraftsRoute)
                 .MapPost(DefinitionDraftRoutes.Search, SearchAttemptDraftsAsync)
                 .RequireAuthorization(TelemetryPermissions.DefinitionDrafts.Read);
+
             app.MapGroup(DefinitionDraftRoutes.AttemptDraftsRoute)
                 .MapGet(DefinitionDraftRoutes.Root, GetAttemptDraftsAsync)
                 .RequireAuthorization(TelemetryPermissions.DefinitionDrafts.Read);
+
             var drafts = app.MapGroup(DefinitionDraftRoutes.DraftBaseRoute);
+
             drafts.MapGet(DefinitionDraftRoutes.PendingCounts, GetPendingCountsAsync)
                 .RequireAuthorization(TelemetryPermissions.DefinitionDrafts.Read);
+
             drafts.MapPost(DefinitionDraftRoutes.Dismiss, DismissAsync)
                 .RequireAuthorization(TelemetryPermissions.DefinitionDrafts.Write);
+
             app.MapGroup(DefinitionDraftRoutes.MachineDraftsRoute)
                 .MapPost(DefinitionDraftRoutes.ApplyPhase, ApplyPhaseAsync)
                 .RequireAuthorization(TelemetryPermissions.DefinitionDrafts.Write)
                 .RequireAuthorization(TelemetryPermissions.OperatingPhases.Write);
+
             app.MapGroup(DefinitionDraftRoutes.MachineDraftsRoute)
                 .MapPost(DefinitionDraftRoutes.DismissAll, DismissMachineDraftsAsync)
                 .RequireAuthorization(TelemetryPermissions.DefinitionDrafts.Write);
+
             app.MapGroup(DefinitionDraftRoutes.AttemptDraftsRoute)
                 .MapPost(DefinitionDraftRoutes.DismissAll, DismissAttemptDraftsAsync)
                 .RequireAuthorization(TelemetryPermissions.DefinitionDrafts.Write);

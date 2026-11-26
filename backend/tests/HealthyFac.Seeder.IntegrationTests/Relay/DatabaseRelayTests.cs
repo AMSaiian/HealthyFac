@@ -3,11 +3,14 @@ using HealthyFac.Seeder.IntegrationTests.Hosting;
 using HealthyFac.Seeder.IntegrationTests.Relay.Data;
 using HealthyFac.Shared.Infrastructure.Messaging.Receiving;
 using HealthyFac.Telemetry.Application.MachineRegistrations;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Seeder.IntegrationTests.Relay;
 
 [Collection(SeederCollection.Name)]
+[Feature(TestFeatures.Seeding)]
+[Feature(TestFeatures.Messaging)]
 public sealed class DatabaseRelayTests(SeederFixture fixture)
 {
     private readonly SeederFixture _fixture = fixture;
@@ -17,8 +20,10 @@ public sealed class DatabaseRelayTests(SeederFixture fixture)
     {
         await _fixture.InitializeHostsAsync(TestContext.Current.CancellationToken);
         var (companyId, machineId) = await _fixture.CreateMachineAsync();
+
         await _fixture.Hosts.CreateRelay()
             .RunAsync(eventItem: "machines.json#press-1", TestContext.Current.CancellationToken);
+
         var queued = await _fixture.QueueStateChangesAsync(companyId, machineId, count: 1);
 
         await _fixture.Hosts.CreateRelay()
@@ -34,7 +39,7 @@ public sealed class DatabaseRelayTests(SeederFixture fixture)
         received.CompanyId.Should().Be(companyId);
         received.ProcessedOn.Should().NotBeNull();
         sent.ProcessedOn.Should().NotBeNull();
-        received.ReadStateChange().StartedAt.Should().Be(queued[index: 0].StartedAt);
+        received.ReadStateChange().StartedAt.Should().Be(queued[0].StartedAt);
     }
 
     [Fact(Explicit = true)]
@@ -55,17 +60,21 @@ public sealed class DatabaseRelayTests(SeederFixture fixture)
     {
         await _fixture.InitializeHostsAsync(TestContext.Current.CancellationToken);
         var (companyId, machineId) = await _fixture.CreateMachineAsync();
+
         await _fixture.Hosts.CreateRelay()
             .RunAsync(eventItem: "machines.json#press-1", TestContext.Current.CancellationToken);
+
         var queued = await _fixture.QueueStateChangesAsync(companyId, machineId, count: 3);
 
         await _fixture.Hosts.CreateRelay()
             .RunAsync(eventItem: "machines.json#press-1-state", TestContext.Current.CancellationToken);
 
         var telemetryInbox = await _fixture.LoadInboxAsync(_fixture.Hosts.Telemetry);
+
         var receivedStarts = telemetryInbox
             .Where(message => message.Type == MachineStateChanged.MessageType)
             .Select(message => message.ReadStateChange().StartedAt);
+
         receivedStarts.Should().Equal(queued.Select(message => message.StartedAt));
     }
 
@@ -74,9 +83,12 @@ public sealed class DatabaseRelayTests(SeederFixture fixture)
     {
         await _fixture.InitializeHostsAsync(TestContext.Current.CancellationToken);
         var (companyId, _) = await _fixture.CreateMachineAsync();
+
         await _fixture.Hosts.CreateRelay()
             .RunAsync(eventItem: "machines.json#press-1", TestContext.Current.CancellationToken);
+
         _fixture.EnterNextMoment(item: "unknown-machine");
+
         await _fixture.AddToCoreOutboxAsync(
             companyId,
             [
@@ -105,9 +117,12 @@ public sealed class DatabaseRelayTests(SeederFixture fixture)
     {
         await _fixture.InitializeHostsAsync(TestContext.Current.CancellationToken);
         var (companyId, machineId) = await _fixture.CreateMachineAsync();
+
         await _fixture.Hosts.CreateRelay()
             .RunAsync(eventItem: "machines.json#press-1", TestContext.Current.CancellationToken);
+
         _fixture.EnterNextMoment(item: "empty-company");
+
         await _fixture.AddToCoreOutboxAsync(
             companyId,
             [
@@ -129,6 +144,7 @@ public sealed class DatabaseRelayTests(SeederFixture fixture)
             .WithMessage(
                 $"*{RelayTestData.TelemetryService}*{MachineStateChanged.MessageType}*machines.json#empty-company*"
                 + $"{MachineMessageErrors.Validation.CompanyIdRequired}*");
+
         exception.Which.Message.Should().NotContain(MachineRegistrationErrors.RegistrationNotFound);
     }
 
@@ -139,6 +155,7 @@ public sealed class DatabaseRelayTests(SeederFixture fixture)
         var messageId = Guid.CreateVersion7();
         using var scope = _fixture.Hosts.Telemetry.CreateScope(SeederTestData.InitializationActor);
         var inbox = scope.ServiceProvider.GetRequiredService<IInbox>();
+
         await inbox.TryAddAsync(
             messageId, type: "core.v1:Other", payload: "{}", traceParent: null, Guid.NewGuid(), companyId: null,
             TestContext.Current.CancellationToken);

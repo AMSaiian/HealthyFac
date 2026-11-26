@@ -31,6 +31,7 @@ public sealed class MailpitFixture : IAsyncLifetime
                     [$"{SmtpOptions.SectionName}:FromName"] = EmailTestData.FromName,
                 })
             .Build();
+
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddSmtpEmail(configuration);

@@ -1,6 +1,6 @@
 import { visibleText, visibleTextLength } from './rich-text-length';
 
-describe('visibleText', () => {
+describe('visibleText', { tags: ['Platform'] }, () => {
   it('visibleText_WithParagraphsAndEntities_ReturnsJoinedDecodedText', () => {
     const text = visibleText('<p>Tom &amp; Jerry</p><p>a &lt; b</p>');
 
@@ -8,7 +8,7 @@ describe('visibleText', () => {
   });
 });
 
-describe('visibleTextLength', () => {
+describe('visibleTextLength', { tags: ['Platform'] }, () => {
   it('visibleTextLength_WithNull_ReturnsZero', () => {
     const length = visibleTextLength(null);
 

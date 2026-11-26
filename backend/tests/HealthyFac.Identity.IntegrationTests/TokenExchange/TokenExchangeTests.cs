@@ -1,10 +1,12 @@
 using System.Net;
 using HealthyFac.Identity.IntegrationTests.Realm.Data;
 using HealthyFac.Identity.IntegrationTests.TokenExchange.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Identity.IntegrationTests.TokenExchange;
 
 [Collection(KeycloakRealmCollection.Name)]
+[Feature(TestFeatures.Identity)]
 public sealed class TokenExchangeTests(KeycloakRealmCollectionFixture fixture)
 {
     private readonly TokenExchangeFixture _fixture = fixture.TokenExchange;
@@ -22,16 +24,20 @@ public sealed class TokenExchangeTests(KeycloakRealmCollectionFixture fixture)
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var claims = response.AccessTokenClaims();
         claims.Audiences().Should().Equal(TokenExchangeTestData.TargetClientId);
+
         claims[TokenExchangeTestData.SubjectClaim]!.GetValue<string>()
             .Should()
             .Be(RealmTestData.SupervisorIdentityId.ToString());
+
         claims[TokenExchangeTestData.OrganizationClaim]!.AsArray()
             .Select(value => value!.GetValue<string>())
             .Should()
             .Equal(RealmTestData.CompanyId.ToString());
+
         claims[RealmTestData.EmployeeIdAttribute]!.GetValue<string>()
             .Should()
             .Be(RealmTestData.SupervisorEmployeeId.ToString());
+
         claims[RealmTestData.PermissionsClaim]!.AsArray()
             .Select(value => value!.GetValue<string>())
             .Should()
@@ -50,6 +56,7 @@ public sealed class TokenExchangeTests(KeycloakRealmCollectionFixture fixture)
             RealmTestData.InternalHost);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
+
         response.AccessTokenClaims()[TokenExchangeTestData.IssuerClaim]!.GetValue<string>()
             .Should()
             .Be(RealmTestData.PublicIssuer);
@@ -80,6 +87,7 @@ public sealed class TokenExchangeTests(KeycloakRealmCollectionFixture fixture)
             TokenExchangeTestData.ExchangeScopes);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
         response.Body[TokenExchangeTestData.ErrorField]!.GetValue<string>()
             .Should()
             .Be(TokenExchangeTestData.InvalidTokenError);

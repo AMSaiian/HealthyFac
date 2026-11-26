@@ -1,9 +1,11 @@
 using HealthyFac.Shared.UnitTests.Configuration.Data;
 using HealthyFac.Shared.Web.Configuration;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.Configuration;
 
 namespace HealthyFac.Shared.UnitTests.Configuration;
 
+[Feature(TestFeatures.Platform)]
 public sealed class DeploymentSettingsExtensionsTests : IDisposable
 {
     private readonly string _baseDirectory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString(format: "N"));
@@ -29,6 +31,7 @@ public sealed class DeploymentSettingsExtensionsTests : IDisposable
     public void AddDeploymentSettingsFile_WithEnvironmentVariable_EnvironmentVariableWins()
     {
         WriteDeploymentFile();
+
         Environment.SetEnvironmentVariable(
             DeploymentSettingsExtensionsTestData.EnvironmentVariableName,
             DeploymentSettingsExtensionsTestData.EnvironmentValue);

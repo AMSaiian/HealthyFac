@@ -17,14 +17,14 @@ public static class ConverterTestData
         Guid.Empty,
     ];
 
-    public static TheoryData<string> JsonNullOrEmptyValues => new() { "null", "\"\"" };
+    public static TheoryData<string> JsonNullOrEmptyValues => ["null", "\"\""];
 
-    public static TheoryData<string> MalformedTokens => new()
-    {
+    public static TheoryData<string> MalformedTokens =>
+    [
         "not-an-encrypted-id",
         "00000000-0000-0000-0000-000000000000",
         "v1_",
         "v1_!!!not-base64!!!",
         "v9.KL01SonK1QYdAtRfguqJTWwxJBoE_J1U",
-    };
+    ];
 }

@@ -12,7 +12,7 @@ const OPEN_ITEM = {
   icon: 'pi pi-external-link',
 };
 
-describe('createRowMenu', () => {
+describe('createRowMenu', { tags: ['Persistence'] }, () => {
   it('menuItem_WithoutActiveRow_DoesNotCallOnSelect', () => {
     const onSelect = vi.fn();
     const menu = createRowMenu<Row>();

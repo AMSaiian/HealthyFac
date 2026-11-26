@@ -39,17 +39,17 @@ public static class KeycloakAdminTestData
 
     public static IReadOnlyDictionary<string, string> RealmEnvironment { get; } = new Dictionary<string, string>
     {
-        [key: "HEALTHYFAC_SPA_URL"] = SpaUrl,
-        [key: "HEALTHYFAC_TEST_COMPANY_ID"] = CompanyId.ToString(),
-        [key: "HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID"] = SupervisorIdentityId.ToString(),
-        [key: "HEALTHYFAC_TEST_SUPERVISOR_EMPLOYEE_ID"] = SupervisorEmployeeId.ToString(),
-        [key: "HEALTHYFAC_TEST_SUPERVISOR_EMAIL"] = SupervisorEmail,
-        [key: "HEALTHYFAC_TEST_SUPERVISOR_PASSWORD"] = SupervisorPassword,
-        [key: "KEYCLOAK_AUTH_CLIENT_SECRET"] = AuthClientSecret,
-        [key: "KEYCLOAK_CORE_CLIENT_SECRET"] = CoreClientSecret,
-        [key: "KEYCLOAK_TELEMETRY_CLIENT_SECRET"] = TelemetryClientSecret,
-        [key: "KEYCLOAK_DOCUMENT_CLIENT_SECRET"] = DocumentClientSecret,
-        [key: "KEYCLOAK_INSIGHTS_CLIENT_SECRET"] = InsightsClientSecret,
+        ["HEALTHYFAC_SPA_URL"] = SpaUrl,
+        ["HEALTHYFAC_TEST_COMPANY_ID"] = CompanyId.ToString(),
+        ["HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID"] = SupervisorIdentityId.ToString(),
+        ["HEALTHYFAC_TEST_SUPERVISOR_EMPLOYEE_ID"] = SupervisorEmployeeId.ToString(),
+        ["HEALTHYFAC_TEST_SUPERVISOR_EMAIL"] = SupervisorEmail,
+        ["HEALTHYFAC_TEST_SUPERVISOR_PASSWORD"] = SupervisorPassword,
+        ["KEYCLOAK_AUTH_CLIENT_SECRET"] = AuthClientSecret,
+        ["KEYCLOAK_CORE_CLIENT_SECRET"] = CoreClientSecret,
+        ["KEYCLOAK_TELEMETRY_CLIENT_SECRET"] = TelemetryClientSecret,
+        ["KEYCLOAK_DOCUMENT_CLIENT_SECRET"] = DocumentClientSecret,
+        ["KEYCLOAK_INSIGHTS_CLIENT_SECRET"] = InsightsClientSecret,
     };
 
     /// <summary>

@@ -17,7 +17,7 @@ const ROW: MachineDraftGridItem = {
   machineName: 'Press',
 };
 
-describe('machineTitleOf', () => {
+describe('machineTitleOf', { tags: ['Drafts'] }, () => {
   it('machineTitleOf_WithKnownMachine_UsesTheMachineTitleAndName', () => {
     const title = machineTitleOf(ROW);
 
@@ -33,7 +33,7 @@ describe('machineTitleOf', () => {
   });
 });
 
-describe('isReviewDisabledOf', () => {
+describe('isReviewDisabledOf', { tags: ['Drafts'] }, () => {
   it('isReviewDisabledOf_ForChildOfPendingCreateDraft_ReturnsTrueButNotForTheMachineDraft', () => {
     const child = isReviewDisabledOf({ ...ROW, machineId: null });
     const machine = isReviewDisabledOf({ ...ROW, kind: DraftKind.Machine, machineId: null, isCreate: true });

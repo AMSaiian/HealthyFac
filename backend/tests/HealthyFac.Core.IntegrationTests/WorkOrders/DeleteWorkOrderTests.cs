@@ -5,11 +5,13 @@ using HealthyFac.Core.IntegrationTests.Shifts.Data;
 using HealthyFac.Core.IntegrationTests.WorkOrders.Data;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.UseCases;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Core.IntegrationTests.WorkOrders;
 
 [Collection(CoreWorkOrdersCollection.Name)]
+[Feature(TestFeatures.WorkOrders)]
 public sealed class DeleteWorkOrderTests(CoreDatabaseFixture fixture)
 {
     private readonly CoreDatabaseFixture _fixture = fixture;
@@ -19,10 +21,12 @@ public sealed class DeleteWorkOrderTests(CoreDatabaseFixture fixture)
     {
         var tenant = await ArrangeTenantAsync();
         var scheduled = await CreateScheduledAsync(tenant, WorkOrderTestData.ScheduledTime);
+
         var backlog = await _fixture.CreateWorkOrderAsync(
             tenant.CompanyId,
             tenant.IdentityUserId,
             WorkOrderTestData.NewRequest(tenant.CompanyId, AccessScope.Company));
+
         var overlap = () => AssignAsync(tenant, backlog.Id);
         await overlap.Should().ThrowAsync<UnprocessableException>();
 
@@ -73,6 +77,7 @@ public sealed class DeleteWorkOrderTests(CoreDatabaseFixture fixture)
         var tenant = await ArrangeTenantAsync();
         var scheduled = await CreateScheduledAsync(tenant, WorkOrderTestData.ScheduledTime);
         var staleRowVersion = await _fixture.LoadWorkOrderRowVersionAsync(scheduled.Id);
+
         await _fixture.ChangeStatusAsync(
             tenant.CompanyId,
             tenant.IdentityUserId,
@@ -96,6 +101,7 @@ public sealed class DeleteWorkOrderTests(CoreDatabaseFixture fixture)
         var tenant = await ArrangeTenantAsync();
         var scheduled = await CreateScheduledAsync(tenant, WorkOrderTestData.ScheduledTime);
         var staleRowVersion = await _fixture.LoadWorkOrderRowVersionAsync(scheduled.Id);
+
         await _fixture.ChangeStatusAsync(
             tenant.CompanyId,
             tenant.IdentityUserId,
@@ -113,11 +119,13 @@ public sealed class DeleteWorkOrderTests(CoreDatabaseFixture fixture)
     private async Task<ShiftTenant> ArrangeTenantAsync()
     {
         var tenant = await _fixture.ArrangeShiftTenantAsync();
+
         await _fixture.SeedVersionAsync(
             tenant.EmployeeId,
             ShiftTestData.Today.AddDays(value: -30),
             ShiftTestData.Morning,
             ShiftTestData.Afternoon);
+
         _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "07:00"));
 
         return tenant;

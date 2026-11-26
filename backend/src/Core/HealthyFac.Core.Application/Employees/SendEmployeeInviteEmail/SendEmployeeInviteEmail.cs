@@ -78,6 +78,7 @@ public sealed class SendEmployeeInviteEmailRequestHandler(
             Link = BuildLink(_tokenService.CreateToken(invite.Id, invite.TokenSalt)),
             ExpiresAt = invite.ExpiresAt,
         };
+
         var email = await _emailBuilder.BuildAsync(model, cancellationToken);
 
         await _emailSender.SendAsync(email, cancellationToken);

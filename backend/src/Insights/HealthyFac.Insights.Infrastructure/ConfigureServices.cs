@@ -83,6 +83,7 @@ public static class ConfigureServices
             services.AddScoped<AuditableEntityInterceptor>();
 
             var connectionString = configuration.GetConnectionString(DatabaseConstants.ConnectionStringName);
+
             if (string.IsNullOrWhiteSpace(connectionString))
             {
                 throw new InvalidOperationException(DatabaseConstants.Errors.MissingConnectionString);
@@ -98,6 +99,7 @@ public static class ConfigureServices
                             TimeSpan.FromSeconds(DatabaseConstants.Retry.MaxDelaySeconds),
                             errorCodesToAdd: null)
                         .ConfigureParentOnlyTracing());
+
                 options.UseExceptionProcessor();
 
                 options.AddInterceptors(
@@ -128,10 +130,13 @@ public static class ConfigureServices
             services.AddIntegrationMessage<SignalEpisodeChanged>();
             services.AddIntegrationMessage<WorkOrderDraftApplied>();
             services.AddIntegrationMessage<WorkOrderDraftDismissed>();
+
             services.AddValidatedOptions<AgentOptions, AgentOptionsValidator>(
                 AgentOptions.SectionName, configuration);
+
             services.AddValidatedOptions<ScreeningOptions, ScreeningOptionsValidator>(
                 ScreeningOptions.SectionName, configuration);
+
             services.AddScoped<IChunkScreener>(provider => new GeminiChunkScreener(
                 provider.GetRequiredKeyedService<IChatClient>(AiClientKeys.Triage),
                 provider.GetRequiredService<IOptions<GeminiOptions>>(),
@@ -139,15 +144,18 @@ public static class ConfigureServices
                 provider.GetRequiredService<IProviderCalls>(),
                 provider.GetRequiredService<IAgentPrompts>(),
                 provider.GetRequiredService<TimeProvider>()));
+
             services.AddScoped<AgentRunQueue>();
             services.AddSingleton<IAgentProviderCalls, AgentProviderCalls>();
             services.AddScoped<AgentRunClaims>();
             services.AddScoped<IAgentRunLease, AgentRunLease>();
             services.AddSingleton<IAdvisorScopes, AdvisorScopes>();
             services.AddSingleton<IAgentPrompts, EmbeddedAgentPrompts>();
+
             services.AddSingleton<ITriageModel>(provider => new GeminiTriageModel(
                 provider.GetRequiredKeyedService<IChatClient>(AiClientKeys.Triage),
                 provider.GetRequiredService<IOptions<GeminiOptions>>()));
+
             services.AddScoped<IAgentRunner, TriageRunner>();
             services.AddSingleton<IAgentJson, AgentJson>();
             services.AddSingleton<IToolCallIds, FunctionToolCallIds>();

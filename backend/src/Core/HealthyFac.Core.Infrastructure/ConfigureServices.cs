@@ -55,6 +55,7 @@ public static class ConfigureServices
             services.AddScoped<AuditableEntityInterceptor>();
 
             var connectionString = configuration.GetConnectionString(DatabaseConstants.ConnectionStringName);
+
             if (string.IsNullOrWhiteSpace(connectionString))
             {
                 throw new InvalidOperationException(DatabaseConstants.Errors.MissingConnectionString);
@@ -69,6 +70,7 @@ public static class ConfigureServices
                             TimeSpan.FromSeconds(DatabaseConstants.Retry.MaxDelaySeconds),
                             errorCodesToAdd: null)
                         .ConfigureParentOnlyTracing());
+
                 options.UseExceptionProcessor();
 
                 options.AddInterceptors(
@@ -89,11 +91,14 @@ public static class ConfigureServices
 
             services.AddValidatedOptions<InviteTokenOptions, InviteTokenOptionsValidator>(
                 InviteTokenOptions.SectionName, configuration);
+
             services.AddSingleton<IInviteTokenService, HmacInviteTokenService>();
 
             services.AddSmtpEmail(configuration);
+
             services.AddValidatedOptions<InviteLinkOptions, InviteLinkOptionsValidator>(
                 InviteLinkOptions.SectionName, configuration);
+
             services.AddIntegrationMessage<EmployeeInvited>();
             services.AddIntegrationMessage<IdentityProvisioned>();
             services.AddIntegrationMessage<IdentityProvisioningFailed>();

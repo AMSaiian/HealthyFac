@@ -1,10 +1,12 @@
 using System.Net;
 using HealthyFac.Gateway.IntegrationTests.Hosting;
 using HealthyFac.Gateway.IntegrationTests.Proxy.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Gateway.IntegrationTests.Proxy;
 
 [Collection(GatewayProxyCollection.Name)]
+[Feature(TestFeatures.Gateway)]
 public sealed class RouteHostTests(GatewayEnvironment environment) : IAsyncLifetime
 {
     private readonly GatewayEnvironment _environment = environment;

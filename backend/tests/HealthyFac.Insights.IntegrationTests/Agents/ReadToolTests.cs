@@ -7,11 +7,13 @@ using HealthyFac.Insights.Domain.Agents.ToolCalls;
 using HealthyFac.Insights.IntegrationTests.Agents.Data;
 using HealthyFac.Insights.IntegrationTests.Cases;
 using HealthyFac.Insights.IntegrationTests.Cases.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.Options;
 
 namespace HealthyFac.Insights.IntegrationTests.Agents;
 
 [Collection(SignalCaseCollection.Name)]
+[Feature(TestFeatures.Cases)]
 public sealed class ReadToolTests(SignalCaseFixture fixture)
 {
     private const string OwnText = "Replace the filter every 500 hours.";
@@ -33,6 +35,7 @@ public sealed class ReadToolTests(SignalCaseFixture fixture)
     public async Task ListOpenWorkOrders_ThroughTheTool_AsksForTheWorkOrdersScopeAndShowsNoAssignee()
     {
         await ArrangeCaseAsync();
+
         _fixture.Agents.WorkOrders.Answer.Add(
             new OpenWorkOrderInfo
             {
@@ -70,9 +73,11 @@ public sealed class ReadToolTests(SignalCaseFixture fixture)
     public async Task SearchManual_WithMoreChunksThanTheOption_ReturnsTheOptionCount()
     {
         await ArrangeCaseAsync();
+
         var texts = Enumerable.Range(start: 1, Options().ManualSearchChunks + SurplusChunkCount)
             .Select(number => $"Passage {number}.")
             .ToArray();
+
         await _fixture.SeedManualAsync(CaseTestData.CompanyId, CaseTestData.MachineId, texts);
 
         var result = await _fixture.CallToolAsync(
@@ -86,6 +91,7 @@ public sealed class ReadToolTests(SignalCaseFixture fixture)
     {
         await ArrangeCaseAsync();
         var to = _fixture.Time.GetUtcNow().UtcDateTime;
+
         var arguments = $$"""
                           {"metricKey":"{{MetricKey}}",
                            "from":"{{to.AddHours(-OverRangeHours):O}}","to":"{{to:O}}"}
@@ -147,6 +153,7 @@ public sealed class ReadToolTests(SignalCaseFixture fixture)
             argumentsJson: """{"query":"filter"}""",
             existingRunId: runId,
             manualPassages: log);
+
         var second = await _fixture.CallToolAsync(
             SearchManualRequest.ToolName,
             argumentsJson: """{"query":"passage"}""",
@@ -162,9 +169,11 @@ public sealed class ReadToolTests(SignalCaseFixture fixture)
     {
         await ArrangeCaseAsync();
         var titleOnly = new[] { "**HALVIK PUMPS**", "# 7 Operation", "# 7 Operation\n**Monitoring**" };
+
         var texts = titleOnly
             .Concat(Enumerable.Range(start: 1, Options().ManualSearchChunks).Select(number => $"Passage {number}."))
             .ToArray();
+
         await _fixture.SeedManualAsync(CaseTestData.CompanyId, CaseTestData.MachineId, texts);
 
         var result = await _fixture.CallToolAsync(
@@ -179,14 +188,15 @@ public sealed class ReadToolTests(SignalCaseFixture fixture)
     {
         await ArrangeCaseAsync();
         var now = _fixture.Time.GetUtcNow().UtcDateTime;
+
         _fixture.Agents.Telemetry.Episodes.AddRange(
             Enumerable.Range(start: 0, Options().EpisodeCount + SurplusChunkCount)
                 .Select(number => Episode(now.AddMinutes(-number))));
 
         var result = await _fixture.CallToolAsync(GetSignalEpisodesToolRequest.ToolName);
 
-        var call = _fixture.Agents.Telemetry.EpisodeCalls.Should().ContainSingle().Subject;
-        (call.To - call.From).Should().Be(TimeSpan.FromHours(Options().EpisodeRangeHours));
+        var (_, from, to) = _fixture.Agents.Telemetry.EpisodeCalls.Should().ContainSingle().Subject;
+        (to - from).Should().Be(TimeSpan.FromHours(Options().EpisodeRangeHours));
         result.Split(separator: "\"episodeId\"").Length.Should().Be(Options().EpisodeCount + 1);
     }
 

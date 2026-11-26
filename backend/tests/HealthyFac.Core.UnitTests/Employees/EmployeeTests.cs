@@ -1,8 +1,10 @@
 using HealthyFac.Core.Domain.Employees;
 using HealthyFac.Core.UnitTests.Employees.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.UnitTests.Employees;
 
+[Feature(TestFeatures.Companies)]
 public sealed class EmployeeTests
 {
     [Fact]
@@ -118,6 +120,7 @@ public sealed class EmployeeTests
     public void IsLinkedTo_ForEachCase_ReturnsExpected(Guid? linkedIdentity, Guid? identityUserId, bool isLinked)
     {
         var employee = EmployeeTestData.CreateEmployee();
+
         if (linkedIdentity is { } identity)
         {
             employee.LinkIdentity(identity);

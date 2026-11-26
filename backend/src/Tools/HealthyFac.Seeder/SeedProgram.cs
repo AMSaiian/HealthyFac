@@ -56,6 +56,7 @@ public static class SeedProgram
     )
     {
         var unknown = args.FirstOrDefault(argument => argument is not (ResetArgument or TelemetryArgument));
+
         if (unknown is not null)
         {
             await output.WriteLineAsync(SeedProgramErrors.UnknownArgument(unknown));
@@ -66,6 +67,7 @@ public static class SeedProgram
         try
         {
             var isReset = args.Contains(ResetArgument);
+
             if (isReset && !await ResetAsync(output, baseDirectory, configuration, anchor, cancellationToken))
             {
                 return Failure;
@@ -111,7 +113,9 @@ public static class SeedProgram
             (request, token) => HostOf(hosts, request).ValidateAsync(request.Request, token),
             SeedCompletion.FindMarkerItem(folder),
             isTelemetry ? ReadScript(folder) : null);
-        var failures = await check.RunAsync(events.Select(planned => planned.Event).ToList(), cancellationToken);
+
+        var failures = await check.RunAsync([.. events.Select(planned => planned.Event)], cancellationToken);
+
         if (failures.Count > 0)
         {
             foreach (var failure in failures)
@@ -123,12 +127,15 @@ public static class SeedProgram
         }
 
         var exitCode = Success;
+
         var completion = new SeedCompletion(
             hosts.Core,
             hosts.Telemetry,
             SeedCompletion.FindLastDraftId(folder),
             SeedCompletion.FindMarkerMessageId(folder));
+
         var relay = hosts.CreateRelay();
+
         var runner = new TimelineRunner(
             clock,
             anchor,
@@ -137,6 +144,7 @@ public static class SeedProgram
             relay.RunAsync,
             output.WriteLine,
             token => ContinueAsync(completion, output, isTelemetry, code => exitCode = code, token));
+
         var context = new SeedContext { Anchor = anchor, Zone = zone };
 
         await runner.RunAsync(events, context, cancellationToken);
@@ -164,6 +172,7 @@ public static class SeedProgram
         var folder = new SeedFolder(Path.Combine(baseDirectory, SeedFolderName));
         var companyId = folder.Read<CompanyFile>(PeopleConstants.FileName).Company.Id;
         clock.Enter(anchor, ResetItem);
+
         var reset = new SeedReset(
             hosts,
             new KeycloakAccounts(hosts.Auth),
@@ -184,6 +193,7 @@ public static class SeedProgram
     )
     {
         var state = await completion.ReadAsync(cancellationToken);
+
         if (state == SeedState.Empty)
         {
             return true;
@@ -191,12 +201,14 @@ public static class SeedProgram
 
         var isComplete = state == SeedState.CompleteWithHistory || (state == SeedState.Complete && !isTelemetry);
         var incompleteText = isTelemetry ? SeedProgramErrors.IncompleteWithTelemetry : SeedProgramErrors.Incomplete;
+
         var text = state switch
         {
             _ when isComplete => SeedProgramErrors.Complete,
             SeedState.Complete => SeedProgramErrors.NoCompleteHistory,
             _ => incompleteText,
         };
+
         await output.WriteLineAsync(text);
         setExitCode(isComplete ? Success : Failure);
 

@@ -3,7 +3,7 @@ import { provideTranslateService } from '@ngx-translate/core';
 
 import { AffectedWorkOrders } from './affected-work-orders';
 
-describe('AffectedWorkOrders', () => {
+describe('AffectedWorkOrders', { tags: ['Shifts'] }, () => {
   it('inputs_ByDefault_KeepTheEditDialogTexts', () => {
     TestBed.configureTestingModule({ providers: [provideTranslateService()] });
     const fixture = TestBed.createComponent(AffectedWorkOrders);

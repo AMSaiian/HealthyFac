@@ -42,7 +42,7 @@ function resolve(
   return firstValueFrom((result as Observable<unknown>).pipe(toArray()));
 }
 
-describe('employeeDayResolver', () => {
+describe('employeeDayResolver', { tags: ['Shifts'] }, () => {
   beforeEach(() => {
     messages.add.mockClear();
   });

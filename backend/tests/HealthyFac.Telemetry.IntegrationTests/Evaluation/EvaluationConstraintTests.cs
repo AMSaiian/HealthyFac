@@ -4,10 +4,12 @@ using HealthyFac.Telemetry.Infrastructure.Evaluation.Persistence;
 using HealthyFac.Telemetry.Infrastructure.SignalEpisodes.Persistence;
 using HealthyFac.Telemetry.IntegrationTests.Evaluation.Data;
 using HealthyFac.Telemetry.IntegrationTests.OperatingPhases.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.IntegrationTests.Evaluation;
 
 [Collection(TelemetryEvaluationCollection.Name)]
+[Feature(TestFeatures.Evaluation)]
 public sealed class EvaluationConstraintTests(TelemetryEvaluationFixture fixture)
 {
     private readonly TelemetryEvaluationFixture _fixture = fixture;
@@ -56,8 +58,10 @@ public sealed class EvaluationConstraintTests(TelemetryEvaluationFixture fixture
     public async Task Save_WithAnOpenEpisodeAfterTheFirstResolved_Succeeds()
     {
         var arrangement = await _fixture.Database.ArrangePhaseMachineAsync();
+
         var firstId = await _fixture.AddResolvableEpisodeAsync(
             arrangement, SignalRule.SilentMachine, metricId: null, statusId: null);
+
         await _fixture.ResolveEpisodeAsync(firstId);
 
         var secondId = await _fixture.AddResolvableEpisodeAsync(

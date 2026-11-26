@@ -28,8 +28,10 @@ public static class MetricDefinitionEndpoints
         {
             app.MapGet(MetricDefinitionRoutes.DefinitionsRoute, ListAsync)
                 .RequireAuthorization(TelemetryPermissions.MetricDefinitions.Read);
+
             app.MapPut(MetricDefinitionRoutes.DefinitionsRoute, ApplyAsync)
                 .RequireAuthorization(TelemetryPermissions.MetricDefinitions.Write);
+
             app.MapGet(MetricDefinitionRoutes.SchemaRoute, GetSchemaAsync)
                 .RequireAuthorization(TelemetryPermissions.MetricDefinitions.Read);
 

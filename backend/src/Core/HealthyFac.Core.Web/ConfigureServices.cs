@@ -90,6 +90,7 @@ public static class ConfigureServices
                 options.LowercaseUrls = true;
                 options.LowercaseQueryStrings = true;
             });
+
             services.AddSharedJsonOptions();
             services.AddIdEncryption(configuration);
             services.AddSharedApiVersioning();

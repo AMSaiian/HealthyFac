@@ -75,12 +75,14 @@ public static class EvaluationFixtureExtensions
         {
             using var scope = fixture.Database.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ITelemetryDbContext>();
+
             var condition = OperatingPhaseCondition.Create(
                 PhaseConditionSource.Status(statusId),
                 PhaseConditionOperator.Active,
                 value: null,
                 upperValue: null,
                 states: null);
+
             var phase = new OperatingPhase(
                 arrangement.MachineId,
                 code,
@@ -211,6 +213,7 @@ public static class EvaluationFixtureExtensions
         {
             using var scope = fixture.Database.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<TelemetryDbContext>();
+
             var payloads = await dbContext.OutboxMessages
                 .AsNoTracking()
                 .Where(message => message.Type == SignalEpisodeChanged.MessageType)
@@ -218,12 +221,14 @@ public static class EvaluationFixtureExtensions
                 .Select(message => message.Payload)
                 .ToListAsync();
 
-            return payloads
-                .Select(payload => JsonSerializer.Deserialize<EpisodeMessage>(payload, EvaluationTestData.Json)!)
-                .Where(message => message.MachineId == machineId)
-                .OrderBy(message => message.ChangedAt)
-                .ThenBy(message => message.Sequence)
-                .ToList();
+            return
+            [
+                .. payloads
+                    .Select(payload => JsonSerializer.Deserialize<EpisodeMessage>(payload, EvaluationTestData.Json)!)
+                    .Where(message => message.MachineId == machineId)
+                    .OrderBy(message => message.ChangedAt)
+                    .ThenBy(message => message.Sequence),
+            ];
         }
 
         public async Task<int> CountOutboxEpisodeMessagesAsync()
@@ -258,6 +263,7 @@ public static class EvaluationFixtureExtensions
         {
             using var scope = fixture.Database.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ITelemetryDbContext>();
+
             var episode = SignalEpisode.Open(
                 arrangement.MachineId,
                 EvaluationTestData.CompanyId,

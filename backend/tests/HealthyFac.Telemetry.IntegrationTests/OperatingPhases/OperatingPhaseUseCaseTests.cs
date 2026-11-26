@@ -6,10 +6,12 @@ using HealthyFac.Telemetry.IntegrationTests.Database.Data;
 using HealthyFac.Telemetry.IntegrationTests.MachineRegistrations.Data;
 using HealthyFac.Telemetry.IntegrationTests.OperatingPhases.Data;
 using HealthyFac.Telemetry.IntegrationTests.StatusDefinitions.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.IntegrationTests.OperatingPhases;
 
 [Collection(TelemetryPhasesCollection.Name)]
+[Feature(TestFeatures.SignalModel)]
 public sealed class OperatingPhaseUseCaseTests(TelemetryDatabaseFixture fixture)
 {
     private static readonly Guid CompanyId = MachineRegistrationTestData.CompanyId;
@@ -20,6 +22,7 @@ public sealed class OperatingPhaseUseCaseTests(TelemetryDatabaseFixture fixture)
     public async Task CreatePhase_WithConditionsAndLimits_GetReturnsThem()
     {
         var arrangement = await _fixture.ArrangePhaseMachineAsync();
+
         var request = OperatingPhaseTestData.CreateRequest(arrangement) with
         {
             Conditions =
@@ -45,12 +48,15 @@ public sealed class OperatingPhaseUseCaseTests(TelemetryDatabaseFixture fixture)
         phase.Code.Should().Be(request.Code);
         phase.IsTracked.Should().BeTrue();
         phase.Conditions.Should().HaveCount(expected: 2);
+
         phase.Conditions.Single(condition => condition.StatusDefinitionId is not null)
             .Operator.Should()
             .Be(PhaseConditionOperator.Active);
+
         phase.Conditions.Single(condition => condition.MetricDefinitionId == arrangement.StateMetricId)
             .States.Should()
             .Equal("running");
+
         phase.Limits.Should()
             .ContainSingle()
             .Which.AlarmHigh.Should()
@@ -61,8 +67,10 @@ public sealed class OperatingPhaseUseCaseTests(TelemetryDatabaseFixture fixture)
     public async Task ListPhases_WithSeveralPhases_ReturnsThemInPriorityOrder()
     {
         var arrangement = await _fixture.ArrangePhaseMachineAsync();
+
         await _fixture.CreatePhaseUseCaseAsync(
             OperatingPhaseTestData.CreateRequest(arrangement, OperatingPhaseTestData.StoppedCode, priority: 1));
+
         await _fixture.CreatePhaseUseCaseAsync(
             OperatingPhaseTestData.CreateRequest(arrangement, OperatingPhaseTestData.CuttingCode, priority: 0));
 
@@ -79,6 +87,7 @@ public sealed class OperatingPhaseUseCaseTests(TelemetryDatabaseFixture fixture)
     public async Task UpdatePhase_WithNewBody_ReplacesCodeConditionsAndLimits()
     {
         var arrangement = await _fixture.ArrangePhaseMachineAsync();
+
         var phaseId = await _fixture.CreatePhaseUseCaseAsync(
             OperatingPhaseTestData.CreateRequest(arrangement) with
             {
@@ -112,10 +121,12 @@ public sealed class OperatingPhaseUseCaseTests(TelemetryDatabaseFixture fixture)
         phase.Code.Should().Be(OperatingPhaseTestData.StoppedCode);
         phase.Priority.Should().Be(expected: 3);
         phase.IsTracked.Should().BeFalse();
+
         phase.Conditions.Should()
             .ContainSingle()
             .Which.MetricDefinitionId.Should()
             .Be(arrangement.MetricId);
+
         phase.Limits.Should().BeEmpty();
     }
 
@@ -138,6 +149,7 @@ public sealed class OperatingPhaseUseCaseTests(TelemetryDatabaseFixture fixture)
     public async Task DeletePhase_WithConditionsAndLimits_SoftDeletesTheirRows()
     {
         var arrangement = await _fixture.ArrangePhaseMachineAsync();
+
         var phaseId = await _fixture.CreatePhaseUseCaseAsync(
             OperatingPhaseTestData.CreateRequest(arrangement) with
             {
@@ -147,17 +159,18 @@ public sealed class OperatingPhaseUseCaseTests(TelemetryDatabaseFixture fixture)
         await _fixture.DeletePhaseUseCaseAsync(CompanyId, arrangement.MachineId, phaseId);
 
         var phase = await _fixture.LoadPhaseAsync(phaseId);
-        var rows = await _fixture.LoadPhaseRowsAsync(phaseId);
+        var (conditions, limits) = await _fixture.LoadPhaseRowsAsync(phaseId);
 
         phase.DeletedAt.Should().NotBeNull();
-        rows.Conditions.Should().ContainSingle().Which.DeletedAt.Should().NotBeNull();
-        rows.Limits.Should().ContainSingle().Which.DeletedAt.Should().NotBeNull();
+        conditions.Should().ContainSingle().Which.DeletedAt.Should().NotBeNull();
+        limits.Should().ContainSingle().Which.DeletedAt.Should().NotBeNull();
     }
 
     [Fact]
     public async Task UpdatePhase_DroppingAConditionAndALimitRow_SoftDeletesBothAndGetReturnsTheRest()
     {
         var arrangement = await _fixture.ArrangePhaseMachineAsync();
+
         var phaseId = await _fixture.CreatePhaseUseCaseAsync(
             OperatingPhaseTestData.CreateRequest(arrangement) with
             {
@@ -168,7 +181,7 @@ public sealed class OperatingPhaseUseCaseTests(TelemetryDatabaseFixture fixture)
                     {
                         MetricDefinitionId = arrangement.StateMetricId,
                         Operator = PhaseConditionOperator.In,
-                        States = [OperatingPhaseTestData.StateMetricStates[index: 1]],
+                        States = [OperatingPhaseTestData.StateMetricStates[1]],
                     },
                 ],
                 Limits = [new PhaseLimitInput { MetricDefinitionId = arrangement.MetricId, AlarmHigh = 90 }],
@@ -177,28 +190,32 @@ public sealed class OperatingPhaseUseCaseTests(TelemetryDatabaseFixture fixture)
         await UpdateAsync(arrangement, phaseId, [OperatingPhaseTestData.StatusCondition(arrangement.StatusId)], []);
 
         var phase = await _fixture.GetPhaseUseCaseAsync(CompanyId, arrangement.MachineId, phaseId);
-        var rows = await _fixture.LoadPhaseRowsAsync(phaseId);
+        var (conditions, limits) = await _fixture.LoadPhaseRowsAsync(phaseId);
 
         phase.Conditions.Should().ContainSingle().Which.StatusDefinitionId.Should().Be(arrangement.StatusId);
         phase.Limits.Should().BeEmpty();
-        rows.Conditions.Where(condition => condition.MetricDefinitionId == arrangement.StateMetricId)
+
+        conditions.Where(condition => condition.MetricDefinitionId == arrangement.StateMetricId)
             .Should()
             .ContainSingle()
             .Which.DeletedAt.Should()
             .NotBeNull();
-        rows.Limits.Should().ContainSingle().Which.DeletedAt.Should().NotBeNull();
+
+        limits.Should().ContainSingle().Which.DeletedAt.Should().NotBeNull();
     }
 
     [Fact]
     public async Task UpdatePhase_KeepingTheMetricOfALimitRow_ChangesTheRowInPlace()
     {
         var arrangement = await _fixture.ArrangePhaseMachineAsync();
+
         var phaseId = await _fixture.CreatePhaseUseCaseAsync(
             OperatingPhaseTestData.CreateRequest(arrangement) with
             {
                 Limits = [new PhaseLimitInput { MetricDefinitionId = arrangement.MetricId, AlarmHigh = 90 }],
             });
-        var before = await _fixture.LoadPhaseRowsAsync(phaseId);
+
+        var (_, limits) = await _fixture.LoadPhaseRowsAsync(phaseId);
 
         await UpdateAsync(
             arrangement,
@@ -206,23 +223,25 @@ public sealed class OperatingPhaseUseCaseTests(TelemetryDatabaseFixture fixture)
             [OperatingPhaseTestData.StatusCondition(arrangement.StatusId)],
             [new PhaseLimitInput { MetricDefinitionId = arrangement.MetricId, AlarmHigh = 95 }]);
 
-        var after = await _fixture.LoadPhaseRowsAsync(phaseId);
+        var (_, limitsAfter) = await _fixture.LoadPhaseRowsAsync(phaseId);
 
-        after.Limits.Should().ContainSingle();
-        after.Limits[index: 0].Id.Should().Be(before.Limits[index: 0].Id);
-        after.Limits[index: 0].AlarmHigh.Should().Be(expected: 95);
-        after.Limits[index: 0].DeletedAt.Should().BeNull();
+        limitsAfter.Should().ContainSingle();
+        limitsAfter[0].Id.Should().Be(limits[0].Id);
+        limitsAfter[0].AlarmHigh.Should().Be(expected: 95);
+        limitsAfter[0].DeletedAt.Should().BeNull();
     }
 
     [Fact]
     public async Task UpdatePhase_AddingALimitRowAfterItsOldRowWasSoftDeleted_Succeeds()
     {
         var arrangement = await _fixture.ArrangePhaseMachineAsync();
+
         var phaseId = await _fixture.CreatePhaseUseCaseAsync(
             OperatingPhaseTestData.CreateRequest(arrangement) with
             {
                 Limits = [new PhaseLimitInput { MetricDefinitionId = arrangement.MetricId, AlarmHigh = 90 }],
             });
+
         var conditions = new[] { OperatingPhaseTestData.StatusCondition(arrangement.StatusId) };
         await UpdateAsync(arrangement, phaseId, conditions, []);
 
@@ -233,21 +252,24 @@ public sealed class OperatingPhaseUseCaseTests(TelemetryDatabaseFixture fixture)
             [new PhaseLimitInput { MetricDefinitionId = arrangement.MetricId, AlarmHigh = 80 }]);
 
         var phase = await _fixture.GetPhaseUseCaseAsync(CompanyId, arrangement.MachineId, phaseId);
-        var rows = await _fixture.LoadPhaseRowsAsync(phaseId);
+        var (_, limits) = await _fixture.LoadPhaseRowsAsync(phaseId);
 
         phase.Limits.Should().ContainSingle();
-        rows.Limits.Should().HaveCount(expected: 2);
-        rows.Limits.Count(limit => limit.DeletedAt is null).Should().Be(expected: 1);
+        limits.Should().HaveCount(expected: 2);
+        limits.Count(limit => limit.DeletedAt is null).Should().Be(expected: 1);
     }
 
     [Fact]
     public async Task ReorderPhases_WithAllPhases_SetsPrioritiesFromZero()
     {
         var arrangement = await _fixture.ArrangePhaseMachineAsync();
+
         var first = await _fixture.CreatePhaseUseCaseAsync(
             OperatingPhaseTestData.CreateRequest(arrangement, OperatingPhaseTestData.CuttingCode, priority: 0));
+
         var second = await _fixture.CreatePhaseUseCaseAsync(
             OperatingPhaseTestData.CreateRequest(arrangement, OperatingPhaseTestData.StoppedCode, priority: 1));
+
         var third = await _fixture.CreatePhaseUseCaseAsync(
             OperatingPhaseTestData.CreateRequest(arrangement, OperatingPhaseTestData.IdleCode, priority: 2));
 
@@ -262,8 +284,10 @@ public sealed class OperatingPhaseUseCaseTests(TelemetryDatabaseFixture fixture)
     public async Task ReorderPhases_WithMissingPhase_ThrowsValidation()
     {
         var arrangement = await _fixture.ArrangePhaseMachineAsync();
+
         var first = await _fixture.CreatePhaseUseCaseAsync(
             OperatingPhaseTestData.CreateRequest(arrangement, OperatingPhaseTestData.CuttingCode, priority: 0));
+
         await _fixture.CreatePhaseUseCaseAsync(
             OperatingPhaseTestData.CreateRequest(arrangement, OperatingPhaseTestData.StoppedCode, priority: 1));
 

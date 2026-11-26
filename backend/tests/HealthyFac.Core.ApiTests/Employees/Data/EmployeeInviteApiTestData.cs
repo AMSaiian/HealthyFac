@@ -13,7 +13,6 @@ public static class EmployeeInviteApiTestData
     public const string UnknownInviteToken = "unknown-invite-token";
     public const string OtherAudience = "healthyfac-other-api";
     public const string EmailField = "email";
-    public const string FirstNameField = "firstName";
     public const string NullCharacterEmail = "before\0after@healthyfac.test";
     public const string NullCharacterEmailDomain = "after@healthyfac.test";
     public const string LowerCaseEmail = "mixed.case@healthyfac.test";

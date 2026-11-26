@@ -6,10 +6,12 @@ using HealthyFac.Insights.IntegrationTests.Documents.Data;
 using HealthyFac.Insights.IntegrationTests.Ingest.Data;
 using HealthyFac.Insights.Messaging.Drafts;
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Insights.IntegrationTests.Ingest;
 
 [Collection(InsightsCollection.Name)]
+[Feature(TestFeatures.Ingest)]
 public sealed class IngestCancelRaceTests(InsightsFixture fixture)
 {
     private const int RaceParticipantCount = 2;
@@ -50,11 +52,13 @@ public sealed class IngestCancelRaceTests(InsightsFixture fixture)
         var claimed = await _fixture.ClaimAttemptAsync();
         var reached = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
         _fixture.Ingest.Embeddings.Before = async _ =>
         {
             reached.TrySetResult();
             await release.Task;
         };
+
         var run = _fixture.RunClaimedAttemptAsync(claimed!, TestContext.Current.CancellationToken);
         await reached.Task;
 

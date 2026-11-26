@@ -112,6 +112,7 @@ public sealed class ServiceHost : IAsyncDisposable
         using var scope = CreateScope(ServiceActor.DatabaseInitialization.For(Name));
         var validatorType = typeof(IValidator<>).MakeGenericType(request.GetType());
         var failures = new List<string>();
+
         foreach (var validator in scope.ServiceProvider.GetServices(validatorType).OfType<IValidator>())
         {
             var result = await validator.ValidateAsync(new ValidationContext<object>(request), cancellationToken);

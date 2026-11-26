@@ -1,7 +1,7 @@
 import { Language } from './i18n.constants';
 import { LANGUAGE_FLAGS, languageFlagUrl } from './language-flags';
 
-describe('LANGUAGE_FLAGS', () => {
+describe('LANGUAGE_FLAGS', { tags: ['Platform'] }, () => {
   it.each(Object.values(Language))('has_ForEveryLanguage_ANonEmptyFlagCode (%s)', (language) => {
     const flag = LANGUAGE_FLAGS[language];
 
@@ -9,7 +9,7 @@ describe('LANGUAGE_FLAGS', () => {
   });
 });
 
-describe('languageFlagUrl', () => {
+describe('languageFlagUrl', { tags: ['Platform'] }, () => {
   it('languageFlagUrl_WithUkrainian_ReturnsTheAssetPath', () => {
     const result = languageFlagUrl(Language.Ukrainian);
 

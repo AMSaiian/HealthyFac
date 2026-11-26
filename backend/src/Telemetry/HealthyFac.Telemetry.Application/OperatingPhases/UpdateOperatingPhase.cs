@@ -90,12 +90,12 @@ public sealed class UpdateOperatingPhaseRequestHandler(ITelemetryDbContext dbCon
                     cancellationToken)
             ?? throw new NotFoundException(OperatingPhaseErrors.PhaseNotFound);
 
-        var body = await _dbContext.BuildPhaseBodyAsync(request, request.MachineId, cancellationToken);
+        var (conditions, limits) = await _dbContext.BuildPhaseBodyAsync(request, request.MachineId, cancellationToken);
 
         phase.ChangeCode(request.Code);
         var isTrackedChanged = phase.Update(request.Name, request.Description, request.IsTracked);
         phase.ChangePriority(request.Priority);
-        var isMeaningChanged = phase.Replace(body.Conditions, body.Limits);
+        var isMeaningChanged = phase.Replace(conditions, limits);
 
         if (isTrackedChanged || isMeaningChanged)
         {

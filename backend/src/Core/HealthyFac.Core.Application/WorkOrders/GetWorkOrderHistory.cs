@@ -124,6 +124,7 @@ public sealed class GetWorkOrderHistoryRequestHandler(
             .Where(workOrder => workOrder.Id == request.Id)
             .ApplyScope(request.Scope, request.CompanyId, ownEmployeeId, _currentUser.GetUserId())
             .AnyAsync(cancellationToken);
+
         if (!isReachable)
         {
             throw new NotFoundException(WorkOrderErrors.Rejections.WorkOrderNotFound);
@@ -132,6 +133,7 @@ public sealed class GetWorkOrderHistoryRequestHandler(
         var rows = _dbContext.WorkOrderHistories
             .AsNoTracking()
             .Where(row => row.WorkOrderId == request.Id);
+
         var totalCount = await rows.CountAsync(cancellationToken);
 
         var page = await rows

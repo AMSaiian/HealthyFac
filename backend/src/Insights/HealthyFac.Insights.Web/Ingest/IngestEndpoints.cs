@@ -22,14 +22,18 @@ public static class IngestEndpoints
         public IEndpointRouteBuilder MapIngestEndpoints()
         {
             var fileGroup = app.MapGroup(IngestRoutes.FileBaseRoute);
+
             fileGroup.MapPost(IngestRoutes.Root, StartAsync)
                 .RequireAuthorization(InsightsPermissions.Ingest.Write);
+
             fileGroup.MapGet(IngestRoutes.Root, GetFileAttemptsAsync)
                 .RequireAuthorization(InsightsPermissions.Ingest.Read);
 
             var attemptGroup = app.MapGroup(IngestRoutes.AttemptBaseRoute);
+
             attemptGroup.MapGet(IngestRoutes.ById, GetAttemptAsync)
                 .RequireAuthorization(InsightsPermissions.Ingest.Read);
+
             attemptGroup.MapPost(IngestRoutes.Cancel, CancelAsync)
                 .RequireAuthorization(InsightsPermissions.Ingest.Write);
 
@@ -112,6 +116,7 @@ public static class IngestEndpoints
             cancellationToken);
 
         var path = (httpRequest.PathBase + httpRequest.Path).Value ?? string.Empty;
+
         var location = string.Format(
             IngestRoutes.AttemptLocationFormat,
             path[..path.IndexOf(IngestRoutes.FilesSegment, StringComparison.Ordinal)],

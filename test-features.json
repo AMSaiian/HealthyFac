@@ -1,0 +1,253 @@
+{
+  "features": [
+    {
+      "name": "Identity",
+      "backend": [
+        "backend/src/Auth/**",
+        "backend/**/Authentication/**",
+        "backend/**/ServiceTokens/**",
+        "backend/**/TokenExchange/**",
+        "backend/**/Revocation/**",
+        "backend/**/CurrentUser/**",
+        "backend/**/DownstreamScopes/**",
+        "backend/**/Locales/**",
+        "backend/tests/HealthyFac.Auth.*/**",
+        "backend/tests/HealthyFac.Identity.*/**",
+        "docker/keycloak/**"
+      ],
+      "frontend": [
+        "frontend/src/app/invite/**",
+        "frontend/src/app/shared/security/**"
+      ]
+    },
+    {
+      "name": "Companies",
+      "backend": [
+        "backend/**/Companies/**",
+        "backend/**/Employees/**",
+        "backend/**/Email/**",
+        "backend/**/Emails/**"
+      ],
+      "frontend": [
+        "frontend/src/app/employees/list/**",
+        "frontend/src/app/employees/invites/**",
+        "frontend/src/app/employees/employee-actions-host/**",
+        "frontend/src/app/employees/employee-actions-store/**"
+      ]
+    },
+    {
+      "name": "Machines",
+      "backend": [
+        "backend/**/Machines/**",
+        "backend/**/MachineRegistrations/**"
+      ],
+      "frontend": [
+        "frontend/src/app/machines/list/**",
+        "frontend/src/app/machines/drawer/**",
+        "frontend/src/app/machines/state/**"
+      ]
+    },
+    {
+      "name": "WorkOrders",
+      "backend": [
+        "backend/**/WorkOrders/**"
+      ],
+      "frontend": [
+        "frontend/src/app/work-orders/**"
+      ]
+    },
+    {
+      "name": "Shifts",
+      "backend": [
+        "backend/**/Shifts/**"
+      ],
+      "frontend": [
+        "frontend/src/app/employees/shifts/**",
+        "frontend/src/app/schedule/**"
+      ]
+    },
+    {
+      "name": "Files",
+      "backend": [
+        "backend/src/Document/**",
+        "backend/tests/HealthyFac.Document.*/**",
+        "backend/**/Files/**"
+      ],
+      "frontend": [
+        "frontend/src/app/files/edit/**",
+        "frontend/src/app/files/list/**",
+        "frontend/src/app/files/tie/**",
+        "frontend/src/app/files/upload/**",
+        "frontend/src/app/machines/files/**"
+      ]
+    },
+    {
+      "name": "Ingest",
+      "backend": [
+        "backend/**/Ingest/**",
+        "backend/**/Conversion/**",
+        "backend/**/Extraction/**",
+        "backend/**/Embeddings/**",
+        "backend/**/Documents/**",
+        "backend/src/Insights/HealthyFac.Insights.Messaging/**"
+      ],
+      "frontend": [
+        "frontend/src/app/files/ingest/**"
+      ]
+    },
+    {
+      "name": "Drafts",
+      "backend": [
+        "backend/**/Drafts/**",
+        "backend/**/DefinitionDrafts/**",
+        "backend/**/Composition/**"
+      ],
+      "frontend": [
+        "frontend/src/app/machines/drafts/**",
+        "frontend/src/app/work-orders/drafts/**"
+      ]
+    },
+    {
+      "name": "SignalModel",
+      "backend": [
+        "backend/**/MetricDefinitions/**",
+        "backend/**/StatusDefinitions/**",
+        "backend/**/MetricUnits/**",
+        "backend/**/OperatingPhases/**",
+        "backend/**/MetricSchemas/**"
+      ],
+      "frontend": [
+        "frontend/src/app/machines/metrics/**",
+        "frontend/src/app/machines/phases/**",
+        "frontend/src/app/machines/statuses/**"
+      ]
+    },
+    {
+      "name": "Intake",
+      "backend": [
+        "backend/**/Intake/**"
+      ],
+      "frontend": []
+    },
+    {
+      "name": "Evaluation",
+      "backend": [
+        "backend/**/Evaluation/**",
+        "backend/**/SignalEpisodes/**",
+        "backend/**/Signals/**"
+      ],
+      "frontend": [
+        "frontend/src/app/machines/signals/**"
+      ]
+    },
+    {
+      "name": "Cases",
+      "backend": [
+        "backend/**/Cases/**",
+        "backend/**/Agents/**"
+      ],
+      "frontend": [
+        "frontend/src/app/maintenance/**"
+      ]
+    },
+    {
+      "name": "Realtime",
+      "backend": [
+        "backend/**/Realtime/**"
+      ],
+      "frontend": [
+        "frontend/src/app/shared/realtime/**",
+        "frontend/src/app/shared/notifications/**"
+      ]
+    },
+    {
+      "name": "Gateway",
+      "backend": [
+        "backend/src/Gateway/**",
+        "backend/tests/HealthyFac.Gateway.*/**"
+      ],
+      "frontend": []
+    },
+    {
+      "name": "Messaging",
+      "backend": [
+        "backend/**/Messaging/**",
+        "backend/src/*/HealthyFac.*.Messaging/**"
+      ],
+      "frontend": []
+    },
+    {
+      "name": "Persistence",
+      "backend": [
+        "backend/**/Persistence/**",
+        "backend/**/Database/**",
+        "backend/**/Grids/**",
+        "backend/**/QueryExpressions/**"
+      ],
+      "frontend": [
+        "frontend/src/app/shared/grid/**"
+      ]
+    },
+    {
+      "name": "Platform",
+      "backend": [
+        "backend/src/Spa/**",
+        "backend/tests/HealthyFac.Spa.*/**",
+        "backend/**/Hosting/**",
+        "backend/**/Health/**",
+        "backend/**/HealthChecks/**",
+        "backend/**/Configuration/**",
+        "backend/**/ErrorHandling/**",
+        "backend/**/HttpFailures/**",
+        "backend/**/TextInput/**",
+        "backend/**/RichText/**",
+        "backend/**/IdEncryption/**",
+        "backend/**/Serialization/**",
+        "backend/**/Time/**",
+        "backend/**/Caching/**",
+        "backend/**/BackgroundQueues/**",
+        "backend/**/Observability/**",
+        "backend/**/Logging/**",
+        "backend/**/Enumerations/**",
+        "backend/**/UseCases/**",
+        "backend/**/Filters/**",
+        "backend/**/Rpc/**",
+        "backend/**/Https/**",
+        "backend/**/CrossOrigin/**"
+      ],
+      "frontend": [
+        "frontend/src/app/layout/**",
+        "frontend/src/app/fallback/**",
+        "frontend/src/app/home/**"
+      ]
+    },
+    {
+      "name": "Seeding",
+      "backend": [
+        "backend/src/Tools/HealthyFac.Seeder/**",
+        "backend/tests/HealthyFac.Seeder.*/**",
+        "backend/seed/**"
+      ],
+      "frontend": []
+    },
+    {
+      "name": "Simulation",
+      "backend": [
+        "backend/src/Tools/HealthyFac.MachineSimulator/**",
+        "backend/src/Tools/HealthyFac.MachineSimulator.Scenarios/**",
+        "backend/tests/HealthyFac.MachineSimulator.*/**"
+      ],
+      "frontend": []
+    },
+    {
+      "name": "Conventions",
+      "backend": [
+        "backend/tests/HealthyFac.Testing/Conventions/**",
+        "backend/tests/*.ArchitectureTests/**"
+      ],
+      "frontend": [
+        "frontend/src/app/*.spec.ts"
+      ]
+    }
+  ]
+}

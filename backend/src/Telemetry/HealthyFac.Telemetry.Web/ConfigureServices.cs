@@ -89,6 +89,7 @@ public static class ConfigureServices
                 options.LowercaseUrls = true;
                 options.LowercaseQueryStrings = true;
             });
+
             services.AddSharedJsonOptions();
             services.AddIdEncryption(configuration);
             services.AddSharedApiVersioning();
@@ -102,8 +103,10 @@ public static class ConfigureServices
             services.AddSharedLogging(configuration);
             services.AddSharedTracing(configuration);
             services.AddSharedMetrics(configuration);
+
             services.ConfigureOpenTelemetryTracerProvider(tracing =>
                 tracing.AddSource(ObservabilityConstants.Intake.Source));
+
             services.ConfigureOpenTelemetryMeterProvider(metrics =>
                 metrics.AddMeter(ObservabilityConstants.Intake.Meter)
                     .AddMeter(ObservabilityConstants.Evaluation.Meter));

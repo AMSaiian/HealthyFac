@@ -2,10 +2,13 @@ using System.Net;
 using System.Text.Json.Nodes;
 using HealthyFac.Gateway.IntegrationTests.Composition.Data;
 using HealthyFac.Gateway.IntegrationTests.Hosting;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Gateway.IntegrationTests.Composition;
 
 [Collection(GatewayProxyCollection.Name)]
+[Feature(TestFeatures.Gateway)]
+[Feature(TestFeatures.Drafts)]
 public sealed class DraftGroupsCompositionTests(GatewayEnvironment environment) : IAsyncLifetime
 {
     private const string CoreGroupsJson = """
@@ -53,19 +56,19 @@ public sealed class DraftGroupsCompositionTests(GatewayEnvironment environment) 
             TestContext.Current.CancellationToken);
 
         var body = JsonNode.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken))!;
-        var groups = body[propertyName: "groups"]!.AsArray();
+        var groups = body["groups"]!.AsArray();
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         groups.Should().HaveCount(expected: 4);
-        Ids(groups[index: 0], list: "metrics").Should().Equal("t1");
-        Ids(groups[index: 0], list: "phases").Should().Equal("p1");
-        Ids(groups[index: 1], list: "statuses").Should().Equal("t2");
-        groups[index: 2]![propertyName: "machineName"]!.GetValue<string>().Should().Be(expected: "Mill");
-        Ids(groups[index: 2], list: "metrics").Should().Equal("t3");
-        groups[index: 3]![propertyName: "machineName"].Should().BeNull();
-        Ids(groups[index: 3], list: "statuses").Should().Equal("t4");
+        Ids(groups[0], list: "metrics").Should().Equal("t1");
+        Ids(groups[0], list: "phases").Should().Equal("p1");
+        Ids(groups[1], list: "statuses").Should().Equal("t2");
+        groups[2]!["machineName"]!.GetValue<string>().Should().Be(expected: "Mill");
+        Ids(groups[2], list: "metrics").Should().Equal("t3");
+        groups[3]!["machineName"].Should().BeNull();
+        Ids(groups[3], list: "statuses").Should().Equal("t4");
     }
 
     private static string[] Ids(JsonNode? group, string list) =>
-        [.. group![list]!.AsArray().Select(item => item![propertyName: "id"]!.GetValue<string>())];
+        [.. group![list]!.AsArray().Select(item => item!["id"]!.GetValue<string>())];
 }

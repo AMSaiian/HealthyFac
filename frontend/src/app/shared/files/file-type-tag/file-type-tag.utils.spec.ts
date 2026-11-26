@@ -42,7 +42,7 @@ function tokensBelowContrast(tokens: readonly string[]): string[] {
   return tokens.filter((token) => contrastWithWhite(paletteHexOf(token)) < WCAG_AA_TEXT_CONTRAST);
 }
 
-describe('fileTypeColors', () => {
+describe('fileTypeColors', { tags: ['Platform'] }, () => {
   it('fileTypeColors_EveryAllowedExtension_HasOneDistinctColor', () => {
     const tokens = Object.values(FILE_TYPE_TOKENS);
 

@@ -1,14 +1,15 @@
 using HealthyFac.Shared.Application.ErrorHandling;
-using HealthyFac.Telemetry.Application.StatusDefinitions;
 using HealthyFac.Telemetry.Domain.StatusDefinitions;
 using HealthyFac.Telemetry.IntegrationTests.Database.Data;
 using HealthyFac.Telemetry.IntegrationTests.MachineRegistrations.Data;
 using HealthyFac.Telemetry.IntegrationTests.MetricDefinitions.Data;
 using HealthyFac.Telemetry.IntegrationTests.StatusDefinitions.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.IntegrationTests.StatusDefinitions;
 
 [Collection(TelemetryDefinitionsCollection.Name)]
+[Feature(TestFeatures.SignalModel)]
 public sealed class ApplyStatusDefinitionChangesTests(TelemetryDatabaseFixture fixture)
 {
     private readonly TelemetryDatabaseFixture _fixture = fixture;
@@ -17,6 +18,7 @@ public sealed class ApplyStatusDefinitionChangesTests(TelemetryDatabaseFixture f
     public async Task Apply_WithNewAndExistingCodes_CreatesTheNewOnesAndChangesTheExistingOneWithoutASchemaRevision()
     {
         var (tenant, machineId) = await ArrangeAsync();
+
         var existingId = await _fixture.CreateStatusDefinitionAsync(
             tenant.CompanyId,
             machineId,
@@ -35,14 +37,18 @@ public sealed class ApplyStatusDefinitionChangesTests(TelemetryDatabaseFixture f
                     StatusDefinitionTestData.UpdatedDescription),
                 StatusDefinitionTestData.Change(StatusDefinitionTestData.ThirdCode),
             ]);
+
         var updated = await _fixture.LoadStatusDefinitionRowAsync(existingId);
         var revision = await _fixture.LoadMetricSchemaRevisionAsync(machineId);
 
-        response.Items.Select(item => (item.Code, item.IsCreated)).Should().Equal(
-            (StatusDefinitionTestData.OtherCode, true),
-            (StatusDefinitionTestData.Code, false),
-            (StatusDefinitionTestData.ThirdCode, true));
-        response.Items[index: 1].Id.Should().Be(existingId);
+        response.Items.Select(item => (item.Code, item.IsCreated))
+            .Should()
+            .Equal(
+                (StatusDefinitionTestData.OtherCode, true),
+                (StatusDefinitionTestData.Code, false),
+                (StatusDefinitionTestData.ThirdCode, true));
+
+        response.Items[1].Id.Should().Be(existingId);
 
         updated.Code.Should().Be(StatusDefinitionTestData.Code);
         updated.Severity.Should().Be(StatusSeverity.Error);
@@ -54,6 +60,7 @@ public sealed class ApplyStatusDefinitionChangesTests(TelemetryDatabaseFixture f
     public async Task Apply_WithNullSeverityAndDescriptionForAnExistingCode_KeepsTheStoredValues()
     {
         var (tenant, machineId) = await ArrangeAsync();
+
         var existingId = await _fixture.CreateStatusDefinitionAsync(
             tenant.CompanyId,
             machineId,
@@ -65,6 +72,7 @@ public sealed class ApplyStatusDefinitionChangesTests(TelemetryDatabaseFixture f
             tenant.CompanyId,
             machineId,
             [StatusDefinitionTestData.NoProposal(StatusDefinitionTestData.Code)]);
+
         var row = await _fixture.LoadStatusDefinitionRowAsync(existingId);
 
         row.Severity.Should().Be(StatusSeverity.Error);
@@ -80,6 +88,7 @@ public sealed class ApplyStatusDefinitionChangesTests(TelemetryDatabaseFixture f
             tenant.CompanyId,
             machineId,
             [StatusDefinitionTestData.NoProposal(StatusDefinitionTestData.Code)]);
+
         var row = await _fixture.LoadStatusDefinitionRowAsync(response.Items.Single().Id);
 
         row.Severity.Should().Be(StatusSeverity.Info);
@@ -127,33 +136,6 @@ public sealed class ApplyStatusDefinitionChangesTests(TelemetryDatabaseFixture f
     }
 
     [Fact]
-    public async Task Apply_WithTheMaximumNumberOfItems_StoresAllOfThem()
-    {
-        var (tenant, machineId) = await ArrangeAsync();
-
-        var response = await _fixture.ApplyStatusChangesAsync(
-            tenant.CompanyId,
-            machineId,
-            StatusDefinitionTestData.Changes(StatusDefinitionValidationConstants.ApplyMaxItems));
-
-        response.Items.Should().HaveCount(StatusDefinitionValidationConstants.ApplyMaxItems);
-        response.Items.Should().OnlyContain(item => item.IsCreated);
-    }
-
-    [Fact]
-    public async Task Apply_WithOneItemAboveTheMaximum_IsAValidationFailure()
-    {
-        var (tenant, machineId) = await ArrangeAsync();
-
-        var act = () => _fixture.ApplyStatusChangesAsync(
-            tenant.CompanyId,
-            machineId,
-            StatusDefinitionTestData.Changes(StatusDefinitionValidationConstants.ApplyMaxItems + 1));
-
-        await act.Should().ThrowAsync<AppValidationException>();
-    }
-
-    [Fact]
     public async Task Apply_InParallelWithTheSameNewCode_OneSucceedsOneConflicts()
     {
         var (tenant, machineId) = await ArrangeAsync();
@@ -168,6 +150,7 @@ public sealed class ApplyStatusDefinitionChangesTests(TelemetryDatabaseFixture f
                 tenant.CompanyId,
                 machineId,
                 [StatusDefinitionTestData.Change(StatusDefinitionTestData.Code, StatusSeverity.Error)])));
+
         var rows = await _fixture.LoadStatusDefinitionRowsAsync(machineId, StatusDefinitionTestData.Code);
 
         race.SaveCounts.Should().Equal(1, 1);

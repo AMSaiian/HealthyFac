@@ -7,6 +7,7 @@ public static class RateLimitClientExtensions
         public Task<HttpResponseMessage> PostVerifyInviteAsync(string? forwardedFor = null)
         {
             var request = new HttpRequestMessage(HttpMethod.Post, RateLimitTestData.VerifyInviteRoute);
+
             if (forwardedFor is not null)
             {
                 request.Headers.Add(RateLimitTestData.ForwardedForHeader, forwardedFor);

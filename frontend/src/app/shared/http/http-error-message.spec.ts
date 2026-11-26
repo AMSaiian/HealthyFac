@@ -1,6 +1,6 @@
 import { httpErrorMessageKey } from './http-error-message';
 
-describe('httpErrorMessageKey', () => {
+describe('httpErrorMessageKey', { tags: ['Platform'] }, () => {
   it.each([
     [0, 'ERRORS.HTTP.NETWORK'],
     [400, 'ERRORS.HTTP.BAD_REQUEST'],

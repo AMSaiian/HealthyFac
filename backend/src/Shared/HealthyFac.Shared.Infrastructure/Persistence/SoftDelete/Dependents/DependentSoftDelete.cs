@@ -19,8 +19,9 @@ internal sealed class DependentSoftDelete<TDependent> : IDependentSoftDelete
         CancellationToken cancellationToken
     )
     {
-        var primaryKeyName = deletion.Relation.DeclaringEntityType.FindPrimaryKey()!.Properties[index: 0].Name;
+        var primaryKeyName = deletion.Relation.DeclaringEntityType.FindPrimaryKey()!.Properties[0].Name;
         var rows = FindRows(dbContext, deletion);
+
         if (!deletion.HasOwnCascade)
         {
             await rows.ExecuteUpdateAsync(setters => SetDeleted(setters, deletion), cancellationToken);
@@ -29,6 +30,7 @@ internal sealed class DependentSoftDelete<TDependent> : IDependentSoftDelete
         }
 
         var keys = await rows.Select(row => EF.Property<Guid>(row, primaryKeyName)).ToListAsync(cancellationToken);
+
         if (keys.Count == 0)
         {
             return keys;
@@ -42,8 +44,9 @@ internal sealed class DependentSoftDelete<TDependent> : IDependentSoftDelete
 
     public List<Guid> Apply(DbContext dbContext, DependentDeletionContext deletion)
     {
-        var primaryKeyName = deletion.Relation.DeclaringEntityType.FindPrimaryKey()!.Properties[index: 0].Name;
+        var primaryKeyName = deletion.Relation.DeclaringEntityType.FindPrimaryKey()!.Properties[0].Name;
         var rows = FindRows(dbContext, deletion);
+
         if (!deletion.HasOwnCascade)
         {
             rows.ExecuteUpdate(setters => SetDeleted(setters, deletion));
@@ -52,6 +55,7 @@ internal sealed class DependentSoftDelete<TDependent> : IDependentSoftDelete
         }
 
         var keys = rows.Select(row => EF.Property<Guid>(row, primaryKeyName)).ToList();
+
         if (keys.Count == 0)
         {
             return keys;
@@ -64,8 +68,8 @@ internal sealed class DependentSoftDelete<TDependent> : IDependentSoftDelete
 
     private static IQueryable<TDependent> FindRows(DbContext dbContext, DependentDeletionContext deletion)
     {
-        var foreignKeyName = deletion.Relation.Properties[index: 0].Name;
-        var primaryKeyName = deletion.Relation.DeclaringEntityType.FindPrimaryKey()!.Properties[index: 0].Name;
+        var foreignKeyName = deletion.Relation.Properties[0].Name;
+        var primaryKeyName = deletion.Relation.DeclaringEntityType.FindPrimaryKey()!.Properties[0].Name;
         var principals = deletion.PrincipalKeys.ToList();
         var tracked = deletion.TrackedKeys.ToList();
 
@@ -80,7 +84,7 @@ internal sealed class DependentSoftDelete<TDependent> : IDependentSoftDelete
         List<Guid> keys
     )
     {
-        var primaryKeyName = deletion.Relation.DeclaringEntityType.FindPrimaryKey()!.Properties[index: 0].Name;
+        var primaryKeyName = deletion.Relation.DeclaringEntityType.FindPrimaryKey()!.Properties[0].Name;
 
         return dbContext.Set<TDependent>()
             .Where(row => keys.Contains(EF.Property<Guid>(row, primaryKeyName)));
@@ -90,6 +94,7 @@ internal sealed class DependentSoftDelete<TDependent> : IDependentSoftDelete
     {
         setters.SetProperty(row => EF.Property<DateTime?>(row, nameof(ISoftDeletable.DeletedAt)), deletion.DeletedAt);
         setters.SetProperty(row => EF.Property<Guid?>(row, nameof(ISoftDeletable.DeletedBy)), deletion.DeletedBy);
+
         if (typeof(IAuditable).IsAssignableFrom(typeof(TDependent)))
         {
             setters.SetProperty(row => EF.Property<DateTime?>(row, nameof(IAuditable.UpdatedAt)), deletion.DeletedAt);

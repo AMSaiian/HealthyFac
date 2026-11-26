@@ -40,7 +40,10 @@
 # - cleanup-changed: the private copy, the lost update, the deleted file, the guard, and the lock.
 # - record-turn-start: the turn tree of non-ASCII paths and the stale turn trees.
 # - command-line-batches: the long file lists.
-# - sarif-reader: Get-SarifDiagnostics and Get-CleanupFixedRules.
+# - sarif-reader: Get-SarifDiagnostics.
+# - line-length: the maximumLineLength of backend/SonarLint.xml equals max_line_length of .editorconfig.
+# - named-index: Get-NamedIndexArguments (the NAMED_INDEX check): named index arguments are found; attribute targets,
+#   strings, comments, and positional indexes are not.
 # -Only <names> (comma-separated) runs the shared setup and only the named sections; an unknown name exits 1 before any
 # check. The last line names the sections that ran.
 # Run:  pwsh .claude/hooks/tests/hook-scope.tests.ps1 [-Only <names>]
@@ -48,7 +51,7 @@
 param([string]$Only = '')
 
 $SectionNames = @('verify-changed', 'reviewer-write-scope', 'handoff-write-guard', 'executor-run-foreground',
-  'cleanup-changed', 'record-turn-start', 'command-line-batches', 'sarif-reader')
+  'cleanup-changed', 'record-turn-start', 'command-line-batches', 'sarif-reader', 'line-length', 'named-index')
 $onlyNames = @($Only -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ })
 foreach ($name in $onlyNames) {
   if ($name -notin $SectionNames) {
@@ -597,6 +600,15 @@ try {
   Add-Content (Join-Path $repo 'backend/App/B.cs') '// edited after the clean stop'
   [void](Invoke-Hook $repo 's2' $noState)
   Assert-That ((Get-MarkCount (Join-Path $repo 'backend/App/A.cs') $marker) -eq 2) 'Proof: without the saved step tree, the next stop cleans the unchanged file again'
+  $repo = New-TestRepo 'run-state-tree'
+  Save-StepState $repo 'backend' (Get-TreeId -Repo $repo)
+  [void](Invoke-Hook $repo 's1')
+  Assert-That ((Get-MarkCount (Join-Path $repo 'backend/App/A.cs') $marker) -eq 0 -and
+    (Get-MarkCount (Join-Path $repo 'backend/App/B.cs') $marker) -eq 0) 'After a run script wrote the backend state of the tree, the hook cleans and builds nothing'
+  Add-Content (Join-Path $repo 'backend/App/B.cs') '// edited after the run'
+  [void](Invoke-Hook $repo 's2')
+  Assert-That ((Get-MarkCount (Join-Path $repo 'backend/App/B.cs') $marker) -eq 1 -and
+    (Get-MarkCount (Join-Path $repo 'backend/App/A.cs') $marker) -eq 0) 'A later edit of a backend file makes the hook clean that file again'
 
   }
 
@@ -724,9 +736,6 @@ try {
   $slashText = @(Get-SarifDiagnostics -Repo $sarifRepo.Replace('\', '/') -Root $sarifRoot -BuildOutput $buildText)
   Assert-That ($slashText -contains "backend/App/App.csproj : warning NU1903: Package 'X' 1.0 has a known vulnerability.") `
     'The text line of a backslash path loses the repo prefix of a forward-slash -Repo'
-  $skipped = 0
-  $without = @(Get-SarifDiagnostics -Repo $sarifRepo -Root $sarifRoot -SkipRules 'IDE0007' -SkippedCount ([ref]$skipped))
-  Assert-That ($without.Count -eq 3 -and -not ($without -match 'IDE0007') -and $skipped -eq 1) '-SkipRules IDE0007 drops the line and counts 1'
   $oldFile = Join-Path $sarifRoot 'two-projects-a.sarif'
   (Get-Item $oldFile).LastWriteTimeUtc = [DateTime]::UtcNow.AddDays(-2)
   $sinceLines = @(Get-SarifDiagnostics -Repo $sarifRepo -Root $sarifRoot -Since ([DateTime]::UtcNow.AddDays(-1)))
@@ -735,11 +744,38 @@ try {
   (Get-Item $oldFile).LastWriteTimeUtc = [DateTime]::UtcNow
   $onlyA = @(Get-SarifDiagnostics -Repo $sarifRepo -Root $sarifRoot -Files 'backend/App/A.cs')
   Assert-That ($onlyA.Count -eq 2 -and -not ($onlyA -match 'B\.cs|Util\.cs')) '-Files keeps only the results of the named file'
-  $sarifRepo2 = New-TestRepo 'cleanup-rules'
-  New-Item -ItemType Directory -Force (Join-Path $sarifRepo2 '.claude/hooks') | Out-Null
-  "IDE0007`n`nIDE0008`n" | Set-Content (Join-Path $sarifRepo2 '.claude/hooks/cleanup-fixed-rules.txt')
-  Assert-That ((@(Get-CleanupFixedRules $sarifRepo2) -join ',') -eq 'IDE0007,IDE0008') 'The cleanup-fixed rules are the non-empty lines of the file'
 
+  }
+
+  if (Test-Section 'line-length') {
+  Write-Host 'Line length'
+  $repoRoot = Split-Path (Split-Path $HooksDir -Parent) -Parent
+  $sonarLimit = [regex]::Match((Get-Content (Join-Path $repoRoot 'backend/SonarLint.xml') -Raw),
+    '(?s)<Key>maximumLineLength</Key>\s*<Value>(\d+)</Value>').Groups[1].Value
+  $editorConfigLimit = [regex]::Match((Get-Content (Join-Path $repoRoot '.editorconfig') -Raw),
+    '(?m)^max_line_length\s*=\s*(\d+)').Groups[1].Value
+  Assert-That ($sonarLimit -ne '' -and $sonarLimit -eq $editorConfigLimit) `
+    'The maximumLineLength of backend/SonarLint.xml equals max_line_length of .editorconfig'
+  }
+
+  if (Test-Section 'named-index') {
+  Write-Host 'Named index arguments'
+  $namedRepo = Join-Path $work 'named-index'
+  New-Item -ItemType Directory -Force (Join-Path $namedRepo 'src/Migrations') | Out-Null
+  $found = @{
+    'Found.cs'  = @('var a = list[index: 0];', 'var b = map[key: "x"];', 'var c = new Dictionary<string, int> { [key: "z"] = 4 };',
+      'var d = items?[index: 1];', 'var e = Get()[index: 2];', 'var f = $"v{list[index: 0]}";',
+      'var g = $@"x{map[key: ""y""]}";', 'var j = rows["a"]!', '    [propertyName: "at"] = 1;')
+    'Clean.cs'  = @('[assembly: InternalsVisibleTo("X")]', '[return: NotNull]', 'var a = list[0];', 'var b = "a[b: c]";',
+      '// x[y: 1]', 'var c = @"x[y: 1]";', 'var d = $"v{list[0]}";', '/* x[y: 1] */', 'var e = M(name: 1);', 'var h = $"{{list[index: 0]}}";', 'var i = $"{list[0]}";', '[Fact]', '[return: NotNull]', 'return [first: 1];', '[field: Obsolete]')
+  }
+  foreach ($name in $found.Keys) { $found[$name] | Set-Content (Join-Path $namedRepo "src/$name") }
+  'var m = list[index: 0];' | Set-Content (Join-Path $namedRepo 'src/Migrations/M.cs')
+  $hits = @(Get-NamedIndexArguments -Repo $namedRepo -Files @('src/Found.cs', 'src/Clean.cs', 'src/Migrations/M.cs', 'src/Missing.cs'))
+  Assert-That ($hits.Count -eq 8) "eight named index arguments are found, nothing in strings, comments, attributes, or Migrations (found $($hits.Count))"
+  Assert-That ($hits[0] -eq 'src/Found.cs(1,14): error NAMED_INDEX: the index access names its argument; write list[0], not list[index: 0].') `
+    'the NAMED_INDEX line names the path, the line, and the column'
+  Assert-That (@($hits | Where-Object { $_ -notlike 'src/Found.cs(*' }).Count -eq 0) 'every hit is in the file with the named arguments'
   }
 
   if (Test-Section 'verify-changed') {
@@ -762,6 +798,15 @@ try {
   Assert-That ($result.ExitCode -eq 2 -and $result.Output.Contains('backend/App/A.cs(3,5): warning CS0219: Message of CS0219')) `
     "The hook reports the SARIF warning of a changed file when the build compiles nothing (output: $($result.Output))"
   Assert-That (-not $result.Output.Contains('Z.cs')) 'The hook reports no SARIF warning of an unchanged file'
+
+  $repo = New-TestRepo 'hook-named-index'
+  'namespace Test; public class A { int M(int[] list) => list[index: 0]; }' | Set-Content (Join-Path $repo 'backend/App/A.cs')
+  $env:FAKE_DOTNET_BUILD = '1'
+  $result = Invoke-Hook $repo
+  Remove-Item Env:FAKE_DOTNET_BUILD
+  Assert-That ($result.ExitCode -eq 2 -and $result.Output.Contains('backend/App/A.cs(1,') -and $result.Output.Contains('error NAMED_INDEX:')) `
+    "The hook reports a named index argument of a changed file (output: $($result.Output))"
+  Assert-That (-not $result.Output.Contains('B.cs')) 'The hook reports no named index argument of a file without one'
 
   $repo = New-TestRepo 'hook-sarif-failed'
   $sarifObj = Join-Path $repo 'artifacts/claude-verify/obj/App'

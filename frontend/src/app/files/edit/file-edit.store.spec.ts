@@ -43,7 +43,7 @@ interface Setup {
   messages: { add: ReturnType<typeof vi.fn> };
 }
 
-describe('FileEditStore', () => {
+describe('FileEditStore', { tags: ['Files'] }, () => {
   function setup(
     scope: object,
     permissions: readonly Permission[] = [Permission.CompanyFilesWrite, Permission.FilesWrite],

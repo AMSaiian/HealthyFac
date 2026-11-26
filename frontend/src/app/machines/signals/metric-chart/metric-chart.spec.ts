@@ -76,38 +76,26 @@ const at = (iso: string): number => Date.parse(iso);
 
 const ALL_LIMITS = { warningLow: 1, warningHigh: 25, alarmLow: 0, alarmHigh: 30 };
 
-describe('metric chart', () => {
-  it('episodeBucketRange_EpisodeInsideTheSecondBucket_GivesOnlyThatBucket', () => {
-    const result = episodeBucketRange(BUCKETS, {
-      openedAt: '2026-01-01T10:01:10Z',
-      resolvedAt: '2026-01-01T10:01:40Z',
-    });
+describe('metric chart', { tags: ['Evaluation'] }, () => {
+  it.each([
+    [
+      'EpisodeInsideTheSecondBucket_GivesOnlyThatBucket',
+      '2026-01-01T10:01:10Z',
+      '2026-01-01T10:01:40Z',
+      { first: 1, last: 1 },
+    ],
+    ['OpenEpisode_RunsFromItsStartToTheLastBucket', '2026-01-01T10:01:30Z', null, { first: 1, last: 2 }],
+    [
+      'EpisodeResolvedAtTheStartOfABucket_LeavesThatBucketOut',
+      '2026-01-01T09:00:00Z',
+      '2026-01-01T10:01:00Z',
+      { first: 0, last: 0 },
+    ],
+    ['EpisodeBeforeTheRange_GivesNull', '2026-01-01T08:00:00Z', '2026-01-01T09:00:00Z', null],
+  ])('episodeBucketRange_%s', (_name, openedAt, resolvedAt, expected) => {
+    const result = episodeBucketRange(BUCKETS, { openedAt, resolvedAt });
 
-    expect(result).toEqual({ first: 1, last: 1 });
-  });
-
-  it('episodeBucketRange_OpenEpisode_RunsFromItsStartToTheLastBucket', () => {
-    const result = episodeBucketRange(BUCKETS, { openedAt: '2026-01-01T10:01:30Z', resolvedAt: null });
-
-    expect(result).toEqual({ first: 1, last: 2 });
-  });
-
-  it('episodeBucketRange_EpisodeResolvedAtTheStartOfABucket_LeavesThatBucketOut', () => {
-    const result = episodeBucketRange(BUCKETS, {
-      openedAt: '2026-01-01T09:00:00Z',
-      resolvedAt: '2026-01-01T10:01:00Z',
-    });
-
-    expect(result).toEqual({ first: 0, last: 0 });
-  });
-
-  it('episodeBucketRange_EpisodeBeforeTheRange_GivesNull', () => {
-    const result = episodeBucketRange(BUCKETS, {
-      openedAt: '2026-01-01T08:00:00Z',
-      resolvedAt: '2026-01-01T09:00:00Z',
-    });
-
-    expect(result).toBeNull();
+    expect(result).toEqual(expected);
   });
 
   it('toChartData_WithAllLimitsAndAnEpisode_HasFiveLegendEntries', () => {
@@ -363,12 +351,12 @@ describe('metric chart', () => {
     expect(limitsOf(null)).toEqual({ warningLow: null, warningHigh: null, alarmLow: null, alarmHigh: null });
   });
 
-  it('withAlpha_LongHexColor_GivesAnRgbaColor', () => {
-    expect(withAlpha('#ff8000', 0.5)).toBe('rgba(255, 128, 0, 0.5)');
-  });
-
-  it('withAlpha_RgbColor_GivesAnRgbaColor', () => {
-    expect(withAlpha('rgb(255, 128, 0)', 0.5)).toBe('rgba(255, 128, 0, 0.5)');
+  it.each([
+    ['LongHexColor_GivesAnRgbaColor', '#ff8000', 'rgba(255, 128, 0, 0.5)'],
+    ['RgbColor_GivesAnRgbaColor', 'rgb(255, 128, 0)', 'rgba(255, 128, 0, 0.5)'],
+    ['ColorThatIsNotLongHex_StaysAsItIs', 'light-dark(#111111, #222222)', 'light-dark(#111111, #222222)'],
+  ])('withAlpha_%s', (_name, color, expected) => {
+    expect(withAlpha(color, 0.5)).toBe(expected);
   });
 
   it('tooltipLabel_RangeBand_GivesTheMinimumAndTheMaximumInOneLine', () => {
@@ -394,75 +382,70 @@ describe('metric chart', () => {
     expect(tooltipLabel(datasets, average, 2, String)).toBe('Average: 30');
   });
 
-  it('tooltipSwatch_DatasetWithAWideLine_GivesASolidBoxInTheLineColorWithoutAFrame', () => {
-    expect(tooltipSwatch({ borderColor: 'warning', backgroundColor: 'muted', borderWidth: 6 })).toEqual({
-      borderColor: 'warning',
-      backgroundColor: 'warning',
-      borderWidth: 0,
-    });
-  });
-
-  it('tooltipSwatch_DatasetWithoutALine_GivesItsFillColor', () => {
-    expect(tooltipSwatch({ backgroundColor: 'band', borderWidth: 0 })).toEqual({
-      borderColor: 'band',
-      backgroundColor: 'band',
-      borderWidth: 0,
-    });
-  });
-
-  it('withAlpha_ColorThatIsNotLongHex_StaysAsItIs', () => {
-    expect(withAlpha('light-dark(#111111, #222222)', 0.5)).toBe('light-dark(#111111, #222222)');
+  it.each([
+    [
+      'DatasetWithAWideLine_GivesASolidBoxInTheLineColorWithoutAFrame',
+      { borderColor: 'warning', backgroundColor: 'muted', borderWidth: 6 },
+      'warning',
+    ],
+    ['DatasetWithoutALine_GivesItsFillColor', { backgroundColor: 'band', borderWidth: 0 }, 'band'],
+    [
+      'DatasetWithATranslucentFill_GivesAnOpaqueBox',
+      { backgroundColor: 'rgba(255, 128, 0, 0.18)', borderWidth: 0 },
+      'rgb(255, 128, 0)',
+    ],
+  ])('tooltipSwatch_%s', (_name, dataset, color) => {
+    expect(tooltipSwatch(dataset)).toEqual({ borderColor: color, backgroundColor: color, borderWidth: 0 });
   });
 });
 
-describe('metric chart time axis', () => {
+describe('metric chart time axis', { tags: ['Evaluation'] }, () => {
   const ZONE = 'Europe/Kyiv';
 
-  it('timeTicks_ViewOfOneHour_PutsTheInnerTicksOnLocalTenMinutes', () => {
-    const min = at('2026-01-15T10:00:17Z');
-    const max = at('2026-01-15T11:00:17Z');
+  it.each([
+    [
+      'ViewOfOneHour_PutsTheInnerTicksOnLocalTenMinutes',
+      '2026-01-15T10:00:17Z',
+      '2026-01-15T11:00:17Z',
+      [
+        '2026-01-15T10:10:00Z',
+        '2026-01-15T10:20:00Z',
+        '2026-01-15T10:30:00Z',
+        '2026-01-15T10:40:00Z',
+        '2026-01-15T10:50:00Z',
+      ],
+    ],
+    [
+      'ViewOf90Seconds_PutsTheInnerTicksOnLocalThirtySeconds',
+      '2026-01-15T10:00:07Z',
+      '2026-01-15T10:01:37Z',
+      ['2026-01-15T10:00:30Z', '2026-01-15T10:01:00Z', '2026-01-15T10:01:30Z'],
+    ],
+    [
+      'ViewOfOneDay_PutsTheInnerTicksOnLocalSixHours',
+      '2026-01-14T22:00:00Z',
+      '2026-01-15T22:00:00Z',
+      ['2026-01-15T04:00:00Z', '2026-01-15T10:00:00Z', '2026-01-15T16:00:00Z'],
+    ],
+    [
+      'ViewOfManyDays_PutsTheInnerTicksOnLocalMidnights',
+      '2026-01-01T10:00:00Z',
+      '2026-01-06T10:00:00Z',
+      [
+        '2026-01-01T22:00:00Z',
+        '2026-01-02T22:00:00Z',
+        '2026-01-03T22:00:00Z',
+        '2026-01-04T22:00:00Z',
+        '2026-01-05T22:00:00Z',
+      ],
+    ],
+  ])('timeTicks_%s', (_name, from, to, inner) => {
+    const min = at(from);
+    const max = at(to);
 
     const ticks = timeTicks(min, max, ZONE, 8);
 
-    expect(ticks).toEqual([
-      min,
-      at('2026-01-15T10:10:00Z'),
-      at('2026-01-15T10:20:00Z'),
-      at('2026-01-15T10:30:00Z'),
-      at('2026-01-15T10:40:00Z'),
-      at('2026-01-15T10:50:00Z'),
-      max,
-    ]);
-  });
-
-  it('timeTicks_ViewOf90Seconds_PutsTheInnerTicksOnLocalThirtySeconds', () => {
-    const min = at('2026-01-15T10:00:07Z');
-    const max = at('2026-01-15T10:01:37Z');
-
-    const ticks = timeTicks(min, max, ZONE, 8);
-
-    expect(ticks).toEqual([
-      min,
-      at('2026-01-15T10:00:30Z'),
-      at('2026-01-15T10:01:00Z'),
-      at('2026-01-15T10:01:30Z'),
-      max,
-    ]);
-  });
-
-  it('timeTicks_ViewOfOneDay_PutsTheInnerTicksOnLocalSixHours', () => {
-    const min = at('2026-01-14T22:00:00Z');
-    const max = at('2026-01-15T22:00:00Z');
-
-    const ticks = timeTicks(min, max, ZONE, 8);
-
-    expect(ticks).toEqual([
-      min,
-      at('2026-01-15T04:00:00Z'),
-      at('2026-01-15T10:00:00Z'),
-      at('2026-01-15T16:00:00Z'),
-      max,
-    ]);
+    expect(ticks).toEqual([min, ...inner.map(at), max]);
   });
 
   it('timeTicks_ViewOf365Days_KeepsTheTickCountWithinTheLimitAndKeepsTheEnds', () => {
@@ -476,23 +459,6 @@ describe('metric chart time axis', () => {
     expect(ticks.at(-1)).toBe(max);
   });
 
-  it('timeTicks_ViewOfManyDays_PutsTheInnerTicksOnLocalMidnights', () => {
-    const min = at('2026-01-01T10:00:00Z');
-    const max = at('2026-01-06T10:00:00Z');
-
-    const ticks = timeTicks(min, max, ZONE, 8);
-
-    expect(ticks).toEqual([
-      min,
-      at('2026-01-01T22:00:00Z'),
-      at('2026-01-02T22:00:00Z'),
-      at('2026-01-03T22:00:00Z'),
-      at('2026-01-04T22:00:00Z'),
-      at('2026-01-05T22:00:00Z'),
-      max,
-    ]);
-  });
-
   it('tickLabel_TimeThatIsNotOnAWholeMinute_ShowsTheSecondsInALongView', () => {
     const odd = tickLabel(at('2026-01-15T08:30:17Z'), ZONE, 3_600_000);
     const whole = tickLabel(at('2026-01-15T08:30:00Z'), ZONE, 3_600_000);
@@ -500,19 +466,9 @@ describe('metric chart time axis', () => {
     expect(odd).toContain('10:30:17');
     expect(whole).not.toContain('10:30:00');
   });
-
-  it('tooltipSwatch_DatasetWithATranslucentFill_GivesAnOpaqueBox', () => {
-    const swatch = tooltipSwatch({ backgroundColor: 'rgba(255, 128, 0, 0.18)', borderWidth: 0 });
-
-    expect(swatch).toEqual({
-      borderColor: 'rgb(255, 128, 0)',
-      backgroundColor: 'rgb(255, 128, 0)',
-      borderWidth: 0,
-    });
-  });
 });
 
-describe('metric chart tooltip lines', () => {
+describe('metric chart tooltip lines', { tags: ['Evaluation'] }, () => {
   it('hasTooltipLines_ClosingPointOfAnArea_IsFalseAndABucketOfASignalIsTrue', () => {
     const inside = episode(SignalSeverity.Alarm, '2026-01-01T10:01:10Z', '2026-01-01T10:01:40Z');
     const area = toChartData(input({ episodes: [inside] })).datasets.find((set) => set.hfSignals !== undefined)!;

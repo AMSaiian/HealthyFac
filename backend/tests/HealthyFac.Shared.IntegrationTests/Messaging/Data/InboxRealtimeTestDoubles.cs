@@ -40,6 +40,7 @@ public sealed class RealtimePushHandler(
         _recorder.Record(new HandledCall(request.Text, _currentUserProvider.TryGetActor()));
         _dbContext.AuditedEntities.Add(new TestAuditedEntity(request.Text));
         await _dbContext.SaveChangesAsync(cancellationToken);
+
         _notifier.AddToGroup(
             InboxProcessorTestData.UserCompanyId,
             RealtimeNotificationKind.WorkOrderBlocked,
@@ -47,6 +48,7 @@ public sealed class RealtimePushHandler(
             isActorSkipped: true);
 
         var isFailing = request.Text.Contains(InboxRealtimeTestData.FailsOnceMarker) && attempts == 0;
+
         if (isFailing)
         {
             throw new InvalidOperationException(InboxProcessorTestData.HandlerFailureText);
@@ -94,6 +96,7 @@ public sealed class InboxUpdateFailureInterceptor : DbCommandInterceptor
     {
         var isInboxUpdate = command.CommandText.Contains(InboxRealtimeTestData.UpdateCommand)
             && command.CommandText.Contains(DatabaseOutageTestData.InboxTableName);
+
         if (isInboxUpdate && Interlocked.Increment(ref _injectedCount) == 1)
         {
             throw new NpgsqlException(DatabaseOutageTestData.InjectedFailureText, new TimeoutException());

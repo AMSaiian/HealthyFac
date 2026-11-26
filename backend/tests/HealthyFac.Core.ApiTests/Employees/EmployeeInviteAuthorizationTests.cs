@@ -3,10 +3,12 @@ using HealthyFac.Core.ApiTests.Employees.Data;
 using HealthyFac.Core.ApiTests.Hosting;
 using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Testing.Authentication;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.ApiTests.Employees;
 
 [Collection(CoreApiCollection.Name)]
+[Feature(TestFeatures.Companies)]
 public sealed class EmployeeInviteAuthorizationTests(CoreApiFixture fixture)
 {
     private readonly CoreApiFixture _fixture = fixture;
@@ -64,7 +66,7 @@ public sealed class EmployeeInviteAuthorizationTests(CoreApiFixture fixture)
     {
         var extraFields = new Dictionary<string, object?>
         {
-            [key: "companyId"] = _fixture.IdEncryptor.Encrypt(EmployeeInviteApiTestData.OtherCompanyId),
+            ["companyId"] = _fixture.IdEncryptor.Encrypt(EmployeeInviteApiTestData.OtherCompanyId),
         };
 
         var response = await _fixture.PostCreateInviteAsync(_fixture.CreateSupervisorClaims(), extraFields);

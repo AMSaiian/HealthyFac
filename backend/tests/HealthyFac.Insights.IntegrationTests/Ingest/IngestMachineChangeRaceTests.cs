@@ -2,10 +2,13 @@ using HealthyFac.Insights.IntegrationTests.Database;
 using HealthyFac.Insights.IntegrationTests.Database.Data;
 using HealthyFac.Insights.IntegrationTests.Documents.Data;
 using HealthyFac.Insights.IntegrationTests.Ingest.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Insights.IntegrationTests.Ingest;
 
 [Collection(InsightsCollection.Name)]
+[Feature(TestFeatures.Ingest)]
+[Feature(TestFeatures.Files)]
 public sealed class IngestMachineChangeRaceTests(InsightsFixture fixture)
 {
     private static readonly Guid FirstMachineId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000101");
@@ -19,6 +22,7 @@ public sealed class IngestMachineChangeRaceTests(InsightsFixture fixture)
         _fixture.ArrangeFile(machineId: null);
         await _fixture.StartAttemptAsync();
         var changedAt = IngestAttemptTestData.Now.AddMinutes(value: 5);
+
         _fixture.Ingest.Converter.Behavior = async _ =>
         {
             await _fixture.HandleMachineChangedAsync(
@@ -40,6 +44,7 @@ public sealed class IngestMachineChangeRaceTests(InsightsFixture fixture)
     {
         _fixture.ArrangeFile(machineId: FirstMachineId);
         await _fixture.StartAttemptAsync();
+
         _fixture.Ingest.Converter.Behavior = async _ =>
         {
             await _fixture.HandleMachineChangedAsync(

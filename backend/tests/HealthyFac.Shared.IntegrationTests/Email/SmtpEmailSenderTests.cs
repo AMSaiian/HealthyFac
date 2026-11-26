@@ -1,10 +1,12 @@
 using System.Diagnostics;
 using HealthyFac.Shared.Application.Observability;
 using HealthyFac.Shared.IntegrationTests.Email.Data;
+using HealthyFac.Testing.Features;
 using HealthyFac.Testing.Tracing;
 
 namespace HealthyFac.Shared.IntegrationTests.Email;
 
+[Feature(TestFeatures.Companies)]
 public sealed class SmtpEmailSenderTests(MailpitFixture fixture) : IClassFixture<MailpitFixture>
 {
     private readonly MailpitFixture _fixture = fixture;
@@ -15,6 +17,7 @@ public sealed class SmtpEmailSenderTests(MailpitFixture fixture) : IClassFixture
         using var capture = new SpanCapture(
             ObservabilityConstants.Sources.Email,
             MailKit.Telemetry.SmtpClient.ActivitySourceName);
+
         using var parent = new Activity(EmailTestData.ParentName).Start();
 
         await _fixture.EmailSender.SendAsync(
@@ -22,10 +25,13 @@ public sealed class SmtpEmailSenderTests(MailpitFixture fixture) : IClassFixture
             CancellationToken.None);
 
         var spans = capture.Spans.Where(span => span.TraceId == parent.TraceId).ToList();
+
         var send = spans.Should()
             .ContainSingle(span => span.OperationName == ObservabilityConstants.Spans.EmailSend)
             .Subject;
+
         var children = spans.Where(span => span.ParentId == send.Id).ToList();
+
         var tagValues = spans
             .SelectMany(span => span.TagObjects)
             .Select(tag => tag.Value?.ToString() ?? string.Empty)

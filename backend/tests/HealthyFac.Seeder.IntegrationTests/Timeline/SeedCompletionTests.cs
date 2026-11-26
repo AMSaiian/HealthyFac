@@ -3,10 +3,12 @@ using HealthyFac.Seeder.IntegrationTests.Ingest.Data;
 using HealthyFac.Seeder.IntegrationTests.Relay.Data;
 using HealthyFac.Seeder.IntegrationTests.Timeline.Data;
 using HealthyFac.Seeder.IntegrationTests.WorkOrders.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Seeder.IntegrationTests.Timeline;
 
 [Collection(SeederCollection.Name)]
+[Feature(TestFeatures.Seeding)]
 public sealed class SeedCompletionTests(SeederFixture fixture)
 {
     private readonly SeederFixture _fixture = fixture;
@@ -37,9 +39,11 @@ public sealed class SeedCompletionTests(SeederFixture fixture)
 
         var after = await _fixture.TakeSnapshotAsync();
         next.ExitCode.Should().Be(expected: 1);
+
         next.Output.Should()
             .Contain(SeedCompletionTestData.NoCompleteHistoryText)
             .And.Contain(SeedCompletionTestData.ResetTelemetryHint);
+
         after.Should().BeEquivalentTo(before);
     }
 
@@ -50,6 +54,7 @@ public sealed class SeedCompletionTests(SeederFixture fixture)
         await _fixture.AddReceivedMessageAsync(SeedCompletionTestData.MarkerMessageId);
 
         var modeOne = await _fixture.RunJobAsync([], TestContext.Current.CancellationToken);
+
         var modeTwo = await _fixture.RunJobAsync(
             [SeedCompletionTestData.TelemetryArgument], TestContext.Current.CancellationToken);
 
@@ -68,12 +73,14 @@ public sealed class SeedCompletionTests(SeederFixture fixture)
         await _fixture.AddReceivedMessageAsync(Guid.CreateVersion7());
 
         var modeOne = await _fixture.RunJobAsync([], TestContext.Current.CancellationToken);
+
         var modeTwo = await _fixture.RunJobAsync(
             [SeedCompletionTestData.TelemetryArgument], TestContext.Current.CancellationToken);
 
         modeOne.ExitCode.Should().Be(expected: 0);
         modeOne.Output.Should().Contain(SeedCompletionTestData.CompleteText);
         modeTwo.ExitCode.Should().Be(expected: 1);
+
         modeTwo.Output.Should()
             .Contain(SeedCompletionTestData.NoCompleteHistoryText)
             .And.Contain(SeedCompletionTestData.ResetTelemetryHint);
@@ -83,8 +90,10 @@ public sealed class SeedCompletionTests(SeederFixture fixture)
     public async Task RunAsync_AfterAFailedRun_ReportsAnIncompleteSeedAndWritesNothing()
     {
         var baseDirectory = SeedBaseDirectory.Create(WorkOrderSeedVariants.PumpCouplingSlotTaken());
+
         var failed = await _fixture.RunJobAsync(
             [], TestContext.Current.CancellationToken, baseDirectory);
+
         var before = await _fixture.TakeSnapshotAsync();
 
         var next = await _fixture.RunJobAsync([], TestContext.Current.CancellationToken);
@@ -92,9 +101,11 @@ public sealed class SeedCompletionTests(SeederFixture fixture)
         var after = await _fixture.TakeSnapshotAsync();
         failed.ExitCode.Should().Be(expected: 1);
         next.ExitCode.Should().Be(expected: 1);
+
         next.Output.Should()
             .Contain(SeedCompletionTestData.IncompleteText)
             .And.Contain(SeedCompletionTestData.ResetHint);
+
         after.Should().BeEquivalentTo(before);
     }
 

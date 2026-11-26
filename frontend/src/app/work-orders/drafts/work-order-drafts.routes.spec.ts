@@ -107,7 +107,7 @@ async function openDrafts(http: HttpTestingController): Promise<InstanceType<typ
   >;
 }
 
-describe('work order drafts route', () => {
+describe('work order drafts route', { tags: ['WorkOrders', 'Drafts'] }, () => {
   afterEach(() => {
     vi.unstubAllGlobals();
   });

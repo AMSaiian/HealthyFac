@@ -71,7 +71,7 @@ function ungatedEmptyStates(templates: Record<string, string>): string[] {
     .map(([path]) => path);
 }
 
-describe('loading skeleton', () => {
+describe('loading skeleton', { tags: ['Conventions'] }, () => {
   const templates = import.meta.glob('./**/*.html', { query: '?raw', import: 'default', eager: true }) as Record<
     string,
     string
@@ -135,19 +135,16 @@ describe('loading skeleton', () => {
     expect(ungatedEmptyStates(templates)).toEqual([]);
   });
 
-  it('ungatedEmptyStates_WithAnEmptyStateWithoutTheGate_ReportsTheTemplate', () => {
+  it.each([
+    ['AnEmptyStateWithoutTheGate_ReportsTheTemplate', '@if (items().length === 0) {', ['./a/a.html']],
+    ['TheGate_ReportsNothing', '@if (grid.showEmpty()) {', []],
+  ])('ungatedEmptyStates_With%s', (_name, condition, expected) => {
     const offenders = ungatedEmptyStates({
-      './a/a.html': '@if (items().length === 0) {\n  <hf-empty-state />\n}',
+      './a/a.html': `${condition}
+  <hf-empty-state />
+}`,
     });
 
-    expect(offenders).toEqual(['./a/a.html']);
-  });
-
-  it('ungatedEmptyStates_WithTheGate_ReportsNothing', () => {
-    const offenders = ungatedEmptyStates({
-      './a/a.html': '@if (grid.showEmpty()) {\n  <hf-empty-state />\n}',
-    });
-
-    expect(offenders).toEqual([]);
+    expect(offenders).toEqual(expected);
   });
 });

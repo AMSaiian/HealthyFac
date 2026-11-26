@@ -1,8 +1,10 @@
 using HealthyFac.Core.Domain.Shifts.DaySchedules;
 using HealthyFac.Core.UnitTests.Shifts.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.UnitTests.Shifts;
 
+[Feature(TestFeatures.Shifts)]
 public sealed class TodayOverrideMergeTests
 {
     [Theory]
@@ -25,6 +27,7 @@ public sealed class TodayOverrideMergeTests
         result.Select(block => block.StartUtc)
             .Should()
             .Equal(ShiftTestData.Blocks(expected).Select(block => block.StartUtc), caseName);
+
         result.Select(block => block.EndUtc)
             .Should()
             .Equal(ShiftTestData.Blocks(expected).Select(block => block.EndUtc), caseName);

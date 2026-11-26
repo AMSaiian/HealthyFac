@@ -45,14 +45,13 @@ public static class HttpFailureTestData
         };
 
     public static TheoryData<string> BodiesWithoutReason =>
-        new()
-        {
-            """{"message":"unknown"}""",
-            """{"detail":"","title":"  "}""",
-            """{"detail":42,"error":null}""",
-            """["detail"]""",
-            """ "text" """,
-        };
+    [
+        """{"message":"unknown"}""",
+        """{"detail":"","title":"  "}""",
+        """{"detail":42,"error":null}""",
+        """["detail"]""",
+        """ "text" """,
+    ];
 
     public static IReadOnlyDictionary<string, JsonTopLevelField> Parse(string json) =>
         JsonTopLevelFields.Read(Encoding.UTF8.GetBytes(json), isComplete: true);

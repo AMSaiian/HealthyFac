@@ -1,10 +1,12 @@
 using System.Net;
 using HealthyFac.Telemetry.ApiTests.Hosting;
 using HealthyFac.Telemetry.ApiTests.MetricUnits.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.ApiTests.MetricUnits;
 
 [Collection(TelemetryApiCollection.Name)]
+[Feature(TestFeatures.SignalModel)]
 public sealed class MetricUnitAuthorizationTests(TelemetryApiFixture fixture)
 {
     private readonly TelemetryApiFixture _fixture = fixture;

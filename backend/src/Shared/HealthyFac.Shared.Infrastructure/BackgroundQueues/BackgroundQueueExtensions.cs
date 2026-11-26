@@ -21,6 +21,7 @@ public static class BackgroundQueueExtensions
         public IServiceCollection AddBackgroundQueue<TItem>(BackgroundQueueCapacity capacity)
         {
             var isRegistered = services.Any(descriptor => descriptor.ServiceType == typeof(BackgroundQueue<TItem>));
+
             if (isRegistered)
             {
                 return services;
@@ -29,8 +30,10 @@ public static class BackgroundQueueExtensions
             services.AddSingleton(provider => new BackgroundQueue<TItem>(
                 capacity,
                 provider.GetService<IBackgroundItemDropObserver<TItem>>()));
+
             services.AddSingleton<IBackgroundQueue<TItem>>(provider =>
                 provider.GetRequiredService<BackgroundQueue<TItem>>());
+
             services.AddHostedService<BackgroundQueueStartCheck<TItem>>();
             services.AddHostedService<BackgroundQueueSender<TItem>>();
 

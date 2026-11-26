@@ -2,7 +2,7 @@ import { ATTACHMENT_EXTENSIONS, EMBEDDED_MAX_BYTES, IMAGE_EXTENSIONS } from '@sh
 
 import { checkUploadCandidate, FILE_ERROR_KEYS, fileBaseNameOf, fileExtensionOf } from './upload-check';
 
-describe('fileExtensionOf', () => {
+describe('fileExtensionOf', { tags: ['Platform'] }, () => {
   it.each([
     ['report.PDF', 'pdf'],
     ['archive.tar.gz', 'gz'],
@@ -15,21 +15,16 @@ describe('fileExtensionOf', () => {
   });
 });
 
-describe('checkUploadCandidate', () => {
+describe('checkUploadCandidate', { tags: ['Platform'] }, () => {
   it('accepts an allowed file with the right size', () => {
     expect(checkUploadCandidate({ name: 'a.pdf', size: 10 }, ATTACHMENT_EXTENSIONS)).toBeNull();
   });
 
-  it('refuses a type that is not allowed', () => {
-    expect(checkUploadCandidate({ name: 'a.zip', size: 10 }, ATTACHMENT_EXTENSIONS)).toBe(
-      FILE_ERROR_KEYS.TypeNotAllowed,
-    );
-  });
-
-  it('refuses a name without an extension', () => {
-    expect(checkUploadCandidate({ name: 'noext', size: 10 }, ATTACHMENT_EXTENSIONS)).toBe(
-      FILE_ERROR_KEYS.TypeNotAllowed,
-    );
+  it.each([
+    ['a type that is not allowed', 'a.zip'],
+    ['a name without an extension', 'noext'],
+  ])('refuses %s', (_case, name) => {
+    expect(checkUploadCandidate({ name, size: 10 }, ATTACHMENT_EXTENSIONS)).toBe(FILE_ERROR_KEYS.TypeNotAllowed);
   });
 
   it('refuses an empty file', () => {
@@ -53,7 +48,7 @@ describe('checkUploadCandidate', () => {
   });
 });
 
-describe('fileBaseNameOf', () => {
+describe('fileBaseNameOf', { tags: ['Platform'] }, () => {
   it.each([
     ['report.PDF', 'report'],
     ['archive.tar.gz', 'archive.tar'],

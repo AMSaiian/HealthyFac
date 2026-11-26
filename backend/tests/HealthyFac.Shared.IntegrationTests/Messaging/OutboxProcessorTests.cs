@@ -2,6 +2,7 @@ using System.Text.Json.Nodes;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Shared.Infrastructure.Messaging.Sending;
 using HealthyFac.Shared.IntegrationTests.Messaging.Data;
+using HealthyFac.Testing.Features;
 using LinqToDB;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -10,6 +11,7 @@ using Npgsql;
 namespace HealthyFac.Shared.IntegrationTests.Messaging;
 
 [Collection(MessagingTransportCollection.Name)]
+[Feature(TestFeatures.Messaging)]
 public sealed class OutboxProcessorTests(TransportCollectionFixture fixture)
     : IDisposable
 {
@@ -22,9 +24,11 @@ public sealed class OutboxProcessorTests(TransportCollectionFixture fixture)
     public async Task OutboxProcessor_WithPendingRow_PublishesAndMarksProcessed()
     {
         await _subscriber.SubscribeAsync(OutboxProcessorTestData.PublishedMessageType);
+
         await _fixture.AddPendingOutboxRowsAsync(
             OutboxProcessorTestData.PublishedMessageType,
             OutboxProcessorTestData.SingleRowCount);
+
         var processor = _fixture.Create<OutboxProcessor>();
 
         await processor.RunAsync(CancellationToken.None);
@@ -32,15 +36,18 @@ public sealed class OutboxProcessorTests(TransportCollectionFixture fixture)
         var received = await _subscriber.WaitForMessagesAsync(
             OutboxProcessorTestData.PublishedMessageType,
             OutboxProcessorTestData.SingleRowCount);
+
         var rows = await _fixture.ReadOutboxRowsAsync(OutboxProcessorTestData.PublishedMessageType);
 
         var row = rows.Should().ContainSingle().Which;
         var message = received.Should().ContainSingle().Which;
         row.ProcessedOn.Should().NotBeNull();
         message.Id.Should().Be(row.Id);
+
         JsonNode.DeepEquals(JsonNode.Parse(message.Payload), JsonNode.Parse(OutboxProcessorTestData.Payload))
             .Should()
             .BeTrue();
+
         message.Headers[ActorHeaderNames.ActorId].Should().Be(TransportTestData.ActorId.ToString());
         message.Headers[ActorHeaderNames.CompanyId].Should().Be(TransportTestData.CompanyId.ToString());
     }
@@ -49,9 +56,11 @@ public sealed class OutboxProcessorTests(TransportCollectionFixture fixture)
     public async Task OutboxProcessor_TwoInstances_PublishEachRowOnce()
     {
         await _subscriber.SubscribeAsync(OutboxProcessorTestData.ConcurrentMessageType);
+
         await _fixture.AddPendingOutboxRowsAsync(
             OutboxProcessorTestData.ConcurrentMessageType,
             OutboxProcessorTestData.ConcurrentRowCount);
+
         var firstProcessor = _fixture.Create<OutboxProcessor>();
         var secondProcessor = _fixture.Create<OutboxProcessor>();
 
@@ -62,6 +71,7 @@ public sealed class OutboxProcessorTests(TransportCollectionFixture fixture)
         var received = await _subscriber.WaitForMessagesAsync(
             OutboxProcessorTestData.ConcurrentMessageType,
             OutboxProcessorTestData.ConcurrentRowCount);
+
         var rows = await _fixture.ReadOutboxRowsAsync(OutboxProcessorTestData.ConcurrentMessageType);
 
         received.Select(message => message.Id).Should().OnlyHaveUniqueItems();
@@ -75,15 +85,17 @@ public sealed class OutboxProcessorTests(TransportCollectionFixture fixture)
         await _fixture.AddPendingOutboxRowsAsync(
             OutboxProcessorTestData.LockedMessageType,
             OutboxProcessorTestData.SingleRowCount);
+
         using var firstScope = _fixture.CreateScope();
         using var secondScope = _fixture.CreateScope();
         var firstContext = firstScope.ServiceProvider.GetRequiredService<TestServiceDbContext>();
         var secondContext = secondScope.ServiceProvider.GetRequiredService<TestServiceDbContext>();
 
-        var claimedIds = await firstContext.RunInTransactionAsync(
+        var (first, second) = await firstContext.RunInTransactionAsync(
             async token =>
             {
                 var firstClaim = await firstContext.ClaimNextOutboxMessageAsync(InboxTestData.Now, token);
+
                 var secondClaim = await secondContext.RunInTransactionAsync(
                     secondToken => secondContext.ClaimNextOutboxMessageAsync(InboxTestData.Now, secondToken),
                     token);
@@ -91,8 +103,8 @@ public sealed class OutboxProcessorTests(TransportCollectionFixture fixture)
                 return (First: firstClaim?.Id, Second: secondClaim?.Id);
             }, TestContext.Current.CancellationToken);
 
-        claimedIds.First.Should().NotBeNull();
-        claimedIds.Second.Should().NotBe(claimedIds.First!.Value);
+        first.Should().NotBeNull();
+        second.Should().NotBe(first.Value);
     }
 
     [Fact]

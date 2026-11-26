@@ -1,9 +1,11 @@
 using HealthyFac.Telemetry.Domain.Evaluation.Statistics;
 using HealthyFac.Telemetry.Domain.MetricDefinitions;
 using HealthyFac.Telemetry.UnitTests.Evaluation.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.UnitTests.Evaluation;
 
+[Feature(TestFeatures.Evaluation)]
 public sealed class MetricStatisticsTests
 {
     private const double Tolerance = 1e-9;
@@ -215,6 +217,7 @@ public sealed class MetricStatisticsTests
     public void Apply_WithACounterThatDropsBack_RestartsTheTracker()
     {
         var statistics = new MetricStatistics(Guid.CreateVersion7(), operatingPhaseId: null);
+
         foreach (var (time, value) in SignalSeries.Ramp(from: 1000, perSecond: 1, count: 100, SignalSeries.Start))
         {
             statistics.Apply(value, time, isFrozen: false, MetricBehavior.Counter, Settings);
