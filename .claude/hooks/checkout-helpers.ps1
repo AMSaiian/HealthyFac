@@ -1,7 +1,9 @@
 # checkout-helpers.ps1 - dot-sourced by verify-changed.ps1, record-turn-start.ps1, tree-id.ps1, check-handoff.ps1,
-# check-plan.ps1, commit-cycle.ps1, run-area.ps1, format-changed.ps1, and start-feature.ps1: the one definition of the
-# tree ID and the area paths, the main branch ref, the default base, the feature base, the state paths, the checkout
-# mutex. Git only.
+# check-plan.ps1, commit-cycle.ps1, run-area.ps1, run-tests.ps1, format-changed.ps1, and start-feature.ps1: the one
+# definition of the tree ID and the area paths, the main branch ref, the default base, the feature base, the state paths,
+# the checkout mutex, the run results of run-area.ps1 and run-tests.ps1 (Write-RunResult, Get-RunResults), the Stop hook
+# state after a run (Get-StepChanges, Save-StepState, Write-HookState), and the tool suites (Get-ToolSuites,
+# Invoke-ToolSuites). Git only.
 # cleanup-changed.ps1 keeps its own copy of the mutex name (Artur, 2026-11-21: the cleanup stays unchanged); both must
 # build the same name, so the mutex is re-entrant for the hook and the cleanup in one thread.
 
@@ -202,6 +204,162 @@ function Get-CleanupFixedRules([string] $Repo) {
   $path = Join-Path $Repo '.claude/hooks/cleanup-fixed-rules.txt'
   if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { return @() }
   @(Get-Content -LiteralPath $path | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+}
+
+# The file patterns of the hook steps (the backend step and the web projects).
+$script:BackendPatterns = @('*.cs', '*.csproj', '*.props', '*.targets')
+$script:WebPatterns = @('*.ts', '*.html', '*.css', '*.json', '*.webmanifest')
+
+# The paths of one step (folder $step/, or backend/) that changed since the last clean run of the step, deleted paths
+# included. See the header for the state tree and the fallback.
+function Get-StepChanges([string] $repo, [string] $step, [string] $currentTree, [string[]] $patterns) {
+  $statePath = Get-GitStatePath $repo "claude-verify-$step-tree.txt"
+  $stateTree = if (Test-Path -LiteralPath $statePath) { (Get-Content -LiteralPath $statePath -Raw).Trim() }
+  $paths = $null
+  if ($stateTree) {
+    $diff = Get-GitLines $repo (@('diff', '--name-only', '--no-renames', $stateTree, $currentTree, '--') + $patterns)
+    if ($diff.ExitCode -eq 0) { $paths = $diff.Lines }
+  }
+  if ($null -eq $paths) {
+    $paths = @((Get-GitLines $repo (@('diff', '--name-only', '--no-renames', 'HEAD', '--') + $patterns)).Lines) +
+      @((Get-GitLines $repo (@('ls-files', '-o', '--exclude-standard', '--') + $patterns)).Lines)
+  }
+  @($paths | Where-Object { $_ -like "$step/*" -and $_ -notlike '*/package-lock.json' } | Sort-Object -Unique)
+}
+
+function Save-StepState([string] $repo, [string] $step, [string] $tree) {
+  $path = Get-GitStatePath $repo "claude-verify-$step-tree.txt"
+  New-Item -ItemType Directory -Force (Split-Path $path) | Out-Null
+  Set-Content -LiteralPath $path -Value $tree -Encoding utf8NoBOM
+}
+
+# Writes the Stop hook state after a passing run of a run script, so the hook finds the verified tree and formats and
+# builds nothing (verify-changed.ps1). The backend step needs a clean hook check first: the SARIF diagnostics of the
+# changed backend files that the build wrote. Else the lines print as "Hook check: <line>" and no state is written. The
+# frontend step has no check here (run-area.ps1 ran its lint); keycloak-theme gets its state when -RanKeycloakTheme is
+# set or none of its files changed since its state. Run it before the last line of the run.
+function Write-HookState([string] $Repo, [string] $Area, [string[]] $BuildOutput = @(), [switch] $RanKeycloakTheme) {
+  $tree = Get-TreeId -Repo $Repo
+  if ($Area -eq 'backend') {
+    $changed = @(Get-StepChanges $Repo 'backend' $tree $script:BackendPatterns |
+        Where-Object { Test-Path -LiteralPath (Join-Path $Repo $_) -PathType Leaf })
+    if ($changed.Count -gt 0) {
+      $lines = @(Get-SarifDiagnostics -Repo $Repo -Root (Join-Path $Repo 'backend') -BuildOutput $BuildOutput `
+          -BuildOutputLevel error -Files $changed)
+      if ($lines.Count -gt 0) {
+        foreach ($line in $lines) { "Hook check: $line" }
+        return
+      }
+    }
+    Save-StepState $Repo 'backend' $tree
+  }
+  if ($Area -eq 'frontend') {
+    Save-StepState $Repo 'frontend' $tree
+    $isThemeUnchanged = @(Get-StepChanges $Repo 'keycloak-theme' $tree $script:WebPatterns).Count -eq 0
+    if ($RanKeycloakTheme -or $isThemeUnchanged) { Save-StepState $Repo 'keycloak-theme' $tree }
+  }
+}
+
+# The test script of each group of tool files (paths relative to the repo; a suite runs once when a changed path
+# matches its pattern).
+$script:ToolSuites = [ordered]@{
+  '.claude/tests/rules.tests.ps1'            = '^(\.claude/.+\.(md|ps1)$|CLAUDE\.md$)'
+  '.claude/hooks/tests/hook-scope.tests.ps1' = '^\.claude/hooks/'
+  '.claude/tests/flow-scripts.tests.ps1'     = '^\.claude/[^/]+\.ps1$|^\.claude/tests/flow-scripts|^\.claude/hooks/(checkout-helpers|command-line-batches|cleanup-changed)\.ps1$'
+  'scripts/tests/verify-slots.tests.ps1'     = '^scripts/(verify-|tests/verify-)'
+  'scripts/tests/agent-chrome.tests.ps1'     = '^scripts/(tests/)?agent-chrome'
+}
+
+# The script test suites (paths relative to the repo) that the changed paths select and that exist in the repo.
+function Get-ToolSuites([string] $Repo, [string[]] $Paths) {
+  @($script:ToolSuites.Keys | Where-Object {
+      $suite = $_
+      $isMatch = @($Paths | Where-Object { $_ -match $script:ToolSuites[$suite] }).Count -gt 0
+      $isMatch -and (Test-Path -LiteralPath (Join-Path $Repo $suite))
+    })
+}
+
+# Runs the given script test suites at the same time, each with its own log in the claude-runs folder. It returns an
+# object with Lines (one "<suite>: passed|failed (exit <n>); log <path>" line for each suite) and Failure (the first
+# failing suite with its first FAIL line as "<suite> - <line>", else $null).
+function Invoke-ToolSuites([string] $Repo, [string[]] $Suites, [string] $LogPrefix) {
+  $logFolder = Get-GitStatePath $Repo 'claude-runs'
+  New-Item -ItemType Directory -Force $logFolder | Out-Null
+  $stamp = [DateTime]::Now.ToString('yyyyMMdd-HHmmss')
+  $runs = foreach ($suite in $Suites) {
+    $log = Join-Path $logFolder "$LogPrefix-$stamp-$(Split-Path $suite -Leaf).log"
+    $process = Start-Process pwsh -ArgumentList @('-NoProfile', '-File', (Join-Path $Repo $suite)) -WorkingDirectory $Repo `
+      -RedirectStandardOutput $log -RedirectStandardError "$log.err" -NoNewWindow -PassThru
+    [pscustomobject]@{ Suite = $suite; Log = $log; Process = $process }
+  }
+  foreach ($run in $runs) { $run.Process.WaitForExit() }
+  $lines = [Collections.Generic.List[string]]::new()
+  $failure = $null
+  foreach ($run in $runs) {
+    $suiteLines = @(Get-Content -LiteralPath $run.Log -ErrorAction SilentlyContinue)
+    $exitCode = $run.Process.ExitCode
+    $result = if ($exitCode -eq 0) { 'passed' } else { 'failed' }
+    $lines.Add("$(Split-Path $run.Suite -Leaf): $result (exit $exitCode); log $($run.Log)")
+    if ($exitCode -ne 0 -and -not $failure) {
+      $firstFail = @($suiteLines | Where-Object { $_ -match '^\s*FAIL ' } | Select-Object -First 1)
+      $reason = if ($firstFail) { $firstFail[0].Trim() } else { @($suiteLines)[-1] }
+      $failure = "$(Split-Path $run.Suite -Leaf) - $reason"
+    }
+  }
+  [pscustomobject]@{ Lines = $lines; Failure = $failure }
+}
+
+# Stores the result of a run script in <git dir>/claude-runs/result-<area>-<full|affected>.json (each worktree has its
+# own git directory). Mode is "full" (run-area.ps1) or "affected" (run-tests.ps1); Status is "pass" or "fail".
+function Write-RunResult([string] $Repo, [string] $Mode, [string] $Area, [string] $Tree, [string] $Status, [string] $Line) {
+  $folder = Get-GitStatePath $Repo 'claude-runs'
+  New-Item -ItemType Directory -Force $folder | Out-Null
+  [ordered]@{
+    kind = if ($Mode -eq 'full') { 'Full run' } else { 'Affected run' }
+    area = $Area
+    tree = $Tree
+    status = $Status
+    line = $Line
+    finished = [DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ssZ')
+  } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $folder "result-$Area-$Mode.json") -Encoding utf8
+}
+
+# The stored run results of the checkout as objects (kind, area, tree, status, line, finished).
+function Get-RunResults([string] $Repo) {
+  $folder = Get-GitStatePath $Repo 'claude-runs'
+  if (-not (Test-Path -LiteralPath $folder)) { return @() }
+  @(Get-ChildItem -LiteralPath $folder -Filter 'result-*.json' | Sort-Object Name |
+      ForEach-Object { Get-Content -LiteralPath $_.FullName -Raw | ConvertFrom-Json })
+}
+
+# True when the repo path (forward slashes) belongs to the test area: backend (every path outside the frontend and the
+# agent tools), frontend, or tooling.
+function Test-PathInArea([string] $Path, [string] $Area) {
+  $isFrontend = @($script:AreaPaths.frontend | Where-Object { $Path -eq $_ -or $Path -like "$_/*" }).Count -gt 0
+  if ($Area -eq 'frontend') { return $isFrontend }
+  if ($Area -eq 'tooling') { return @($script:AreaPaths.tooling | Where-Object { $Path -eq $_ -or $Path -like "$_/*" }).Count -gt 0 }
+  $isTool = @($script:AreaPaths.agentTools | Where-Object { $Path -eq $_ -or $Path -like "$_/*" }).Count -gt 0
+  return -not $isFrontend -and -not $isTool
+}
+
+# The passed count of a test command: the "succeeded:" line of the Microsoft Testing Platform summary, or the
+# "Tests <n> passed" line of vitest. Nothing for a command without tests.
+function Get-PassedCount([string[]] $Lines) {
+  $succeeded = @($Lines | Select-String -Pattern '^\s*succeeded:\s*(\d+)' | Select-Object -Last 1)
+  if ($succeeded) { return [int]$succeeded[0].Matches[0].Groups[1].Value }
+  $vitest = @($Lines | Select-String -Pattern '^\s*Tests\s+(?:\d+ failed \| )?(\d+) passed' | Select-Object -Last 1)
+  if ($vitest) { return [int]$vitest[0].Matches[0].Groups[1].Value }
+}
+
+function Get-FailedTests([string[]] $Lines) {
+  @($Lines | Where-Object { $_ -match '^\s*failed\s+\S' -and $_ -notmatch '^\s*failed:' -or $_ -match '^\s*(FAIL|×)\s' } |
+    ForEach-Object { $_.Trim() })
+}
+
+# The regex of a glob of a Files line or of test-features.json: "**/" any folders (or none), "**" any path, "*" a name
+# part. The regex matches a whole repo path (forward slashes).
+function ConvertTo-GlobRegex([string] $Glob) {
+  '^' + ([regex]::Escape($Glob) -replace '\\\*\\\*/', '(.*/)?' -replace '\\\*\\\*', '.*' -replace '\\\*', '[^/]*') + '$'
 }
 
 # The text of a C# file with every comment, string literal, and character literal replaced by spaces (line breaks stay),

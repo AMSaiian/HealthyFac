@@ -600,6 +600,15 @@ try {
   Add-Content (Join-Path $repo 'backend/App/B.cs') '// edited after the clean stop'
   [void](Invoke-Hook $repo 's2' $noState)
   Assert-That ((Get-MarkCount (Join-Path $repo 'backend/App/A.cs') $marker) -eq 2) 'Proof: without the saved step tree, the next stop cleans the unchanged file again'
+  $repo = New-TestRepo 'run-state-tree'
+  Save-StepState $repo 'backend' (Get-TreeId -Repo $repo)
+  [void](Invoke-Hook $repo 's1')
+  Assert-That ((Get-MarkCount (Join-Path $repo 'backend/App/A.cs') $marker) -eq 0 -and
+    (Get-MarkCount (Join-Path $repo 'backend/App/B.cs') $marker) -eq 0) 'After a run script wrote the backend state of the tree, the hook cleans and builds nothing'
+  Add-Content (Join-Path $repo 'backend/App/B.cs') '// edited after the run'
+  [void](Invoke-Hook $repo 's2')
+  Assert-That ((Get-MarkCount (Join-Path $repo 'backend/App/B.cs') $marker) -eq 1 -and
+    (Get-MarkCount (Join-Path $repo 'backend/App/A.cs') $marker) -eq 0) 'A later edit of a backend file makes the hook clean that file again'
 
   }
 

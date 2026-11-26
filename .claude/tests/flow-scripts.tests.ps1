@@ -22,8 +22,7 @@
 #   without seen:, a pass line with a caveat, a transient fail without retried: fail; a retry note and step prose pass).
 # - check-review-routing: the "## Open" layout routes, counts REOPENED only in ## Open, and fails on a wrong table, a
 #   wrong heading, APPROVE with an open MAJOR, or a review.md without "## Open".
-# - format-changed: a second call at the same tree formats nothing again; a new file at the same tree is formatted
-#   alone; a changed tree formats every given file again.
+# - format-changed: every call formats every given file again (Prettier and the cleanup); it writes no state file.
 # - run-area: the backend order (format, build, unit, integration) and the Full run line with the tree after the
 #   format step; a named index argument, a failing unit command, and a change during the run fail it; the frontend commands with
 #   and without a keycloak-theme change.
@@ -43,7 +42,7 @@
 param([string]$ScriptsDir = [IO.Path]::GetFullPath((Split-Path $PSScriptRoot -Parent)), [string]$Only = '')
 
 $SectionNames = @('tree-id', 'check-plan', 'plan-sections', 'check-handoff', 'check-review-routing', 'commit-cycle',
-  'format-changed', 'run-area')
+  'format-changed', 'run-area', 'run-tests')
 $onlyNames = @($Only -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ })
 foreach ($name in $onlyNames) {
   if ($name -notin $SectionNames) {
@@ -611,7 +610,15 @@ Assert-That ($null -eq (Get-ReviewedMark (@('Cycle: 1') + (1..25 | ForEach-Objec
 if (Test-Section 'check-handoff') {
 Write-Host 'check-handoff'
 
-# A plan with a "Full run backend:" line and "#### Deviations" in the cycle.
+# Stores a run result like run-area.ps1 (mode full) or run-tests.ps1 (mode affected) does, in the git directory of the repo.
+function Write-CaseResult([string] $repoDir, [string] $mode, [string] $area, [string] $tree, [string] $status = 'pass') {
+  $folder = Join-Path $repoDir '.git/claude-runs'
+  New-Item -ItemType Directory -Force $folder | Out-Null
+  [ordered]@{ kind = if ($mode -eq 'full') { 'Full run' } else { 'Affected run' }; area = $area; tree = $tree; status = $status
+    line = "$area run"; finished = '2026-11-26T09:00:00Z' } | ConvertTo-Json | Set-Content (Join-Path $folder "result-$area-$mode.json")
+}
+
+# A plan with "#### Deviations" in the cycle, and the stored results of the runs (the RunMode change picks full or affected).
 function New-HandoffCase([string] $name, [hashtable] $change = @{}) {
   $repoDir = New-Repo "$name-repo"
   New-Item -ItemType Directory -Force (Join-Path $repoDir 'src') | Out-Null
@@ -646,7 +653,7 @@ function New-HandoffCase([string] $name, [hashtable] $change = @{}) {
   if ($change.EarlierFrontendRun -or $change.EarlierFilesLine -or $change.EarlierDeviationFile) {
     $lines += '### Cycle 0', ''
     if ($change.EarlierFilesLine) { $lines += '- [x] Step 0: Add the extra file.', "    *   Files: ``$($change.EarlierFilesLine)``" }
-    if ($change.EarlierFrontendRun) { $lines += "*   Full run frontend: tree $frontendTree; ng test -> 5 passed, 0 failed" }
+    if ($change.EarlierFrontendRun) { Write-CaseResult $repoDir 'full' 'frontend' $frontendTree }
     if ($change.EarlierDeviationFile) { $lines += '', '#### Deviations', "*   Step 0: Added $($change.EarlierDeviationFile) because the helper was missing." }
     $lines += ''
   }
@@ -660,8 +667,9 @@ function New-HandoffCase([string] $name, [hashtable] $change = @{}) {
   if ($change.Step2Proof) { $lines += '    *   Proof: the doc test fails without the guard; restored, checked with git diff' }
   if ($change.Step2Lines) { $lines += $change.Step2Lines }
   $lines += ''
-  if (-not $change.NoFullRun) { $lines += "*   Full run backend: tree $backendTree; dotnet test -> 12 passed, 0 failed" }
-  if ($change.ToolingRun) { $lines += "*   Full run tooling: tree $toolingTree; suites none -> passed" }
+  $runMode = if ($change.RunMode) { $change.RunMode } else { 'full' }
+  if (-not $change.NoFullRun) { Write-CaseResult $repoDir $runMode 'backend' $backendTree }
+  if ($change.ToolingRun) { Write-CaseResult $repoDir 'affected' 'tooling' $toolingTree }
   $lines += '', '#### Deviations', ''
   if ($change.DeviationFile) { $lines += "*   Steps 1-2: Added $($change.DeviationFile) because the helper was missing." }
   if ($change.DeviationProof) { $lines += '*   Step 1: Proof: ATest -> Expected 1, found 0; restored, checked with git diff' }
@@ -762,32 +770,32 @@ $otherGlob = Invoke-Handoff (New-HandoffCase 'ho-glob-other' @{ ExtraFile = 'src
 Assert-That ($otherGlob.Exit -eq 1 -and $otherGlob.Output[0] -match 'src/extra.cs is in no Files') 'a changed file outside a Files: glob fails with its line'
 
 $noRun = Invoke-Handoff (New-HandoffCase 'ho-norun' @{ NoFullRun = $true })
-Assert-That ($noRun.Exit -eq 1 -and $noRun.Output.Count -eq 1 -and $noRun.Output[0] -match "no 'Full run backend") `
-  'a missing Full run backend line fails with its line'
+Assert-That ($noRun.Exit -eq 1 -and $noRun.Output.Count -eq 1 -and $noRun.Output[0] -match 'no passed full run has the current tree .*run-area.ps1 -Area backend') `
+  'a missing stored backend result fails with its line'
 
 $oldRun = New-HandoffCase 'ho-old-run' @{ NoFullRun = $true }
 $oldPlan = Join-Path $oldRun.Folder 'plan.md'
 $oldText = (Get-Content $oldPlan -Raw).Replace('#### Deviations', "*   Full run: tree $(Get-TreeId $oldRun.Repo); dotnet test -> 12 passed, 0 failed`n`n#### Deviations")
 Set-Content $oldPlan $oldText
 $oldRunResult = Invoke-Handoff $oldRun
-Assert-That ($oldRunResult.Exit -eq 1 -and $oldRunResult.Output.Count -eq 1 -and $oldRunResult.Output[0] -match "no 'Full run backend") `
-  'an old "Full run: tree" line with the current tree does not count as a full run'
+Assert-That ($oldRunResult.Exit -eq 1 -and $oldRunResult.Output.Count -eq 1 -and $oldRunResult.Output[0] -match 'no passed full run has the current tree') `
+  'a Full run line of plan.md without a stored result does not count'
 
 $plannedCycle = Invoke-Handoff (New-HandoffCase 'ho-planned' @{PlannedCycle2 = $true })
 Assert-That ($plannedCycle.Exit -eq 0 -and $plannedCycle.Output.Count -eq 0) `
   'a planned cycle 2 below the open cycle 1 does not fail the handoff of cycle 1'
 
 $areaStale = Invoke-Handoff (New-HandoffCase 'ho-area-stale' @{StaleTree = $true })
-Assert-That ($areaStale.Exit -eq 1 -and $areaStale.Output.Count -eq 1 -and $areaStale.Output[0] -match 'not the current backend tree') `
-  'a Full run backend line with an old tree fails with its line'
+Assert-That ($areaStale.Exit -eq 1 -and $areaStale.Output.Count -eq 1 -and $areaStale.Output[0] -match 'no passed full run has the current tree') `
+  'a stale backend result (an old tree) fails with its line'
 
 $areaFrontend = Invoke-Handoff (New-HandoffCase 'ho-area-fe' @{FrontendFile = $true })
 Assert-That ($areaFrontend.Exit -eq 1 -and $areaFrontend.Output.Count -eq 1 -and
-  $areaFrontend.Output[0] -match "frontend area changed .* no 'Full run frontend") 'a changed frontend without its Full run line fails'
+  $areaFrontend.Output[0] -match 'frontend area changed, but no passed full run has the current tree') 'a changed frontend without its stored result fails'
 
 $areaEarlier = Invoke-Handoff (New-HandoffCase 'ho-area-earlier' @{FrontendFile = $true; EarlierFrontendRun = $true })
 Assert-That ($areaEarlier.Exit -eq 0 -and $areaEarlier.Output.Count -eq 0) `
-  'a Full run frontend line of an earlier cycle with the current tree passes'
+  'a stored full frontend result with the current tree passes'
 
 $earlierFiles = Invoke-Handoff (New-HandoffCase 'ho-earlier-files' @{ExtraFile = 'src/extra.cs'; EarlierFilesLine = 'src/extra.cs' })
 Assert-That ($earlierFiles.Exit -eq 0 -and $earlierFiles.Output.Count -eq 0) `
@@ -799,7 +807,7 @@ Assert-That ($earlierDeviation.Exit -eq 0 -and $earlierDeviation.Output.Count -e
 
 $lateClaude = Invoke-Handoff (New-HandoffCase 'ho-late-claude' @{LateClaudeFile = $true; ToolingRun = $true; DeviationFile = '.claude/commands/late.md' })
 Assert-That ($lateClaude.Exit -eq 0 -and $lateClaude.Output.Count -eq 0) `
-  'a .claude change after the Full run backend line keeps the backend run current'
+  'a .claude change after the backend result keeps the backend result current'
 
 $cycleLogged = Invoke-Handoff (New-HandoffCase 'ho-cycle-dev' @{ExtraFile = 'src/extra.cs'; DeviationFile = 'src/extra.cs' })
 Assert-That ($cycleLogged.Exit -eq 0 -and $cycleLogged.Output.Count -eq 0) 'a changed file in the #### Deviations of the cycle passes'
@@ -859,29 +867,34 @@ $noBase = Invoke-Handoff (New-HandoffCase 'ho-no-base' @{}) @() @('-MainBranch',
 Assert-That ($noBase.Exit -eq 1 -and ($noBase.Output -join ' ') -match 'No merge base') 'without -Base and without the main branch, the check fails with a message'
 
 $toolingNoRun = Invoke-Handoff (New-HandoffCase 'ho-tooling-norun' @{ScriptChange = $true })
-Assert-That ($toolingNoRun.Exit -eq 1 -and $toolingNoRun.Output.Count -eq 1 -and $toolingNoRun.Output[0] -match "no 'Full run tooling") `
-  'a changed .claude/ file without a Full run tooling line fails with its line, and no script test suite runs'
+Assert-That ($toolingNoRun.Exit -eq 1 -and $toolingNoRun.Output.Count -eq 1 -and $toolingNoRun.Output[0] -match 'tooling area changed, but no passed run has the current tree .*run-tests.ps1 -Area tooling -Changed') `
+  'a changed .claude/ file without a stored tooling result fails with its line, and no script test suite runs'
 
 $toolingRun = Invoke-Handoff (New-HandoffCase 'ho-tooling-run' @{ScriptChange = $true; ToolingRun = $true })
-Assert-That ($toolingRun.Exit -eq 0 -and $toolingRun.Output.Count -eq 0) 'a Full run tooling line with the current tree passes'
-$fakeFormat = Join-Path $work 'fake-format.ps1'
-Set-Content $fakeFormat @(
-  'param([string]$Repo, [string[]]$Files)',
-  'Add-Content (Join-Path $Repo ''src/b.cs'') ''// formatted''',
-  '''Cleanup skipped: the test note.''')
-$markerFormat = Join-Path $work 'marker-format.ps1'
-$formatMarker = Join-Path $work 'format-ran.txt'
-Set-Content $markerFormat @('param([string]$Repo, [string[]]$Files)', "Set-Content '$formatMarker' 'ran'")
-if (Test-Path $formatMarker) { Remove-Item $formatMarker }
-$textFirst = Invoke-Handoff (New-HandoffCase 'ho-text-first' @{ Step2Open = $true }) @('-FormatScript', $markerFormat)
+Assert-That ($toolingRun.Exit -eq 0 -and $toolingRun.Output.Count -eq 0) 'a stored tooling result with the current tree passes'
+$corruptCase = New-HandoffCase 'ho-text-first' @{ Step2Open = $true }
+Set-Content (Join-Path $corruptCase.Repo '.git/claude-runs/result-backend-full.json') 'this is not json'
+$textFirst = Invoke-Handoff $corruptCase
 Assert-That ($textFirst.Exit -eq 1 -and $textFirst.Output.Count -eq 2 -and $textFirst.Output[0] -match 'Step 2 is not done' -and
-  $textFirst.Output[1] -eq 'Text checks failed: the format pass and the run lines were not checked.' -and -not (Test-Path $formatMarker)) `
-  'a text problem exits with the Text checks failed line before the format script runs'
-$formatted = Invoke-Handoff (New-HandoffCase 'ho-format' @{}) @('-FormatScript', $fakeFormat)
-Assert-That ($formatted.Exit -eq 1 -and ($formatted.Output -match 'The formatter changed src/b.cs').Count -eq 1 -and
-  ($formatted.Output -match '^Formatter: Cleanup skipped').Count -eq 1 -and
-  ($formatted.Output -match 'not the current backend tree').Count -eq 1) `
-  'a file that the formatter changes fails, with its note and a stale Full run line'
+  $textFirst.Output[1] -eq 'Text checks failed: the run results were not checked.') `
+  'a missing tick exits with the Text checks failed line and reads no result file'
+Assert-That ((Select-String -Path (Join-Path $ScriptsDir 'check-handoff.ps1') -Pattern 'format-changed|FormatScript').Count -eq 0) `
+  'check-handoff starts no format script'
+
+$middleOk = Invoke-Handoff (New-HandoffCase 'ho-middle-ok' @{ PlannedCycle2 = $true; RunMode = 'affected' })
+Assert-That ($middleOk.Exit -eq 0 -and $middleOk.Output.Count -eq 0) 'a middle cycle passes with an affected result'
+$middleNone = Invoke-Handoff (New-HandoffCase 'ho-middle-none' @{ PlannedCycle2 = $true; NoFullRun = $true })
+Assert-That ($middleNone.Exit -eq 1 -and $middleNone.Output.Count -eq 1 -and
+  $middleNone.Output[0] -match 'backend area changed, but no passed run has the current tree .*run-tests.ps1 -Area backend -Changed') `
+  'a middle cycle without a stored result fails with the run-tests line'
+$lastAffected = Invoke-Handoff (New-HandoffCase 'ho-last-affected' @{ RunMode = 'affected' })
+Assert-That ($lastAffected.Exit -eq 1 -and $lastAffected.Output.Count -eq 1 -and
+  $lastAffected.Output[0] -match 'backend area changed, but no passed full run has the current tree .*run-area.ps1 -Area backend') `
+  'the last cycle fails with only an affected backend result'
+$failedResult = New-HandoffCase 'ho-fail-result' @{ NoFullRun = $true }
+Write-CaseResult $failedResult.Repo 'full' 'backend' (Get-AreaTreeId $failedResult.Repo 'backend') 'fail'
+$failedResultRun = Invoke-Handoff $failedResult
+Assert-That ($failedResultRun.Exit -eq 1 -and $failedResultRun.Output[0] -match 'no passed full run has the current tree') 'a failed result does not count'
 
 }
 
@@ -1361,7 +1374,7 @@ Assert-That ($inlineStep.Exit -eq 1 -and
 }
 
 # --- fake tools for format-changed and run-area ------------------------------------------------------------------
-if (Test-Section 'format-changed', 'run-area' -Quiet) {
+if (Test-Section 'format-changed', 'run-area', 'run-tests' -Quiet) {
 # Each fake logs "<tool> <arguments> @ <folder name>" to FAKE_LOG. The fake npx prettier appends "// PRETTIER" to each
 # file it gets. The fake dotnet answers like the Microsoft Testing Platform summary; FAKE_UNIT_FAIL makes the unit
 # command fail, and FAKE_TOUCH names a file that the integration command changes.
@@ -1369,20 +1382,23 @@ $fakeBin = Join-Path $work 'bin'
 New-Item -ItemType Directory -Force $fakeBin | Out-Null
 $fakeLogLine = 'if ($env:FAKE_LOG) { Add-Content $env:FAKE_LOG "$tool $($args -join '' '') @ $(Split-Path -Leaf (Get-Location))" }'
 Set-Content (Join-Path $fakeBin 'fake-npx.ps1') @(
-  '$tool = ''npx''', $fakeLogLine,
+  '$tool = ''npx''', $fakeLogLine, 'if ($env:FAKE_ARGS_LOG -and $env:HF_TEST_TAGS) { Add-Content $env:FAKE_ARGS_LOG "tags $env:HF_TEST_TAGS" }',
   'if ($args[0] -eq ''prettier'') { foreach ($file in @($args | Where-Object { $_ -notlike ''-*'' -and $_ -ne ''prettier'' })) { if (Test-Path -LiteralPath $file) { Add-Content -LiteralPath $file ''// PRETTIER'' } }; exit 0 }',
   'if ($args[1] -eq ''test'') { Write-Output ''      Tests  3 passed (3)'' }',
   'exit 0')
 Set-Content (Join-Path $fakeBin 'fake-npm.ps1') @(
   '$tool = ''npm''', $fakeLogLine,
+  'if ($env:FAKE_NPM_FAIL -and ($args -join '' '') -eq $env:FAKE_NPM_FAIL) { Write-Output ''lint error''; exit 1 }',
   'if ($args[0] -eq ''test'') { Write-Output '' Tests  2 passed (2)'' }',
   'exit 0')
 Set-Content (Join-Path $fakeBin 'fake-dotnet.ps1') @(
   '$tool = ''dotnet''',
   '$line = $args -join '' ''',
+  'if ($env:FAKE_ARGS_LOG) { Add-Content $env:FAKE_ARGS_LOG "dotnet $line" }',
   '$kind = if ($args[0] -eq ''build'') { ''build'' } elseif ($line -match ''UnitTests'') { ''unit'' } else { ''integration'' }',
   'if ($env:FAKE_LOG) { Add-Content $env:FAKE_LOG "dotnet $kind" }',
   'if ($kind -eq ''build'' -and $env:FAKE_BUILD_FAIL) { $folder = Join-Path $env:FAKE_BUILD_FAIL ''backend/App/obj/Debug''; New-Item -ItemType Directory -Force $folder | Out-Null; $uri = ''file:///'' + $env:FAKE_BUILD_FAIL.Replace(''\'', ''/'') + ''/backend/App/A.cs''; @{ version = ''2.1.0''; runs = @(@{ results = @(@{ ruleId = ''CS0103''; level = ''error''; message = @{ text = ''The name x does not exist'' }; locations = @(@{ physicalLocation = @{ artifactLocation = @{ uri = $uri }; region = @{ startLine = 7; startColumn = 9 } } }) }) }) } | ConvertTo-Json -Depth 10 | Set-Content (Join-Path $folder ''App.sarif''); exit 1 }',
+  'if ($kind -eq ''build'' -and $env:FAKE_BUILD_WARN) { $folder = Join-Path $env:FAKE_BUILD_WARN ''backend/App/obj/Debug''; New-Item -ItemType Directory -Force $folder | Out-Null; $uri = ''file:///'' + $env:FAKE_BUILD_WARN.Replace(''\'', ''/'') + ''/backend/App/A.cs''; @{ version = ''2.1.0''; runs = @(@{ results = @(@{ ruleId = ''CS0219''; level = ''warning''; message = @{ text = ''The variable is assigned but never used'' }; locations = @(@{ physicalLocation = @{ artifactLocation = @{ uri = $uri }; region = @{ startLine = 3; startColumn = 5 } } }) }) }) } | ConvertTo-Json -Depth 10 | Set-Content (Join-Path $folder ''App.sarif'') }',
   'if ($kind -eq ''unit'' -and $env:FAKE_UNIT_FAIL) { ''failed SampleTests.Unit_Fails (1ms)'', ''  total: 5'', ''  failed: 1'', ''  succeeded: 4''; exit 2 }',
   'if ($kind -eq ''build'' -and $env:FAKE_PROBE_LOCK) { try { Remove-Item -LiteralPath $env:FAKE_PROBE_LOCK -Force -ErrorAction Stop; Add-Content $env:FAKE_LOG ''lock delete worked'' } catch { Add-Content $env:FAKE_LOG ''lock delete blocked'' } }',
   'if ($kind -eq ''unit'') { ''  total: 5'', ''  failed: 0'', ''  succeeded: 5'' }',
@@ -1393,6 +1409,24 @@ foreach ($tool in 'npx', 'npm', 'dotnet') {
 }
 $previousPath = $env:PATH
 $env:PATH = "$fakeBin$([IO.Path]::PathSeparator)$env:PATH"
+
+# A repository for the tool suites: the fake suites log "suite <name>" to FAKE_LOG; FAKE_SUITE_FAIL names a suite that fails.
+function New-ToolingRepo([string] $name, [string[]] $changed) {
+  $dir = New-Repo $name
+  foreach ($folder in '.claude/rules', '.claude/agents', '.claude/commands', '.claude/hooks/tests', '.claude/tests', 'scripts/tests', 'src') {
+    New-Item -ItemType Directory -Force (Join-Path $dir $folder) | Out-Null
+  }
+  $suiteTemplate = @('param()', 'Add-Content $env:FAKE_LOG "suite @SUITE@"', 'if ($env:FAKE_SUITE_FAIL -eq "@SUITE@") { Write-Host "  FAIL a sample check"; exit 1 }', 'Write-Host "All checks passed."')
+  foreach ($suite in '.claude/tests/rules.tests.ps1', '.claude/hooks/tests/hook-scope.tests.ps1', '.claude/tests/flow-scripts.tests.ps1',
+    'scripts/tests/verify-slots.tests.ps1', 'scripts/tests/agent-chrome.tests.ps1') {
+    Set-Content (Join-Path $dir $suite) ($suiteTemplate | ForEach-Object { $_.Replace('@SUITE@', (Split-Path $suite -Leaf)) })
+  }
+  foreach ($file in $changed + @('src/a.cs')) { Set-Content (Join-Path $dir $file) 'x' }
+  Save-Commit $dir 'base'
+  git -C $dir tag base
+  foreach ($file in $changed) { Add-Content (Join-Path $dir $file) '# edit' }
+  return $dir
+}
 
 function Get-MarkCount([string] $path, [string] $mark) {
   ([regex]::Matches((Get-Content $path -Raw), [regex]::Escape($mark))).Count
@@ -1414,13 +1448,25 @@ $fileB = Join-Path $formatRepo 'frontend/src/b.ts'
 [void](Invoke-Script 'format-changed.ps1' @('-Repo', $formatRepo, '-Files', 'frontend/src/a.ts'))
 Assert-That ((Get-MarkCount $fileA '// PRETTIER') -eq 1) 'format-changed formats a given file'
 [void](Invoke-Script 'format-changed.ps1' @('-Repo', $formatRepo, '-Files', 'frontend/src/a.ts'))
-Assert-That ((Get-MarkCount $fileA '// PRETTIER') -eq 1) 'a second call at the same tree formats the file not again'
+Assert-That ((Get-MarkCount $fileA '// PRETTIER') -eq 2) 'a second call at the same tree formats the file again'
 [void](Invoke-Script 'format-changed.ps1' @('-Repo', $formatRepo, '-Files', 'frontend/src/a.ts,frontend/src/b.ts'))
-Assert-That ((Get-MarkCount $fileA '// PRETTIER') -eq 1 -and (Get-MarkCount $fileB '// PRETTIER') -eq 1) `
-  'a call with one more file at the same tree formats only that file'
-Set-Content (Join-Path $formatRepo 'frontend/src/c.ts') 'export const c = 1;'
-[void](Invoke-Script 'format-changed.ps1' @('-Repo', $formatRepo, '-Files', 'frontend/src/a.ts'))
-Assert-That ((Get-MarkCount $fileA '// PRETTIER') -eq 2) 'a call after an edit of another file formats the file again'
+Assert-That ((Get-MarkCount $fileA '// PRETTIER') -eq 3 -and (Get-MarkCount $fileB '// PRETTIER') -eq 1) `
+  'a call with two files formats both'
+Assert-That (-not (Test-Path (Join-Path $formatRepo '.git/claude-format-state.json'))) 'format-changed writes no claude-format-state.json'
+
+# The cleanup of C# files: a fake cleanup script in a copy of the scripts counts its calls.
+$formatScripts = Join-Path $work 'format-scripts'
+New-Item -ItemType Directory -Force (Join-Path $formatScripts 'hooks') | Out-Null
+Copy-Item (Join-Path $ScriptsDir 'format-changed.ps1') $formatScripts
+foreach ($helper in 'checkout-helpers.ps1', 'command-line-batches.ps1') { Copy-Item (Join-Path $ScriptsDir "hooks/$helper") (Join-Path $formatScripts 'hooks') }
+$cleanupCalls = Join-Path $work 'cleanup-calls.txt'
+Set-Content (Join-Path $formatScripts 'hooks/cleanup-changed.ps1') @('param([string[]]$Files, [string]$Repo)', "Add-Content '$cleanupCalls' ""cleanup `$(`$Files -join ',')""")
+$csRepo = New-Repo 'format-cs'
+Set-Content (Join-Path $csRepo 'a.cs') 'class A {}'
+Save-Commit $csRepo 'base'
+Add-Content (Join-Path $csRepo 'a.cs') '// edited'
+foreach ($call in 1..2) { & pwsh -NoProfile -File (Join-Path $formatScripts 'format-changed.ps1') -Repo $csRepo -Files 'a.cs' | Out-Null }
+Assert-That ((@(Get-Content $cleanupCalls)).Count -eq 2) 'a second call at the same tree runs the cleanup again'
 
 }
 
@@ -1628,23 +1674,7 @@ Assert-That ($openRun.Exit -eq 1 -and $openRun.Last -like 'RUN FAILED backend: a
 
 
 
-# --- tooling area (Step 86) ---
-function New-ToolingRepo([string] $name, [string[]] $changed) {
-  $dir = New-Repo $name
-  foreach ($folder in '.claude/rules', '.claude/agents', '.claude/commands', '.claude/hooks/tests', '.claude/tests', 'scripts/tests', 'src') {
-    New-Item -ItemType Directory -Force (Join-Path $dir $folder) | Out-Null
-  }
-  $suiteTemplate = @('param()', 'Add-Content $env:FAKE_LOG "suite @SUITE@"', 'if ($env:FAKE_SUITE_FAIL -eq "@SUITE@") { Write-Host "  FAIL a sample check"; exit 1 }', 'Write-Host "All checks passed."')
-  foreach ($suite in '.claude/tests/rules.tests.ps1', '.claude/hooks/tests/hook-scope.tests.ps1', '.claude/tests/flow-scripts.tests.ps1',
-    'scripts/tests/verify-slots.tests.ps1', 'scripts/tests/agent-chrome.tests.ps1') {
-    Set-Content (Join-Path $dir $suite) ($suiteTemplate | ForEach-Object { $_.Replace('@SUITE@', (Split-Path $suite -Leaf)) })
-  }
-  foreach ($file in $changed + @('src/a.cs')) { Set-Content (Join-Path $dir $file) 'x' }
-  Save-Commit $dir 'base'
-  git -C $dir tag base
-  foreach ($file in $changed) { Add-Content (Join-Path $dir $file) '# edit' }
-  return $dir
-}
+# --- tooling area (Step 86): New-ToolingRepo is defined with the shared fake tools ---
 
 $rulesRepo = New-ToolingRepo 'ra-tooling-rules' @('.claude/rules/sample.md')
 $rulesRun = Invoke-Area $rulesRepo 'tooling'
@@ -1676,6 +1706,203 @@ $suiteFail = Invoke-Area (New-ToolingRepo 'ra-tooling-fail' @('.claude/hooks/x.p
 Assert-That ($suiteFail.Exit -eq 1 -and $suiteFail.Last -eq 'RUN FAILED tooling: hook-scope.tests.ps1 - FAIL a sample check') `
   'a failing suite prints RUN FAILED tooling with the suite and its first FAIL line'
 
+}
+
+# --- run-tests -------------------------------------------------------------------------------------------------
+if (Test-Section 'run-tests') {
+Write-Host 'run-tests'
+
+# Three features: Alpha (backend src/Alpha, frontend frontend/src/app/alpha), Beta and Gamma (backend only; none in the
+# frontend). The fake dotnet and npx log every argument line to the log file; the fake npx also logs HF_TEST_TAGS.
+function New-TestsRepo([string] $name, [string[]] $changed) {
+  $dir = New-Repo $name
+  Set-Content (Join-Path $dir 'test-features.json') (@{ features = @(
+        @{ name = 'Alpha'; backend = @('src/Alpha/**'); frontend = @('frontend/src/app/alpha/**') },
+        @{ name = 'Beta'; backend = @('src/Beta/**'); frontend = @() },
+        @{ name = 'Gamma'; backend = @('src/Gamma/**'); frontend = @() }) } | ConvertTo-Json -Depth 5)
+  foreach ($path in $changed) {
+    New-Item -ItemType Directory -Force (Split-Path (Join-Path $dir $path) -Parent) | Out-Null
+    Set-Content (Join-Path $dir $path) 'base'
+  }
+  Save-Commit $dir 'base'
+  git -C $dir tag base
+  foreach ($path in $changed) { Add-Content (Join-Path $dir $path) '// edit' }
+  return $dir
+}
+
+$testsFormat = Join-Path $work 'fake-tests-format.ps1'
+Set-Content $testsFormat 'param([string]$Repo, [string[]]$Files)'
+
+function Invoke-Tests([string] $repoDir, [string[]] $arguments, [hashtable] $environment = @{}) {
+  $log = Join-Path $work "tests-$([Guid]::NewGuid().ToString('N').Substring(0, 8)).log"
+  New-Item -ItemType File $log | Out-Null
+  $env:FAKE_LOG = $log
+  $env:FAKE_ARGS_LOG = $log
+  foreach ($key in $environment.Keys) { Set-Item "Env:$key" $environment[$key] }
+  try { $result = Invoke-Script 'run-tests.ps1' (@('-Repo', $repoDir, '-Base', 'base', '-FormatScript', $testsFormat) + $arguments) }
+  finally {
+    Remove-Item Env:FAKE_LOG, Env:FAKE_ARGS_LOG -ErrorAction SilentlyContinue
+    foreach ($key in $environment.Keys) { Remove-Item "Env:$key" -ErrorAction SilentlyContinue }
+  }
+  [pscustomobject]@{ Output = $result.Output; Exit = $result.Exit; Log = @(Get-Content $log); Last = @($result.Output)[-1] }
+}
+
+$mappedRepo = New-TestsRepo 'rt-mapped' @('src/Alpha/a.cs')
+$mappedRun = Invoke-Tests $mappedRepo @('-Area', 'backend', '-Kind', 'integration', '-Changed')
+$mappedTree = Get-AreaTreeId $mappedRepo 'backend'
+Assert-That ($mappedRun.Exit -eq 0 -and $mappedRun.Last -eq
+  "Affected run backend: tree $mappedTree; features Alpha; build, integration+API command -> 7 passed, 0 failed") `
+  'a mapped backend path runs the integration command of its feature and prints the Affected run line'
+Assert-That (@($mappedRun.Log | Where-Object { $_ -like 'dotnet test*--filter-trait Feature=Alpha*' }).Count -eq 1 -and
+  @($mappedRun.Log | Where-Object { $_ -like '*Feature=Beta*' }).Count -eq 0) 'a mapped path passes --filter-trait of its feature only'
+
+$unmappedRepo = New-TestsRepo 'rt-unmapped' @('src/Other/x.cs')
+$unmappedRun = Invoke-Tests $unmappedRepo @('-Area', 'backend', '-Kind', 'integration', '-Changed')
+Assert-That ($unmappedRun.Exit -eq 0 -and $unmappedRun.Last -like 'Affected run backend: tree *; features all; *' -and
+  @($unmappedRun.Log | Where-Object { $_ -like '*--filter-trait*' }).Count -eq 0) `
+  'an unmapped backend path selects every feature and passes no --filter-trait'
+Assert-That (@($mappedRun.Log | Where-Object { $_ -like 'dotnet test*--filter-trait Feature=Alpha*--ignore-exit-code 8*' }).Count -eq 1 -and
+  @($unmappedRun.Log | Where-Object { $_ -like '*--ignore-exit-code*' }).Count -eq 0) `
+  'an integration command with --filter-trait also passes --ignore-exit-code 8 (a module without a test of the feature exits 8); without a filter it passes none'
+
+$unitRun = Invoke-Tests $mappedRepo @('-Area', 'backend', '-Kind', 'unit', '-Changed')
+Assert-That ($unitRun.Exit -eq 0 -and $unitRun.Log -contains 'dotnet unit' -and $unitRun.Log -notcontains 'dotnet integration' -and
+  @($unitRun.Log | Where-Object { $_ -like '*--filter-trait*' }).Count -eq 0) '-Kind unit starts no integration command and no trait filter'
+
+$unitFailRun = Invoke-Tests $mappedRepo @('-Area', 'backend', '-Changed') @{ FAKE_UNIT_FAIL = '1' }
+Assert-That ($unitFailRun.Exit -eq 1 -and $unitFailRun.Last -eq 'RUN FAILED backend: unit+architecture command failed' -and
+  $unitFailRun.Log -notcontains 'dotnet integration') 'a failing unit command starts no integration command'
+
+$featureRun = Invoke-Tests $mappedRepo @('-Area', 'backend', '-Kind', 'integration', '-Feature', 'Beta,Alpha')
+Assert-That ($featureRun.Exit -eq 0 -and $featureRun.Last -like '*features Beta, Alpha;*' -and
+  @($featureRun.Log | Where-Object { $_ -like '*--filter-trait Feature=Beta*--filter-trait Feature=Alpha*' }).Count -eq 1) `
+  '-Feature selects the named features, one --filter-trait each'
+
+$projectRun = Invoke-Tests $mappedRepo @('-Area', 'backend', '-Project', 'backend/tests/HealthyFac.Core.UnitTests', '-Filter', '/*/*/*/Sample*')
+Assert-That ($projectRun.Exit -eq 0 -and
+  @($projectRun.Log | Where-Object { $_ -like 'dotnet test --project backend/tests/HealthyFac.Core.UnitTests --no-build --filter /*/*/*/Sample*' }).Count -eq 1) `
+  '-Project runs one project without a build and with the filter'
+
+$frontendRepo = New-TestsRepo 'rt-frontend' @('frontend/src/app/alpha/x.ts')
+$frontendRun = Invoke-Tests $frontendRepo @('-Area', 'frontend', '-Changed')
+Assert-That ($frontendRun.Exit -eq 0 -and @($frontendRun.Log | Where-Object { $_ -like 'npx ng test --watch=false --include src/app/alpha @ frontend' }).Count -eq 1 -and
+  $frontendRun.Log -contains 'tags Alpha') 'a frontend path of a feature gives --include of its folder and HF_TEST_TAGS'
+
+$sharedRepo = New-TestsRepo 'rt-shared' @('frontend/src/app/shared/x/y.ts')
+$sharedRun = Invoke-Tests $sharedRepo @('-Area', 'frontend', '-Changed')
+Assert-That ($sharedRun.Exit -eq 0 -and @($sharedRun.Log | Where-Object { $_ -like 'npx ng test --watch=false @ frontend' }).Count -eq 1 -and
+  @($sharedRun.Log | Where-Object { $_ -like 'tags *' }).Count -eq 0) 'a frontend shared/ path gives neither --include nor HF_TEST_TAGS'
+
+$noFrontendRun = Invoke-Tests $mappedRepo @('-Area', 'frontend', '-Feature', 'Beta')
+Assert-That ($noFrontendRun.Exit -eq 0 -and @($noFrontendRun.Log | Where-Object { $_ -like 'npx ng test*' }).Count -eq 0 -and
+  $noFrontendRun.Last -like 'Affected run frontend: tree *; features Beta; no frontend tests -> 0 passed, 0 failed') `
+  'a feature without frontend globs starts no frontend command'
+
+
+function Read-StoredResult([string] $repoDir, [string] $area, [string] $mode) {
+  $path = Join-Path $repoDir ".git/claude-runs/result-$area-$mode.json"
+  if (Test-Path $path) { Get-Content $path -Raw | ConvertFrom-Json }
+}
+
+$passResult = Read-StoredResult $mappedRepo 'backend' 'affected'
+Assert-That ($passResult -and $passResult.kind -eq 'Affected run' -and $passResult.status -eq 'pass' -and $passResult.tree -eq $mappedTree -and
+  $passResult.line -like 'Affected run backend: tree *' -and $passResult.finished -is [datetime]) `
+  'a passing run-tests run stores a pass result with the kind, the tree, and the last line'
+$null = Invoke-Tests $mappedRepo @('-Area', 'backend', '-Kind', 'unit', '-Changed') @{ FAKE_UNIT_FAIL = '1' }
+$failResult = Read-StoredResult $mappedRepo 'backend' 'affected'
+Assert-That ($failResult -and $failResult.status -eq 'fail' -and $failResult.line -eq 'RUN FAILED backend: unit+architecture command failed') `
+  'a failing run-tests run stores a fail result with the RUN FAILED line'
+
+$resultFormat = Join-Path $work 'fake-result-format.ps1'
+Set-Content $resultFormat 'param([string]$Repo, [string[]]$Files)'
+function Invoke-FullRun([string] $repoDir, [hashtable] $environment = @{}) {
+  $env:FAKE_LOG = Join-Path $work "full-$([Guid]::NewGuid().ToString('N').Substring(0, 8)).log"
+  foreach ($key in $environment.Keys) { Set-Item "Env:$key" $environment[$key] }
+  try { $result = Invoke-Script 'run-area.ps1' @('-Area', 'backend', '-Repo', $repoDir, '-Base', 'base', '-FormatScript', $resultFormat) }
+  finally {
+    Remove-Item Env:FAKE_LOG -ErrorAction SilentlyContinue
+    foreach ($key in $environment.Keys) { Remove-Item "Env:$key" -ErrorAction SilentlyContinue }
+  }
+  $result
+}
+$fullRepo = New-TestsRepo 'rt-full' @('src/Alpha/a.cs')
+$fullRun = Invoke-FullRun $fullRepo
+$fullResult = Read-StoredResult $fullRepo 'backend' 'full'
+Assert-That ($fullRun.Exit -eq 0 -and $fullResult -and $fullResult.kind -eq 'Full run' -and $fullResult.status -eq 'pass' -and
+  $fullResult.line -eq @($fullRun.Output)[-1] -and $fullResult.tree -eq (Get-AreaTreeId $fullRepo 'backend')) `
+  'a passing run-area run stores a pass result of the kind Full run'
+$null = Invoke-FullRun $fullRepo @{ FAKE_UNIT_FAIL = '1' }
+$fullFail = Read-StoredResult $fullRepo 'backend' 'full'
+Assert-That ($fullFail -and $fullFail.status -eq 'fail' -and $fullFail.line -eq 'RUN FAILED backend: unit+architecture command failed') `
+  'a failing run-area run stores a fail result'
+
+$toolRepo = New-ToolingRepo 'rt-tooling' @('.claude/rules/sample.md')
+$toolRun = Invoke-Tests $toolRepo @('-Area', 'tooling', '-Changed')
+$toolTree = Get-AreaTreeId $toolRepo 'tooling'
+Assert-That ($toolRun.Exit -eq 0 -and $toolRun.Last -eq "Affected run tooling: tree $toolTree; suites rules.tests.ps1 -> passed" -and
+  ($toolRun.Log -join '|') -eq 'suite rules.tests.ps1') 'a changed .claude/rules/ file runs only rules.tests.ps1 through run-tests'
+$toolResult = Read-StoredResult $toolRepo 'tooling' 'affected'
+Assert-That ($toolResult -and $toolResult.status -eq 'pass' -and $toolResult.tree -eq $toolTree) 'a tooling run stores its result'
+$toolFail = Invoke-Tests (New-ToolingRepo 'rt-tooling-fail' @('.claude/hooks/x.ps1')) @('-Area', 'tooling', '-Changed') @{ FAKE_SUITE_FAIL = 'hook-scope.tests.ps1' }
+Assert-That ($toolFail.Exit -eq 1 -and $toolFail.Last -eq 'RUN FAILED tooling: hook-scope.tests.ps1 - FAIL a sample check') `
+  'a failing tool suite prints RUN FAILED tooling with the suite and its first FAIL line'
+
+$showFresh = Invoke-Script 'run-tests.ps1' @('-ShowResults', '-Repo', $fullRepo)
+Assert-That ($showFresh.Exit -eq 0 -and ($showFresh.Output | Where-Object { $_ -like 'Full run backend: tree *; fail; current' }).Count -eq 1) `
+  '-ShowResults prints one line for each stored result, current for the tree of the area now'
+$null = Invoke-FullRun $fullRepo
+Add-Content (Join-Path $fullRepo 'src/Alpha/a.cs') '// later edit'
+$showStale = Invoke-Script 'run-tests.ps1' @('-ShowResults', '-Repo', $fullRepo)
+Assert-That (($showStale.Output | Where-Object { $_ -like 'Full run backend: tree *; pass; stale' }).Count -eq 1) `
+  '-ShowResults marks a result stale after a change of its area'
+
+# --- hook state after a run (Step 80) ---
+function New-StateRepo([string] $name) {
+  $dir = New-Repo $name
+  New-Item -ItemType Directory -Force (Join-Path $dir 'backend/App') | Out-Null
+  Set-Content (Join-Path $dir 'test-features.json') (@{ features = @(@{ name = 'Alpha'; backend = @('backend/App/**'); frontend = @() }) } | ConvertTo-Json -Depth 5)
+  Set-Content (Join-Path $dir '.gitignore') 'obj/'
+  Set-Content (Join-Path $dir 'backend/App/A.cs') 'class A {}'
+  Save-Commit $dir 'base'
+  git -C $dir tag base
+  Add-Content (Join-Path $dir 'backend/App/A.cs') '// edit'
+  return $dir
+}
+
+$stateRepo = New-StateRepo 'rt-state'
+$stateRun = Invoke-Tests $stateRepo @('-Area', 'backend', '-Kind', 'unit', '-Changed')
+$statePath = Join-Path $stateRepo '.git/claude-verify-backend-tree.txt'
+Assert-That ($stateRun.Exit -eq 0 -and (Test-Path $statePath) -and (Get-Content $statePath -Raw).Trim() -eq (Get-TreeId $stateRepo)) `
+  'a passing backend run-tests run writes the hook state of the backend step with the current tree'
+$stateFullRepo = New-StateRepo 'rt-state-full'
+$null = Invoke-FullRun $stateFullRepo
+Assert-That ((Test-Path (Join-Path $stateFullRepo '.git/claude-verify-backend-tree.txt')) -and
+  (Get-Content (Join-Path $stateFullRepo '.git/claude-verify-backend-tree.txt') -Raw).Trim() -eq (Get-TreeId $stateFullRepo)) `
+  'a passing run-area backend run writes the hook state too'
+
+$warnRepo = New-StateRepo 'rt-state-warn'
+$warnRun = Invoke-Tests $warnRepo @('-Area', 'backend', '-Kind', 'unit', '-Changed') @{ FAKE_BUILD_WARN = $warnRepo }
+$warnResult = Read-StoredResult $warnRepo 'backend' 'affected'
+Assert-That ($warnRun.Exit -eq 0 -and @($warnRun.Output | Where-Object { $_ -like 'Hook check: backend/App/A.cs(3,5): warning CS0219:*' }).Count -eq 1 -and
+  -not (Test-Path (Join-Path $warnRepo '.git/claude-verify-backend-tree.txt')) -and $warnResult.status -eq 'pass' -and
+  $warnRun.Last -like 'Affected run backend:*') 'a SARIF warning in a changed file prints Hook check: and writes no state; the run result stays pass'
+
+$stateFailRepo = New-StateRepo 'rt-state-fail'
+$null = Invoke-Tests $stateFailRepo @('-Area', 'backend', '-Kind', 'unit', '-Changed') @{ FAKE_UNIT_FAIL = '1' }
+Assert-That (-not (Test-Path (Join-Path $stateFailRepo '.git/claude-verify-backend-tree.txt'))) 'a failing run writes no hook state'
+
+# --- keycloak theme in the frontend run (Step 107) ---
+$themeRun = Invoke-Tests (New-TestsRepo 'rt-theme' @('keycloak-theme/src/x.ts', 'frontend/src/app/alpha/y.ts')) @('-Area', 'frontend', '-Changed')
+Assert-That ($themeRun.Exit -eq 0 -and ($themeRun.Log -join '|') -like '*npx ng test*|npm run lint @ keycloak-theme|npm test @ keycloak-theme*' -and
+  $themeRun.Last -like '*keycloak lint, keycloak test*') 'a changed keycloak-theme path runs npm run lint and npm test in keycloak-theme/ after ng test'
+$themeFailRepo = New-TestsRepo 'rt-theme-fail' @('keycloak-theme/src/x.ts', 'frontend/src/app/alpha/y.ts')
+$themeFail = Invoke-Tests $themeFailRepo @('-Area', 'frontend', '-Changed') @{ FAKE_NPM_FAIL = 'run lint' }
+$themeFailResult = Read-StoredResult $themeFailRepo 'frontend' 'affected'
+Assert-That ($themeFail.Exit -eq 1 -and $themeFail.Last -eq 'RUN FAILED frontend: keycloak lint failed' -and $themeFailResult.status -eq 'fail') `
+  'a failing npm run lint in keycloak-theme/ prints RUN FAILED frontend and stores no pass'
+$plainFrontend = Invoke-Tests (New-TestsRepo 'rt-theme-none' @('frontend/src/app/alpha/x.ts')) @('-Area', 'frontend', '-Changed')
+Assert-That ($plainFrontend.Exit -eq 0 -and @($plainFrontend.Log | Where-Object { $_ -like '*@ keycloak-theme' }).Count -eq 0) `
+  'a change only under frontend/ runs no keycloak command'
 }
 
 if ($previousPath) { $env:PATH = $previousPath }

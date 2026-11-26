@@ -1,7 +1,7 @@
 #Requires -Version 7
 # run-area.ps1 - the full run of one test area for the executor (.claude/agents/executor.md, Execution). It formats the
-# changed files of the area first, so the tree of the Full run line is the tree that check-handoff.ps1 sees after its
-# own format step (a format change after a full run made the run stale and cost a second run).
+# changed files of the area first, so the tree of the run result is the tree that check-handoff.ps1 reads (it formats
+# nothing, Step 73).
 # Usage: pwsh .claude/run-area.ps1 -Area backend|frontend|tooling [-Repo <path>] [-Base <ref>] [-MainBranch <name>]
 #        [-FormatScript <path>]
 # Defaults: -Repo is the checkout that holds this script file; -Base is the merge base of HEAD and origin/<MainBranch>
@@ -13,7 +13,7 @@
 # is stale: the next run deletes it. When a run holds the file open, the next run prints "RUN FAILED <area>: another
 # run of <area> is active (pid <id>)", leaves the lock, and exits 1 at once.
 # Area tooling (.claude/, CLAUDE.md, scripts/): no format step, no named index check, no build. It runs each script test
-# suite whose pattern matches a path that changed since the base, once (the table $ScriptTests below; the suites run
+# suite whose pattern matches a path that changed since the base, once (Get-ToolSuites in checkout-helpers.ps1; the suites run
 # at the same time, each with its own log). Last line: "Full run tooling: tree <id>; suites <names> -> passed" (or
 # "suites none" when no pattern matches), or "RUN FAILED tooling: <suite> - <first FAIL line>". The lock applies to it.
 # Steps of the other areas, in order; the first failure ends the run:
@@ -28,9 +28,12 @@
 #    then the names of its failing tests. A failed backend build prints its diagnostics first as typed lines from the
 #    SARIF files under backend/ (Get-SarifDiagnostics), errors first.
 # 5. The area tree again: a change during the run fails it.
+# After a passing run, the hook state of the area (Write-HookState): the Stop hook then finds the verified tree and formats and
+# builds nothing. A backend run with a SARIF warning in a changed file prints "Hook check: <line>" and writes no state.
 # Last line: "Full run <area>: tree <id>; <commands> -> <passed counts> passed, 0 failed" (exit code 0), or
-# "RUN FAILED <area>: <reason>" (exit code 1). The executor copies the Full run line into plan.md with the Edit tool;
-# this script never writes plan.md (agent-workflow.md, Handoff Files). It runs longer than 180 seconds, so the executor
+# "RUN FAILED <area>: <reason>" (exit code 1). The script stores its result, pass or fail (Write-RunResult,
+# result-<area>-full.json in the git directory), and check-handoff.ps1 reads it; the line goes into no plan.md. It
+# runs longer than 180 seconds, so the executor
 # runs it in the foreground with timeout 600000 (never in the background; a hook denies that). When the harness moves the
 # run to the background, the executor waits with one foreground loop on the output file until the last line shows.
 param(
@@ -43,15 +46,6 @@ param(
 
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'hooks/checkout-helpers.ps1')
-# The test script of each group of tool files (paths relative to the repo; a suite runs once when a changed path
-# matches its pattern).
-$ScriptTests = [ordered]@{
-  '.claude/tests/rules.tests.ps1'            = '^(\.claude/.+\.(md|ps1)$|CLAUDE\.md$)'
-  '.claude/hooks/tests/hook-scope.tests.ps1' = '^\.claude/hooks/'
-  '.claude/tests/flow-scripts.tests.ps1'     = '^\.claude/[^/]+\.ps1$|^\.claude/tests/flow-scripts|^\.claude/hooks/(checkout-helpers|command-line-batches|cleanup-changed)\.ps1$'
-  'scripts/tests/verify-slots.tests.ps1'     = '^scripts/(verify-|tests/verify-)'
-  'scripts/tests/agent-chrome.tests.ps1'     = '^scripts/(tests/)?agent-chrome'
-}
 $UnitModules = 'backend/tests/**/bin/Debug/net10.0/HealthyFac.*.UnitTests.dll;backend/tests/**/bin/Debug/net10.0/HealthyFac.*.ArchitectureTests.dll'
 $IntegrationModules = 'backend/tests/**/bin/Debug/net10.0/HealthyFac.*.IntegrationTests.dll;backend/tests/**/bin/Debug/net10.0/HealthyFac.*.ApiTests.dll'
 $IntegrationParallelModules = 4
@@ -70,10 +64,25 @@ function Remove-RunLock {
   }
 }
 
+# Stores the result of the run (Write-RunResult), with the tree of the area now when it can be read.
+function Save-Result([string] $status, [string] $line) {
+  $tree = try { Get-TreeId -Repo $Repo -Area $Area } catch { '' }
+  Write-RunResult $Repo 'full' $Area $tree $status $line
+}
+
 function Stop-Run([string] $reason) {
   Remove-RunLock
-  "RUN FAILED ${Area}: $reason"
+  $line = "RUN FAILED ${Area}: $reason"
+  $line
+  Save-Result 'fail' $line
   exit 1
+}
+
+# Ends a passing run: it releases the lock, stores the pass result with the tree of the Full run line, and prints the line.
+function Complete-Run([string] $tree, [string] $line) {
+  Remove-RunLock
+  Write-RunResult $Repo 'full' $Area $tree 'pass' $line
+  $line
 }
 
 # Takes the lock of the area, or ends the run when another run holds it. The lock file is created with an exclusive
@@ -114,66 +123,20 @@ function Stop-Lock([string] $holder) {
   exit 1
 }
 
-function Test-InArea([string] $path) {
-  $isFrontend = @($script:AreaPaths.frontend | Where-Object { $path -eq $_ -or $path -like "$_/*" }).Count -gt 0
-  if ($Area -eq 'frontend') { return $isFrontend }
-  if ($Area -eq 'tooling') { return @($script:AreaPaths.tooling | Where-Object { $path -eq $_ -or $path -like "$_/*" }).Count -gt 0 }
-  $isTool = @($script:AreaPaths.agentTools | Where-Object { $path -eq $_ -or $path -like "$_/*" }).Count -gt 0
-  return -not $isFrontend -and -not $isTool
-}
-
-# The passed count of a test command: the "succeeded:" line of the Microsoft Testing Platform summary, or the
-# "Tests <n> passed" line of vitest. Nothing for a command without tests.
-function Get-PassedCount([string[]] $lines) {
-  $succeeded = @($lines | Select-String -Pattern '^\s*succeeded:\s*(\d+)' | Select-Object -Last 1)
-  if ($succeeded) { return [int]$succeeded[0].Matches[0].Groups[1].Value }
-  $vitest = @($lines | Select-String -Pattern '^\s*Tests\s+(?:\d+ failed \| )?(\d+) passed' | Select-Object -Last 1)
-  if ($vitest) { return [int]$vitest[0].Matches[0].Groups[1].Value }
-}
-
-function Get-FailedTests([string[]] $lines) {
-  @($lines | Where-Object { $_ -match '^\s*failed\s+\S' -and $_ -notmatch '^\s*failed:' -or $_ -match '^\s*(FAIL|×)\s' } |
-    ForEach-Object { $_.Trim() })
-}
-
-# The tooling area: the suites whose pattern matches a changed path run at the same time, once each. The tree is read
-# before and after, like for the other areas.
+# The tooling area: the suites that the changed paths select (Get-ToolSuites) run at the same time, once each. The tree is
+# read before and after, like for the other areas.
 function Invoke-ToolingRun([string[]] $changed) {
   $treeBefore = Get-TreeId -Repo $Repo -Area $Area
-  $suites = @($ScriptTests.Keys | Where-Object {
-      $suite = $_
-      $isMatch = @($changed | Where-Object { $_ -match $ScriptTests[$suite] }).Count -gt 0
-      $isMatch -and (Test-Path -LiteralPath (Join-Path $Repo $suite))
-    })
-  $logFolder = Get-GitStatePath $Repo 'claude-runs'
-  New-Item -ItemType Directory -Force $logFolder | Out-Null
-  $stamp = [DateTime]::Now.ToString('yyyyMMdd-HHmmss')
-  $runs = foreach ($suite in $suites) {
-    $log = Join-Path $logFolder "$Area-$stamp-$(Split-Path $suite -Leaf).log"
-    $process = Start-Process pwsh -ArgumentList @('-NoProfile', '-File', (Join-Path $Repo $suite)) -WorkingDirectory $Repo `
-      -RedirectStandardOutput $log -RedirectStandardError "$log.err" -NoNewWindow -PassThru
-    [pscustomobject]@{ Suite = $suite; Log = $log; Process = $process }
-  }
-  foreach ($run in $runs) { $run.Process.WaitForExit() }
-  foreach ($run in $runs) {
-    $lines = @(Get-Content -LiteralPath $run.Log -ErrorAction SilentlyContinue)
-    $exitCode = $run.Process.ExitCode
-    $result = if ($exitCode -eq 0) { 'passed' } else { 'failed' }
-    "$(Split-Path $run.Suite -Leaf): $result (exit $exitCode); log $($run.Log)"
-    if ($exitCode -ne 0) {
-      $firstFail = @($lines | Where-Object { $_ -match '^\s*FAIL ' } | Select-Object -First 1)
-      $reason = if ($firstFail) { $firstFail[0].Trim() } else { @($lines)[-1] }
-      Stop-Run "$(Split-Path $run.Suite -Leaf) - $reason"
-    }
-  }
+  $suites = @(Get-ToolSuites $Repo $changed)
+  $run = Invoke-ToolSuites $Repo $suites $Area
+  $run.Lines
+  if ($run.Failure) { Stop-Run $run.Failure }
 
   $treeAfter = Get-TreeId -Repo $Repo -Area $Area
   if ($treeAfter -ne $treeBefore) { Stop-Run 'the tree changed during the run' }
-  Remove-RunLock
   $names = if ($suites.Count -gt 0) { @($suites | ForEach-Object { Split-Path $_ -Leaf }) -join ', ' } else { 'none' }
-  "Full run ${Area}: tree $treeBefore; suites $names -> passed"
+  Complete-Run $treeBefore "Full run ${Area}: tree $treeBefore; suites $names -> passed"
 }
-
 # The steps of the header. Each failure prints its RUN FAILED line and exits; a throw (a tree ID, the format script,
 # a missing tool) reaches the catch below, so the last line is always a Full run or a RUN FAILED line.
 function Invoke-AreaRun {
@@ -186,7 +149,7 @@ function Invoke-AreaRun {
   $changed = @(@((Get-GitLines $Repo @('diff', '--name-only', '--no-renames', $Base)).Lines) +
     @((Get-GitLines $Repo @('ls-files', '--others', '--exclude-standard')).Lines) |
       Where-Object { $_ } | ForEach-Object { $_.Replace('\', '/') } | Sort-Object -Unique |
-      Where-Object { Test-InArea $_ })
+      Where-Object { Test-PathInArea $_ $Area })
   $existing = @($changed | Where-Object { Test-Path -LiteralPath (Join-Path $Repo $_) -PathType Leaf })
 
   if ($Area -eq 'tooling') {
@@ -224,6 +187,7 @@ function Invoke-AreaRun {
   New-Item -ItemType Directory -Force $logFolder | Out-Null
   $stamp = [DateTime]::Now.ToString('yyyyMMdd-HHmmss')
   $passed = [Collections.Generic.List[int]]::new()
+  $buildLines = @()
   $number = 0
   foreach ($command in $commands) {
     $number++
@@ -237,6 +201,7 @@ function Invoke-AreaRun {
     finally { Pop-Location }
     $lines = @(Get-Content -LiteralPath $log -ErrorAction SilentlyContinue | ForEach-Object { $_ -replace '\x1b\[[0-9;]*m', '' })
     $count = Get-PassedCount $lines
+    if ($command.Label -eq 'build') { $buildLines = $lines }
     $countText = if ($null -ne $count) { "$count passed" } else { 'no test count' }
     $result = if ($exitCode -eq 0) { 'passed' } else { 'failed' }
     "$($command.Label): $result (exit $exitCode) -> $countText; log $log"
@@ -255,14 +220,16 @@ function Invoke-AreaRun {
   $treeAfter = Get-TreeId -Repo $Repo -Area $Area
   if ($treeAfter -ne $treeBefore) { Stop-Run 'the tree changed during the run' }
 
-  Remove-RunLock
-  "Full run ${Area}: tree $treeBefore; $(@($commands | ForEach-Object { $_.Label }) -join ', ') -> $($passed -join ' and ') passed, 0 failed"
+  Write-HookState $Repo $Area -BuildOutput $buildLines -RanKeycloakTheme:(@($commands | Where-Object { $_.Folder -eq 'keycloak-theme' }).Count -gt 0)
+  Complete-Run $treeBefore "Full run ${Area}: tree $treeBefore; $(@($commands | ForEach-Object { $_.Label }) -join ', ') -> $($passed -join ' and ') passed, 0 failed"
 }
 
 try { Invoke-AreaRun }
 catch {
   Remove-RunLock
-  "RUN FAILED ${Area}: $($_.Exception.Message)"
+  $line = "RUN FAILED ${Area}: $($_.Exception.Message)"
+  $line
+  Save-Result 'fail' $line
   exit 1
 }
 exit 0
