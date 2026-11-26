@@ -1,7 +1,7 @@
 import { computed, inject } from '@angular/core';
 import { patchState, signalStore, withComputed, withHooks, withMethods, withProps, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { EMPTY, exhaustMap, finalize, pipe } from 'rxjs';
+import { EMPTY, exhaustMap, finalize, pipe, Subject, takeUntil } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
 
 import { CHATS_PAGE_SIZE } from '@assistant/chats-list.store.utils';
@@ -25,9 +25,9 @@ export const ChatsListStore = signalStore(
   withComputed((store) => ({
     hasMore: computed(() => store.nextPosition() !== null),
   })),
-  withMethods((store) => ({
-    /** Loads the next page, or the first page when none loaded yet. It does nothing after the last page. */
-    loadNext: rxMethod<void>(
+  withMethods((store) => {
+    const reloaded$ = new Subject<void>();
+    const loadNext = rxMethod<void>(
       pipe(
         exhaustMap(() => {
           if (store.hasLoaded() && store.nextPosition() === null) {
@@ -37,6 +37,7 @@ export const ChatsListStore = signalStore(
           patchState(store, isFirst ? { isLoading: true } : { isLoadingNext: true });
           const after = store.nextPosition() ?? undefined;
           return store._api.search({ limit: CHATS_PAGE_SIZE, filter: {}, after }).pipe(
+            takeUntil(reloaded$),
             tap((page) => {
               patchState(store, {
                 items: [...store.items(), ...page.items],
@@ -49,8 +50,18 @@ export const ChatsListStore = signalStore(
           );
         }),
       ),
-    ),
-  })),
+    );
+    return {
+      /** Loads the next page, or the first page when none loaded yet. It does nothing after the last page. */
+      loadNext,
+      /** Loads the list again from the first page. A running page load ends, so its page never joins the new list. */
+      reload(): void {
+        reloaded$.next();
+        patchState(store, { items: [], nextPosition: null, hasLoaded: false });
+        loadNext();
+      },
+    };
+  }),
   withHooks({
     onInit(store) {
       store.loadNext();

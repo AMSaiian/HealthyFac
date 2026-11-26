@@ -52,4 +52,18 @@ describe('ChatsListStore', () => {
     expect(store.hasLoaded()).toBe(false);
     expect(store.items()).toEqual([]);
   });
+
+  it('reload_DuringANextPageLoad_EndsWithTheFirstPageOnly', () => {
+    const { store, http } = setup();
+    const position = toKeysetPosition({ key: 'p1' });
+    http.expectOne(SEARCH).flush({ items: [item('a')], totalCount: 2, nextPosition: position });
+    store.loadNext();
+    const nextPageRequest = http.expectOne(SEARCH);
+
+    store.reload();
+    http.expectOne(SEARCH).flush({ items: [item('new'), item('a')], totalCount: 2, nextPosition: null });
+
+    expect(nextPageRequest.cancelled).toBe(true);
+    expect(store.items().map((row) => row.id)).toEqual(['new', 'a']);
+  });
 });

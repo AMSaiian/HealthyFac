@@ -16,7 +16,26 @@
       icon="pi pi-exclamation-circle"
       messageKey="ASSISTANT.CHAT.NOT_FOUND"
     />
-  } @else if (chat.chat(); as current) {
-    <h1 class="truncate text-xl font-semibold">{{ current.title }}</h1>
+  } @else {
+    <hf-chat-view
+      [chat]="chat.chat()"
+      [messages]="chat.viewMessages()"
+      [running]="chat.runningTurn()"
+      [isLoading]="chat.isLoading()"
+      [isLoadingOlder]="chat.isLoadingOlder()"
+      [hasMore]="chat.nextBefore() !== null"
+      [hasLoaded]="chat.chat() !== null || chatId() === undefined"
+      [limit]="messagesPageSize"
+      [isRunning]="chat.isRunning()"
+      [isStopping]="chat.isStopping()"
+      [canStop]="chat.isSending()"
+      [unsentText]="chat.unsentText()"
+      [canWrite]="canWrite"
+      (olderRequested)="chat.loadOlder()"
+      (sendRequested)="chat.send($event, [])"
+      (stopRequested)="chat.stop()"
+      (deleteMessageRequested)="chat.requestDeleteMessage($event)"
+      (deleteChatRequested)="chat.requestDeleteChat()"
+    />
   }
 </section>

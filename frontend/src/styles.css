@@ -266,5 +266,7 @@
     --p-select-invalid-border-color: var(--p-select-border-color);
     --p-inputtext-invalid-placeholder-color: var(--p-inputtext-placeholder-color);
     --p-select-invalid-placeholder-color: var(--p-select-placeholder-color);
+    --p-textarea-invalid-border-color: var(--p-textarea-border-color);
+    --p-textarea-invalid-placeholder-color: var(--p-textarea-placeholder-color);
   }
 }

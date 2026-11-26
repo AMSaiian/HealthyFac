@@ -1,5 +1,11 @@
 import { type ChatMessage, ChatMessageRole, ChatMessageState } from '@shared/chat/chat';
-import { appendOlderPage, isStaleUpdate, mergeNewestPage } from '@shared/chat/chat.store.utils';
+import {
+  appendOlderPage,
+  isStaleUpdate,
+  mergeNewestPage,
+  pendingMessages,
+  removeMessageWithReply,
+} from '@shared/chat/chat.store.utils';
 
 function message(id: string, sequence: number): ChatMessage {
   return {
@@ -15,7 +21,7 @@ function message(id: string, sequence: number): ChatMessage {
   };
 }
 
-describe('chat.store.utils', () => {
+describe('chat.store.utils', { tags: ['Chat'] }, () => {
   it('isStaleUpdate_WithAnEqualSequenceOfTheSameReply_ReturnsTrue', () => {
     const running = { messageId: 'm1', text: 'a', sequence: 5, activity: null };
 
@@ -65,5 +71,22 @@ describe('chat.store.utils', () => {
     );
 
     expect(result.nextBefore).toBeNull();
+  });
+
+  it('pendingMessages_WithALoadedMessage_PutsTheEmptyReplyAndTheUserMessageOnTop', () => {
+    const result = pendingMessages([message('m2', 2)], { text: 'Hi', links: [] }, 'running-id');
+
+    expect(result.map((item) => [item.id, item.sequence, item.text])).toEqual([
+      ['running-id', 4, ''],
+      ['pending-user', 3, 'Hi'],
+    ]);
+  });
+
+  it('removeMessageWithReply_WithAUserMessage_RemovesItAndTheNextSequence', () => {
+    const loaded = [message('m4', 4), message('m3', 3), message('m2', 2), message('m1', 1)];
+
+    const result = removeMessageWithReply(loaded, message('m1', 1));
+
+    expect(result.map((item) => item.id)).toEqual(['m4', 'm3']);
   });
 });

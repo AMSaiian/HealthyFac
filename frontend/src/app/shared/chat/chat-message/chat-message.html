@@ -1,0 +1,74 @@
+<div
+  class="flex min-w-0 flex-1 items-start gap-3"
+  [class.flex-row-reverse]="isUser()"
+>
+  <p-avatar
+    shape="circle"
+    [image]="isUser() ? userAvatar : assistantAvatar"
+  />
+  <div
+    class="flex min-w-0 max-w-3xl flex-col gap-2 rounded px-3 py-2"
+    [class.bg-highlight]="isUser()"
+    [class.bg-emphasis]="!isUser()"
+  >
+    @if (isWaiting() && showSkeleton()) {
+      <p-skeleton
+        width="12rem"
+        height="1rem"
+      />
+    } @else if (text() !== '') {
+      <p
+        #paragraph
+        class="min-w-0 whitespace-pre-wrap break-words"
+        [class.line-clamp-3]="!isExpanded()"
+        [textContent]="text()"
+      ></p>
+    }
+    @if (isStreaming() && activityKey(); as key) {
+      <span class="text-muted-color text-sm">{{ key | translate }}</span>
+    }
+    @if (noteKey(); as key) {
+      <span class="text-muted-color text-sm">{{ key | translate }}</span>
+    }
+    @if (message().links.length > 0) {
+      <div class="flex flex-wrap gap-1">
+        @for (link of message().links; track link.position) {
+          <p-tag
+            severity="secondary"
+            [value]="link.label"
+          />
+        }
+      </div>
+    }
+    @if (isOverflowing() || isExpanded()) {
+      <button
+        pButton
+        [pTooltip]="(isExpanded() ? 'CHAT.SHOW_LESS_TOOLTIP' : 'CHAT.SHOW_ALL_TOOLTIP') | translate"
+        tooltipPosition="bottom"
+        type="button"
+        size="small"
+        severity="secondary"
+        class="self-start"
+        (click)="toggleExpanded()"
+      >
+        <i [class]="isExpanded() ? 'pi pi-angle-up' : 'pi pi-angle-down'"></i>
+        {{ (isExpanded() ? 'CHAT.SHOW_LESS' : 'CHAT.SHOW_ALL') | translate }}
+      </button>
+    }
+  </div>
+  @if (canDelete()) {
+    <button
+      pButton
+      [pTooltip]="'CHAT.DELETE.MESSAGE' | translate"
+      tooltipPosition="bottom"
+      type="button"
+      iconOnly
+      severity="secondary"
+      [text]="true"
+      [attr.aria-label]="'CHAT.DELETE.MESSAGE' | translate"
+      (click)="deleteRequested.emit(message())"
+    >
+      <i class="pi pi-trash"></i>
+    </button>
+  }
+</div>

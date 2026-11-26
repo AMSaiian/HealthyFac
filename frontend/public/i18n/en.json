@@ -1514,5 +1514,64 @@
     "CHAT": {
       "NOT_FOUND": "This chat does not exist"
     }
+  },
+  "CHAT": {
+    "EMPTY": "This conversation is empty. Start with your first message",
+    "SHOW_ALL": "Show all",
+    "SHOW_LESS": "Show less",
+    "SHOW_ALL_TOOLTIP": "Show the whole message",
+    "SHOW_LESS_TOOLTIP": "Show the first lines only",
+    "NOTES": {
+      "CANCELLED": "The answer was cancelled",
+      "TIME_LIMIT": "The answer took too long",
+      "PROVIDER_UNAVAILABLE": "The assistant is not available now. Try again later",
+      "OUTPUT_LIMIT": "The answer was cut",
+      "INTERRUPTED": "The answer was interrupted",
+      "FAILED": "The answer failed"
+    },
+    "KINDS": {
+      "REFUSAL": "I can help only with questions about your machines, work orders, and maintenance",
+      "UNANSWERABLE": "This cannot be answered from the current data",
+      "BLOCKED_NOTICE": "This chat is blocked"
+    },
+    "ACTIVITY": {
+      "MACHINES": "Reading machines…",
+      "SIGNALS": "Reading signals…",
+      "CASES": "Reading cases…",
+      "WORK_ORDERS": "Reading work orders…",
+      "PEOPLE": "Reading people…",
+      "SCHEDULE": "Reading the schedule…",
+      "MANUALS": "Reading manuals…",
+      "FILES": "Reading files…",
+      "DRAFTS": "Preparing drafts…"
+    },
+    "COMPOSER": {
+      "PLACEHOLDER": "Ask about your machines",
+      "SEND": "Send",
+      "STOP": "Stop",
+      "SEND_TOOLTIP": "Send the message",
+      "STOP_TOOLTIP": "Stop the answer",
+      "REASON_EMPTY": "Write a message first",
+      "REASON_TOO_LONG": "The message is too long",
+      "REASON_RUNNING": "Wait until the answer ends",
+      "REASON_STOPPING": "The answer is stopping",
+      "COUNT": "{{count}} / {{max}}"
+    },
+    "ERRORS": {
+      "TURN_IN_PROGRESS": "The previous answer is still stopping"
+    },
+    "BLOCKED_BANNER": "This chat is blocked because a message broke the rules. Start a new chat",
+    "DELETE": {
+      "MESSAGE": "Delete message",
+      "CHAT": "Delete chat",
+      "CONFIRM_MESSAGE_HEADER": "Delete the message",
+      "CONFIRM_MESSAGE": "Delete this message and its answer?",
+      "CONFIRM_CHAT_HEADER": "Delete the chat",
+      "CONFIRM_CHAT": "Delete this chat with all its messages?"
+    },
+    "TOASTS": {
+      "MESSAGE_DELETED": "The message is deleted",
+      "CHAT_DELETED": "The chat is deleted"
+    }
   }
 }

@@ -7,6 +7,7 @@ type StubbedMember =
   | 'accessToken'
   | 'currentToken'
   | 'email'
+  | 'ensureValidFor'
   | 'forceRefresh'
   | 'hasPermission'
   | 'isAuthenticated'
@@ -42,6 +43,7 @@ export function provideFakeAuthStore({ permissions = [], ...overrides }: FakeAut
       hasPermission: (permission: string) => permissions.includes(permission),
       setUiLocale: vi.fn(),
       signInLocale: () => null,
+      ensureValidFor: () => Promise.resolve(),
       ...overrides,
     },
   };

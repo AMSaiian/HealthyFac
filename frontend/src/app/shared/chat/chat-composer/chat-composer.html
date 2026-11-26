@@ -1,0 +1,54 @@
+<div class="flex flex-col gap-1">
+  <textarea
+    pTextarea
+    id="chat-composer-text"
+    rows="3"
+    class="w-full resize-none"
+    data-hf-calm
+    [attr.aria-label]="'CHAT.COMPOSER.PLACEHOLDER' | translate"
+    [placeholder]="'CHAT.COMPOSER.PLACEHOLDER' | translate"
+    [formField]="composerForm.text"
+    (keydown.enter)="onEnter($event)"
+  ></textarea>
+  @if (showCount()) {
+    <small
+      class="self-end"
+      [class.text-red-500]="model().text.length > maxLength"
+      [class.text-muted-color]="model().text.length <= maxLength"
+      >{{ 'CHAT.COMPOSER.COUNT' | translate: { count: model().text.length, max: maxLength } }}</small
+    >
+  }
+</div>
+<div class="flex justify-end gap-2">
+  @if (canStop() && !isStopping()) {
+    <button
+      pButton
+      [pTooltip]="'CHAT.COMPOSER.STOP_TOOLTIP' | translate"
+      tooltipPosition="bottom"
+      type="button"
+      severity="secondary"
+      (click)="stopRequested.emit()"
+    >
+      <i class="pi pi-stop-circle"></i>
+      {{ 'CHAT.COMPOSER.STOP' | translate }}
+    </button>
+  }
+  <span
+    [pTooltip]="disabledReason() ?? 'CHAT.COMPOSER.SEND_TOOLTIP' | translate"
+    tooltipPosition="bottom"
+    [tooltipDisabled]="disabledReason() === null"
+  >
+    <button
+      pButton
+      [pTooltip]="'CHAT.COMPOSER.SEND_TOOLTIP' | translate"
+      tooltipPosition="bottom"
+      [tooltipDisabled]="disabledReason() !== null"
+      type="button"
+      [disabled]="disabledReason() !== null"
+      (click)="onSend()"
+    >
+      <i class="pi pi-send"></i>
+      {{ 'CHAT.COMPOSER.SEND' | translate }}
+    </button>
+  </span>
+</div>

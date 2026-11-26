@@ -1,0 +1,48 @@
+@if (chat(); as current) {
+  <div class="flex flex-none items-center gap-2">
+    <h1 class="min-w-0 flex-1 truncate text-xl font-semibold">{{ current.title }}</h1>
+    @if (canWrite()) {
+      <button
+        pButton
+        [pTooltip]="'CHAT.DELETE.CHAT' | translate"
+        tooltipPosition="bottom"
+        type="button"
+        iconOnly
+        severity="secondary"
+        [text]="true"
+        [attr.aria-label]="'CHAT.DELETE.CHAT' | translate"
+        (click)="deleteChatRequested.emit()"
+      >
+        <i class="pi pi-trash"></i>
+      </button>
+    }
+  </div>
+}
+<hf-chat-message-list
+  [messages]="messages()"
+  [running]="running()"
+  [isLoading]="isLoading()"
+  [isLoadingOlder]="isLoadingOlder()"
+  [hasMore]="hasMore()"
+  [hasLoaded]="hasLoaded()"
+  [limit]="limit()"
+  [canDelete]="canWrite() && !isBlocked()"
+  (olderRequested)="olderRequested.emit()"
+  (deleteRequested)="deleteMessageRequested.emit($event)"
+/>
+@if (isBlocked()) {
+  <p-message
+    severity="warn"
+    class="flex-none"
+    >{{ 'CHAT.BLOCKED_BANNER' | translate }}</p-message
+  >
+} @else if (canWrite()) {
+  <hf-chat-composer
+    [isRunning]="isRunning()"
+    [isStopping]="isStopping()"
+    [canStop]="canStop()"
+    [unsentText]="unsentText()"
+    (sendRequested)="sendRequested.emit($event)"
+    (stopRequested)="stopRequested.emit()"
+  />
+}
