@@ -76,7 +76,7 @@ Do not make a plan item: propose its step in the report. When I answer "inline a
 - `spec.md`: when an item changes what a line describes (a layout, a text, a control),
   update that line in place and add a line to `## Changes` (`spec.md` command).
 - `review.md`: move each finding that an item fixes from `## Open` to `## Closed` as
-  `FIXED INLINE (Artur, YYYY-MM-DD)`, and update the summary table.
+  `FIXED INLINE (Artur, YYYY-MM-DD)`.
 - Run `pwsh <worktree>/.claude/check-plan.ps1 <feature folder>` and fix each line it prints.
 
 ## Review

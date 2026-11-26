@@ -4,6 +4,7 @@
 # Usage: pwsh .claude/check-plan.ps1 <feature folder> [-Cycle <N>]
 #        (default: the "Cycle:" line of plan.md; the highest cycle when plan.md has none)
 #        [-Repo <path>] (default: the checkout that holds this script file; it serves the git calls)
+#        [-MainBranch <name>] (default: develop; the base without a "Base:" line is the merge base with origin/<name>)
 # Output: one line for each problem. Exit code 1 when there is one.
 # Problems:
 # - the cycle has no "Spec:" line;
@@ -18,12 +19,14 @@
 # - an AC number with more than one "*   **AC<n>:**" line in spec.md (a number is never reused);
 # - the Commit lines of the cycle ("Commit <tooling|docs|code>: <subject>"): none, an unknown group, 2 lines for one
 #   group, a subject that is not "<feature|bug>(<category>): <message in lower case>", a tooling subject without the
-#   category setup, or a docs subject without the category docs; a cycle whose steps (not cancelled) all have a
-#   "Fixup:" line needs no Commit line;
+#   category setup, or a docs subject without the category docs; a cycle needs no Commit line when it has 1 or more fixup
+#   entries (Fixup steps or inline fix entries) and each step (not cancelled) whose Files: line names a path has a
+#   "Fixup:" line; a step without files (Files: none, such as a browser check) does not count (Test-FixupOnlyCycle);
 # - a step whose Files: line names a template or a style file (.html, .css, "template"), without a "Look:" line in its
 #   block (.claude/browser-checks.md, Looking);
-# - a step with a "Fixup: <subject>" line whose subject matches no commit, or 2 or more commits, of <base>..HEAD (the
-#   base is the "Base:" SHA of plan.md, else the merge base with develop);
+# - a step with a "Fixup: <subject>" line, or an "Inline fix" entry with one, whose subject matches no commit, or 2 or more commits, of <base>..HEAD (the
+#   base is the "Base:" SHA of plan.md, else the merge base with origin/<-MainBranch>, or with the local branch when
+#   origin has none: Get-FeatureBase);
 # - a path of a "Fixup:" step that is also in the Files: line of a step of the same cycle without "Fixup:";
 # - a path in two fixup entries (steps or inline fix entries) with different subjects, or in an inline fix with Fixup and
 #   in a step without "Fixup:" (Get-FixupPathProblems);
@@ -33,7 +36,8 @@
 param(
   [Parameter(Mandatory = $true)][string]$Folder,
   [int]$Cycle = 0,
-  [string]$Repo = (git -C $PSScriptRoot rev-parse --show-toplevel)
+  [string]$Repo = (git -C $PSScriptRoot rev-parse --show-toplevel),
+  [string]$MainBranch = 'develop'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -56,6 +60,7 @@ function Expand-AcNumbers([string] $text) {
 }
 
 . (Join-Path $PSScriptRoot 'plan-sections.ps1')
+. (Join-Path $PSScriptRoot 'hooks/checkout-helpers.ps1')
 $planCycle = Get-PlanCycle $planLines $Cycle
 $Cycle = $planCycle.Number
 $section = $planCycle.Section
@@ -117,29 +122,17 @@ foreach ($step in $steps) {
 }
 
 $stepFixups = @(Get-StepFixups $steps)
-if ($stepFixups.Count -gt 0) {
-  $base = Get-PlanBase $planLines
-  if (-not $base) { $base = (git -C $Repo merge-base HEAD develop 2>$null) }
+
+$inlineFixups = @(Get-InlineFixups @(Get-CycleDeviations $section))
+if ($stepFixups.Count -gt 0 -or $inlineFixups.Count -gt 0) {
+  $base = Get-FeatureBase -Repo $Repo -PlanLines $planLines -MainBranch $MainBranch
   $loggedSubjects = if ($base) { @(git -C $Repo log --format=%s "$($base.Trim())..HEAD" 2>$null) } else { @() }
-  foreach ($fixup in $stepFixups) {
-    $matchCount = @($loggedSubjects | Where-Object { $_ -ceq $fixup.Subject }).Count
-    if ($matchCount -eq 0) {
-      $problems.Add("Cycle ${Cycle}: Step $($fixup.Step): the Fixup subject '$($fixup.Subject)' matches no commit of ${base}..HEAD.")
-    } elseif ($matchCount -ge 2) {
-      $problems.Add("Cycle ${Cycle}: Step $($fixup.Step): the Fixup subject '$($fixup.Subject)' matches $matchCount commits of ${base}..HEAD.")
-    }
-    foreach ($other in ($steps | Where-Object { $_.Number -notin @($stepFixups.Step) -and $_.Mark -ne '~' })) {
-      $otherFiles = @(Get-StepFiles $other)
-      foreach ($path in $fixup.Files) {
-        if ($path -in $otherFiles) {
-          $problems.Add("Cycle ${Cycle}: Step $($fixup.Step): $path is in a Fixup step and in Step $($other.Number) without Fixup.")
-        }
-      }
-    }
+  foreach ($text in @(Get-FixupSubjectProblems -Entries ($stepFixups + $inlineFixups) -Subjects $loggedSubjects -Base $base)) {
+    $problems.Add("Cycle ${Cycle}: $text")
   }
 }
 
-foreach ($text in @(Get-FixupPathProblems $Cycle $steps @(Get-InlineFixups @(Get-CycleDeviations $section)))) { $problems.Add($text) }
+foreach ($text in @(Get-FixupPathProblems $Cycle $steps $inlineFixups)) { $problems.Add($text) }
 
 $reviewedMark = Get-ReviewedMark $planLines
 if ($reviewedMark) {
@@ -169,7 +162,7 @@ if (-not ($section | Where-Object { $_ -match '^#### Deviations\s*$' })) {
   $problems.Add("Cycle ${Cycle}: no '#### Deviations' heading. End the cycle section with it.")
 }
 
-$isFixupOnly = Test-FixupOnlyCycle $steps
+$isFixupOnly = Test-FixupOnlyCycle $steps $inlineFixups
 foreach ($text in @(Get-CommitProblems @(Get-CycleCommits $section) -AllowNone:$isFixupOnly)) { $problems.Add("Cycle ${Cycle}: $text") }
 
 $acLines = $specLines | ForEach-Object {

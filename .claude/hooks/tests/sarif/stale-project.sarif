@@ -1,0 +1,22 @@
+{
+  "version": "2.1.0",
+  "runs": [
+    {
+      "results": [
+        {
+          "ruleId": "CS1002",
+          "level": "error",
+          "message": { "text": "; expected" },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": { "uri": "file:///@REPO@/backend/App/A.cs" },
+                "region": { "startLine": 5, "startColumn": 7 }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

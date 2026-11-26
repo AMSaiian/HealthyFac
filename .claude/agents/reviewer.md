@@ -31,7 +31,7 @@ The spec writer sends only these forms:
 - `review cycle C`: one round (**Rounds**, **Check**).
 - `checkpoint <x>: base tree <a>, checkpoint tree <b>`: a checkpoint review (**Check**).
 - `review branch`: one review of `git diff <base>...HEAD` and `git log --oneline <base>..HEAD`
-  (**Branch Review**). The base is the `Base:` SHA of plan.md, else `git merge-base HEAD develop`.
+  (**Branch Review**). The base is the `Base:` SHA of plan.md, else `git merge-base HEAD origin/develop` (the local `develop` when `origin/develop` is missing).
   Write `Scope: branch` as line 4 of review.md. Keep `Cycle:` and `Round:` as for a round.
   Only this task writes that line. A round, a checkpoint, and an inline fix review remove the
   line first.
@@ -78,7 +78,7 @@ Read a full file only for a reference that points outside these parts.
 - Round 1 of a cycle: review the changes since the last commit of the branch:
   `git diff <tree of HEAD> <tree of the checkout>`, both IDs from `pwsh .claude/tree-id.ps1
   -Repo <repo path>` (the first with `-Ref HEAD`), and the checks below. In the first cycle,
-  `HEAD` is the base (the `Base:` line of plan.md, else `git merge-base HEAD develop`).
+  `HEAD` is the base (the `Base:` line of plan.md, else `git merge-base HEAD origin/develop` (the local `develop` when `origin/develop` is missing)).
   In a later cycle, the earlier cycles
   are committed and were reviewed.
 - A later round of the same cycle: review `git diff <Reviewed tree>` (the tree of the last
@@ -99,7 +99,7 @@ Read a full file only for a reference that points outside these parts.
   not left half-applied.
 - The changes follow the agent-workflow rules and the rule files of their paths.
 - Correctness, error handling, concurrency, security, and project conventions.
-- Full run, per test area (`backend`, `frontend`): run `pwsh .claude/tree-id.ps1 -Repo
+- Full run, per test area (`backend`, `frontend`, `tooling`): run `pwsh .claude/tree-id.ps1 -Repo
   <repo path> -Area <area>`. When the ID equals a `Full run <area>:` line of plan.md, the
   executor tested this code: do not run that area again, and run only the tests that you
   doubt. Otherwise run the full commands of that area (`CLAUDE.md`, **Build and Test**). Use
@@ -114,8 +114,14 @@ Read a full file only for a reference that points outside these parts.
   tree>` for the steps after the last checkpoint. The checks of the whole cycle stay.
 - A test that fails in `baseline.md` is known. Report it only when a step should fix it.
 - Every test of a guard or a behavior has a `Red:` or `Proof:` line with an assertion
-  message under its step. A missing line is a MINOR [CODE] finding; its fix is the proof
-  run, not a code change.
+  message under its step. A `Red:` line that names each guard test of a step proves them. File no
+  "no proof line" finding for a test that a `Red:` or `Proof:` line names; run an own
+  disable-and-rerun only for a test you doubt. A missing line is a MINOR [CODE] finding; its fix
+  is the proof run, not a code change.
+- A `Full run tooling:` line with the current tree (`pwsh .claude/tree-id.ps1 -Repo <repo path>
+  -Area tooling`) means that the tool suites ran: do not run them again.
+- A browser check step marked `[!] ... WAITING: ...; retried: ...` is no finding. Write
+  `browser waiting` in the round line.
 - Each new route flow has route flow tests (`frontend-angular.md`, **Tests**). A missing
   one is a MAJOR [CODE] finding.
 - Browser scope (UI feature): never run every flow of the browser check list again. The
@@ -187,16 +193,8 @@ finding or a check that passed. Layout:
 - `## Rounds`: one line per round: `Cycle C, round R: tree <id>; <test areas run and
   results>; browser <passed>/<total> flows.` Write no list of the checks that
   passed.
-- `## Summary`: the summary table of `## Open`, then the verdict. `check-review-routing.ps1`
-  fails when the table differs from the headings in `## Open`.
-- The table, in exactly this form:
-  ```
-  | Severity | [CODE] | [SPEC] |
-  |---|---|---|
-  | BLOCKER | 0 | 0 |
-  | MAJOR | 0 | 0 |
-  | MINOR | 0 | 0 |
-  ```
+- `## Summary`: only the verdict. Write no summary table, and remove a table that an earlier
+  round left. `check-review-routing.ps1` counts the headings in `## Open`.
 - Last line exactly: `Verdict: APPROVE` or `Verdict: CHANGES_REQUESTED`
   (any BLOCKER or MAJOR means CHANGES_REQUESTED).
 

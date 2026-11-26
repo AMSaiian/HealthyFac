@@ -7,4 +7,4 @@ Apply Simplified Technical English (ASD-STE100) to all output, explanations, and
 *   **Structure:** Use bullet lists, tables, and short paragraphs for sequential information.
 *   **Noun Clusters:** Do not chain more than three nouns together.
 *   **Consistent Terms:** Use the same term for the same concept across all output.
-*   **Items in Words:** When you ask the user about an item or report it (a finding, a step, a blocker, an AC), state it in words: the problem, `file:line`, and the options. An ID (`F3`, `Step 87`, `AC12`) may follow the text, never replace it.
+*   **Items in Words:** When you ask the user about an item or report it (a finding, a step, a blocker, an AC), state it in words: the problem, `file:line`, and the options. An ID (`F3`, `Step 87`, `AC12`) may follow the text, never replace it. A decision request holds the problem, `file:line`, the options, and the recommendation with its reason in one message.

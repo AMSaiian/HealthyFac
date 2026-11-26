@@ -10,16 +10,21 @@
 # - plan.md has a "Cycle: N" line and its "### Cycle N" section;
 # - review.md has "Verdict: APPROVE", its Cycle line equals N, and its "Reviewed tree:" equals the tree of the checkout
 #   (tree-id.ps1), so a change after the review stops the commit;
-# - the Commit lines of the cycle have no problem (plan-sections.ps1, Get-CommitProblems); a cycle with a fixup entry
-#   and no Commit line is allowed, and each changed path that is no fixup path then needs its own Commit line;
-# - no path is in two fixup entries with different subjects, and no path of an inline fix is in a step without
-#   "Fixup:" (Get-FixupPathProblems);
+# - the Commit lines of the cycle have no problem (plan-sections.ps1, Get-CommitProblems); a cycle without a Commit line
+#   is allowed only when Test-FixupOnlyCycle is true (1 or more fixup entries, and each step with files has a
+#   "Fixup:" line; a step without files does not count), and each changed path that is no fixup path still needs a
+#   Commit line of its group;
+# - no path is in two fixup entries with different subjects, no path of an inline fix is in a step without
+#   "Fixup:", and no path of a "Fixup:" step is also in a step without "Fixup:" (Get-FixupPathProblems);
+# - when the cycle is the last one (no "### Cycle N+1" section), no browser check step of plan.md is "[!]" with
+#   "WAITING:" or "BLOCKED:": the last cycle commits after its flows pass;
 # - each "Fixup: <subject>" of a step or of an "Inline fix" entry of the cycle matches exactly 1 commit subject of
-#   <base>..HEAD (the "Base:" SHA of plan.md, else the merge base of HEAD and the main branch);
+#   <base>..HEAD (Get-FeatureBase: the "Base:" SHA of plan.md, else the merge base of HEAD and origin/<main branch>, or
+#   the local main branch when origin has none);
 # - each other changed path (git diff --name-only --no-renames HEAD, so a move lists both paths, plus the untracked
 #   files) has a Commit line for its group;
-# - a Commit line whose group has no changed path is done only when a commit since the merge base of HEAD and the main
-#   branch has its subject.
+# - a Commit line whose group has no changed path is done only when a commit since the feature base (Get-FeatureBase:
+#   the "Base:" SHA of plan.md, else Get-DefaultBase) has its subject.
 # Commit, in this order: for each fixup entry that has a changed file, in step order, "git add -A" and
 # "git commit --fixup=<SHA> --only" on its changed files; then, for each Commit line that is not done, in the order
 # tooling, docs, code: "git add -A" and "git commit -m <subject> --only" on the paths of its group. No body, no
@@ -27,7 +32,7 @@
 # done.
 # Autosquash: then "git rebase --autosquash <squash base>" (Git 2.44 or later; else "git rebase -i --autosquash" with
 # GIT_SEQUENCE_EDITOR=true). The squash base is the "Reviewed by Artur:" SHA of plan.md, else its "Base:" SHA, else the
-# merge base of HEAD and the main branch. The tree of HEAD before the rebase and the squash base are stored in the
+# default base (Get-DefaultBase). The tree of HEAD before the rebase and the squash base are stored in the
 # git directory (claude-autosquash-tree.txt; -Verify reads both, and reports "no stored autosquash tree." without
 # the file). The rebase runs with --no-autostash. Two checks follow: the HEAD tree is the stored tree, and no "fixup!" commit of
 # <squash base>..HEAD has its target above the squash base. On a conflict the script prints
@@ -49,6 +54,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'plan-sections.ps1')
+. (Join-Path $PSScriptRoot 'hooks/checkout-helpers.ps1')
 $GroupOrder = @('tooling', 'docs', 'code')
 $TreeFileName = 'claude-autosquash-tree.txt'
 
@@ -141,9 +147,8 @@ foreach ($path in $requiredPaths) {
 }
 $planLines = Get-Content -LiteralPath $planPath
 
-$mergeBase = @(Invoke-Git @('merge-base', 'HEAD', $MainBranch))[0]
-$planBase = Get-PlanBase $planLines
-$featureBase = if ($planBase) { $planBase } else { $mergeBase }
+$featureBase = Get-FeatureBase -Repo $Repo -PlanLines $planLines -MainBranch $MainBranch
+if (-not $featureBase) { Stop-WithLines @("no merge base of HEAD and $MainBranch.") }
 
 if ($Verify -or $Squash) {
   if ($Squash) {
@@ -165,6 +170,16 @@ if (-not ($planLines | Where-Object { $_ -match "^### Cycle $cycle\s*$" })) {
 }
 
 $problems = [Collections.Generic.List[string]]::new()
+$isLastCycle = -not ($planLines | Where-Object { $_ -match "^### Cycle $($cycle + 1)\s*$" })
+if ($isLastCycle) {
+  foreach ($heading in @($planLines | Where-Object { $_ -match '^### Cycle \d+\s*$' })) {
+    $cycleNumber = [int][regex]::Match($heading, '\d+').Value
+    foreach ($step in @(Get-CycleSteps (Get-PlanCycle $planLines $cycleNumber).Section)) {
+      $kind = Get-BrowserCheckMark $step
+      if ($kind) { $problems.Add("Step $($step.Number) is a $kind browser check: the last cycle commits after its flows pass.") }
+    }
+  }
+}
 $reviewedSha = Get-ReviewedMark $planLines
 $squashBase = if ($reviewedSha) { $reviewedSha } else { $featureBase }
 $squashBaseProblem = Get-SquashBaseProblem $squashBase
@@ -185,18 +200,18 @@ if (-not $reviewedTree.Success -or $reviewedTree.Groups[1].Value -ne $currentTre
 
 $section = (Get-PlanCycle $planLines $cycle).Section
 $commits = @(Get-CycleCommits $section)
-$fixups = @(Get-StepFixups @(Get-CycleSteps $section)) + @(Get-InlineFixups @(Get-CycleDeviations $section))
-foreach ($text in @(Get-CommitProblems $commits -AllowNone:($fixups.Count -gt 0))) { $problems.Add($text) }
+$steps = @(Get-CycleSteps $section)
+$inlineFixups = @(Get-InlineFixups @(Get-CycleDeviations $section))
+$fixups = @(Get-StepFixups $steps) + $inlineFixups
+foreach ($text in @(Get-CommitProblems $commits -AllowNone:(Test-FixupOnlyCycle $steps $inlineFixups))) { $problems.Add($text) }
 $loggedEntries = @(Invoke-Git @('log', '--format=%H%x09%s', "$featureBase..HEAD"))
 $fixupShas = @{}
-foreach ($text in @(Get-FixupPathProblems $cycle @(Get-CycleSteps $section) @(Get-InlineFixups @(Get-CycleDeviations $section)))) { $problems.Add($text) }
+foreach ($text in @(Get-FixupPathProblems $cycle $steps $inlineFixups)) { $problems.Add($text) }
+$loggedSubjects = @($loggedEntries | ForEach-Object { $_.Substring($_.IndexOf("`t") + 1) })
+foreach ($text in @(Get-FixupSubjectProblems -Entries $fixups -Subjects $loggedSubjects -Base $featureBase)) { $problems.Add($text) }
 foreach ($fixup in $fixups) {
   $matched = @($loggedEntries | Where-Object { $_.Substring($_.IndexOf("`t") + 1) -ceq $fixup.Subject })
-  if ($matched.Count -eq 0) {
-    $problems.Add("the Fixup subject '$($fixup.Subject)' matches no commit of ${featureBase}..HEAD.")
-  } elseif ($matched.Count -ge 2) {
-    $problems.Add("the Fixup subject '$($fixup.Subject)' matches $($matched.Count) commits of ${featureBase}..HEAD.")
-  } elseif (-not $fixupShas.ContainsKey($fixup.Subject)) {
+  if ($matched.Count -eq 1 -and -not $fixupShas.ContainsKey($fixup.Subject)) {
     $fixupShas[$fixup.Subject] = $matched[0].Substring(0, $matched[0].IndexOf("`t"))
   }
 }
@@ -216,7 +231,6 @@ $pathsByGroup = @{}
 foreach ($group in $GroupOrder) { $pathsByGroup[$group] = [Collections.Generic.List[string]]::new() }
 foreach ($path in $groupChanged) { $pathsByGroup[(Get-CommitGroup $path)].Add($path) }
 
-$loggedSubjects = @(Invoke-Git @('log', '--format=%s', "$mergeBase..HEAD"))
 $isDone = @{}
 foreach ($group in $GroupOrder) {
   $commit = $commits | Where-Object Group -eq $group | Select-Object -First 1

@@ -32,8 +32,38 @@
 # - Proof: the turn skip case, the checkout case, the two guard cases, and the two step state cases run once more with
 #   the skip, the script checkout, the guard, or the state rule switched off in a copy of the hook scripts. The checks
 #   must then show the difference, which proves that the switched-off line causes it.
-# Run:  pwsh .claude/hooks/tests/hook-scope.tests.ps1
+#
+# Sections (named after the hook script or the helper that the blocks test):
+# - verify-changed: the turn skip, the reviewer and executor skips, the checkout, the git worktree, the step state,
+#   the frontend step, the lint filter, and the Stop hook that reads SARIF and the build text.
+# - reviewer-write-scope, handoff-write-guard, executor-run-foreground: the PreToolUse hooks.
+# - cleanup-changed: the private copy, the lost update, the deleted file, the guard, and the lock.
+# - record-turn-start: the turn tree of non-ASCII paths and the stale turn trees.
+# - command-line-batches: the long file lists.
+# - sarif-reader: Get-SarifDiagnostics and Get-CleanupFixedRules.
+# -Only <names> (comma-separated) runs the shared setup and only the named sections; an unknown name exits 1 before any
+# check. The last line names the sections that ran.
+# Run:  pwsh .claude/hooks/tests/hook-scope.tests.ps1 [-Only <names>]
 # It exits 1 when a check fails.
+param([string]$Only = '')
+
+$SectionNames = @('verify-changed', 'reviewer-write-scope', 'handoff-write-guard', 'executor-run-foreground',
+  'cleanup-changed', 'record-turn-start', 'command-line-batches', 'sarif-reader')
+$onlyNames = @($Only -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+foreach ($name in $onlyNames) {
+  if ($name -notin $SectionNames) {
+    Write-Host "unknown section '$name'; sections: $($SectionNames -join ', ')."
+    exit 1
+  }
+}
+$ranSections = [Collections.Generic.List[string]]::new()
+
+# True when the section runs: always without -Only, else when its name is in -Only.
+function Test-Section([string] $Name) {
+  $isSelected = $onlyNames.Count -eq 0 -or $Name -in $onlyNames
+  if ($isSelected -and $Name -notin $ranSections) { $ranSections.Add($Name) }
+  return $isSelected
+}
 
 $ErrorActionPreference = 'Stop'
 $HooksDir = [IO.Path]::GetFullPath((Split-Path $PSScriptRoot -Parent))
@@ -89,6 +119,7 @@ exit 0
 param()
 if ($args[0] -eq 'build') {
   if ($env:FAKE_DOTNET_TEXT) { Write-Output ($env:FAKE_DOTNET_TEXT -split '\|') }
+  foreach ($touched in @($env:FAKE_DOTNET_TOUCH -split '\|' | Where-Object { $_ })) { (Get-Item -LiteralPath $touched).LastWriteTimeUtc = [DateTime]::UtcNow }
   exit ($env:FAKE_DOTNET_BUILD -eq 'fail' ? 1 : 0)
 }
 & $env:HF_REAL_DOTNET @args
@@ -161,7 +192,87 @@ function New-ModifiedHooks([string] $name, [string] $script, [string] $line, [st
   $dir
 }
 
+. (Join-Path $HooksDir 'checkout-helpers.ps1')
+$cleanup = Join-Path $HooksDir 'cleanup-changed.ps1'
+
+function Invoke-ShellHook([string] $script, [string] $command, [string] $tool = 'Bash') {
+  Invoke-Hook $repo 's1' $HooksDir $script -fields @{
+    hook_event_name = 'PreToolUse'; tool_name = $tool; tool_input = @{ command = $command } }
+}
+
+function Wait-Until([scriptblock] $condition, [string] $what) {
+  $deadline = [DateTime]::UtcNow.AddSeconds(180)
+  while (-not (& $condition)) {
+    if ([DateTime]::UtcNow -gt $deadline) { throw "Timeout while waiting for: $what" }
+    Start-Sleep -Milliseconds 100
+  }
+}
+
+function Measure-TwoCleanups(
+  [string] $repoOne, [string] $repoTwo, [string] $fileTwo, [string] $script = $cleanup, [switch] $WaitForSecondStart) {
+  $id = [Guid]::NewGuid().ToString('N')
+  $log = Join-Path $work "lock-$id.log"
+  $release = Join-Path $work "lock-$id.release"
+  $waiting = Join-Path $work "lock-$id.waiting"
+  New-Item -ItemType File $log | Out-Null
+  $env:FAKE_JB_LOG = $log
+  $env:FAKE_JB_HOLD = $release
+  $readLog = { @(Get-Content $log -ErrorAction SilentlyContinue) }
+  try {
+    $env:FAKE_JB_TAG = 'one'
+    $first = Start-Process pwsh -PassThru -WindowStyle Hidden -ArgumentList @(
+      '-NoProfile', '-File', $script, '-Files', 'backend/App/A.cs', '-Repo', $repoOne)
+    Wait-Until { (& $readLog) -match '^start \d+ one$' } 'the first cleanup holds the lock'
+
+    $env:FAKE_JB_TAG = 'two'
+    $second = Start-Process pwsh -PassThru -WindowStyle Hidden -RedirectStandardOutput $waiting -ArgumentList @(
+      '-NoProfile', '-File', $script, '-Files', $fileTwo, '-Repo', $repoTwo, '-Verbose')
+    Wait-Until { (Get-Content $waiting -ErrorAction SilentlyContinue) -match 'Waiting for the checkout lock' } `
+      'the second cleanup reports that it waits'
+    if ($WaitForSecondStart) {
+      Wait-Until { (& $readLog) -match '^start \d+ two$' } 'the second cleanup starts its jb'
+    }
+    Set-Content $release 'go'
+    $first.WaitForExit()
+    $second.WaitForExit()
+  }
+  finally {
+    Remove-Item Env:FAKE_JB_LOG, Env:FAKE_JB_HOLD, Env:FAKE_JB_TAG -ErrorAction SilentlyContinue
+  }
+  $events = @(& $readLog | ForEach-Object {
+      $parts = $_ -split ' '
+      [pscustomobject]@{ Kind = $parts[0]; Ticks = [long]$parts[1]; Tag = $parts[2] }
+    })
+  $secondStart = $events | Where-Object { $_.Kind -eq 'start' -and $_.Tag -eq 'two' }
+  $firstEnd = $events | Where-Object { $_.Kind -eq 'end' -and $_.Tag -eq 'one' }
+  [pscustomobject]@{
+    Runs = @($events | Where-Object Kind -eq 'start').Count
+    IsOverlapping = [bool]($secondStart -and $firstEnd -and $secondStart.Ticks -lt $firstEnd.Ticks)
+  }
+}
+
+
+function Get-MarkCount([string] $path, [string] $mark) {
+  ([regex]::Matches((Get-Content $path -Raw), [regex]::Escape($mark))).Count
+}
+
+function New-FrontendRepo([string] $name) {
+  $repo = New-TestRepo $name
+  Add-Content (Join-Path $repo '.gitignore') 'node_modules/'
+  New-Item -ItemType Directory -Force (Join-Path $repo 'frontend/src'), (Join-Path $repo 'frontend/node_modules') | Out-Null
+  foreach ($file in 'a', 'b') { "export const $file = 1;" | Set-Content (Join-Path $repo "frontend/src/$file.ts") }
+  git -C $repo add -A 2>&1 | Out-Null
+  git -C $repo commit -q -m frontend 2>&1 | Out-Null
+  foreach ($file in 'a', 'b') { Add-Content (Join-Path $repo "frontend/src/$file.ts") '// edited' }
+  $repo
+}
+
+function Test-Prettiered([string] $repo, [string] $file) {
+  (Get-Content (Join-Path $repo "frontend/src/$file.ts") -Raw) -match '// PRETTIER'
+}
+
 try {
+  if (Test-Section 'verify-changed') {
   Write-Host 'Turn skip'
   $repo = New-TestRepo 'turn-none'
   [void](Invoke-Hook $repo 's1' $HooksDir 'record-turn-start.ps1')
@@ -189,6 +300,9 @@ try {
   [void](Invoke-Hook $repo 's1' $noSkip)
   Assert-That (Test-Cleaned $repo 'A') 'Proof: with the skip switched off, a turn without changes runs the cleanup'
 
+  }
+
+  if (Test-Section 'verify-changed') {
   Write-Host 'Reviewer session'
   $repo = New-TestRepo 'reviewer'
   $env:HEALTHYFAC_SESSION_ROLE = 'reviewer'
@@ -198,6 +312,9 @@ try {
   [void](Invoke-Hook $repo 's1')
   Assert-That (Test-Cleaned $repo 'A') 'Proof: the same Stop without the reviewer role runs the cleanup'
 
+  }
+
+  if (Test-Section 'verify-changed') {
   Write-Host 'Reviewer subagent'
   $repo = New-TestRepo 'reviewer-subagent'
   $result = Invoke-Hook $repo 's1' -fields @{ hook_event_name = 'SubagentStop'; agent_type = 'reviewer'; agent_id = 'a1' }
@@ -205,6 +322,9 @@ try {
   [void](Invoke-Hook $repo 's1' -fields @{ hook_event_name = 'SubagentStop'; agent_type = 'executor'; agent_id = 'a2' })
   Assert-That (Test-Cleaned $repo 'A') 'Proof: the same SubagentStop of the executor runs the cleanup'
 
+  }
+
+  if (Test-Section 'verify-changed') {
   Write-Host 'Executor in flight'
   $repo = New-TestRepo 'executor-in-flight'
   $executorTask = @{ id = 't1'; type = 'subagent'; status = 'running'; description = 'run'; agent_type = 'executor' }
@@ -214,6 +334,9 @@ try {
   [void](Invoke-Hook $repo 's1' -fields @{ hook_event_name = 'Stop'; background_tasks = @($shellTask) })
   Assert-That (Test-Cleaned $repo 'A') 'Proof: the same Stop with only a shell task in flight runs the cleanup'
 
+  }
+
+  if (Test-Section 'reviewer-write-scope') {
   Write-Host 'Reviewer write scope'
   $repo = New-TestRepo 'write-scope'
   $scopeTree = Join-Path $work 'write-scope-feature'
@@ -237,13 +360,12 @@ try {
   $result = Invoke-Hook $repo 's1' $HooksDir 'reviewer-write-scope.ps1' -fields @{ hook_event_name = 'PreToolUse'; tool_name = 'Write' }
   Assert-That ($result.ExitCode -eq 2) 'The reviewer write hook denies a call without a file'
 
+  }
+
+  if (Test-Section 'handoff-write-guard') {
   Write-Host 'Handoff write guard'
   $repo = New-TestRepo 'handoff-guard'
   $handoff = 'E:/specs/HealthyFac/feature'
-  function Invoke-ShellHook([string] $script, [string] $command, [string] $tool = 'Bash') {
-    Invoke-Hook $repo 's1' $HooksDir $script -fields @{
-      hook_event_name = 'PreToolUse'; tool_name = $tool; tool_input = @{ command = $command } }
-  }
   $denied = @(
     @('a > redirect', "echo x > $handoff/plan.md"),
     @('a >> redirect', "echo x >> `"$handoff/review.md`""),
@@ -286,6 +408,30 @@ try {
     Assert-That ($result.ExitCode -eq 0) "The handoff guard allows $($case[0])"
   }
 
+  }
+
+  if (Test-Section 'executor-run-foreground') {
+  Write-Host 'Executor run in the foreground'
+  $repo = New-TestRepo 'run-foreground'
+  function Invoke-RunHook([string] $command, [bool] $isBackground, [string] $hooks = $HooksDir) {
+    Invoke-Hook $repo 's1' $hooks 'executor-run-foreground.ps1' -fields @{
+      hook_event_name = 'PreToolUse'; tool_name = 'Bash'; tool_input = @{ command = $command; run_in_background = $isBackground } }
+  }
+  $denyText = 'Run run-area.ps1 and run-tests.ps1 in the foreground with timeout 600000'
+  $areaBackground = Invoke-RunHook 'pwsh .claude/run-area.ps1 -Area backend' $true
+  Assert-That ($areaBackground.ExitCode -eq 0 -and $areaBackground.Output.Contains('"permissionDecision":"deny"') -and
+    $areaBackground.Output.Contains($denyText)) 'A background run-area.ps1 command is denied with its reason'
+  $testsBackground = Invoke-RunHook 'pwsh .claude/run-tests.ps1 -Area backend -Changed' $true
+  Assert-That ($testsBackground.ExitCode -eq 0 -and $testsBackground.Output.Contains('"permissionDecision":"deny"')) `
+    'A background run-tests.ps1 command is denied'
+  $areaForeground = Invoke-RunHook 'pwsh .claude/run-area.ps1 -Area backend' $false
+  Assert-That ($areaForeground.ExitCode -eq 0 -and -not $areaForeground.Output) 'A foreground run-area.ps1 command passes without output'
+  $buildBackground = Invoke-RunHook 'dotnet build backend/HealthyFac.slnx' $true
+  Assert-That ($buildBackground.ExitCode -eq 0 -and -not $buildBackground.Output) 'A background dotnet build passes without output'
+
+  }
+
+  if (Test-Section 'verify-changed') {
   Write-Host 'Checkout resolved from the hook script'
   $first = New-TestRepo 'checkout-one'
   $second = New-TestRepo 'checkout-two'
@@ -308,6 +454,9 @@ try {
   [void](Invoke-Hook $repo 'test' $fromCwd 'verify-changed.ps1' $outside)
   Assert-That (-not (Test-Cleaned $repo 'A')) 'Proof: with the checkout taken from the session folder, the same Stop cleans nothing'
 
+  }
+
+  if (Test-Section 'verify-changed') {
   Write-Host 'Git worktree'
   $main = New-TestRepo 'worktree-main'
   $feature = Join-Path $work 'worktree-feature'
@@ -317,8 +466,10 @@ try {
   Assert-That (Test-Cleaned $feature 'A') 'The hook of a worktree cleans the changed file of the worktree'
   Assert-That (-not (Test-Cleaned $main 'A')) 'The hook of a worktree leaves the main checkout unchanged'
 
-  $cleanup = Join-Path $HooksDir 'cleanup-changed.ps1'
 
+  }
+
+  if (Test-Section 'cleanup-changed') {
   Write-Host 'Short private copy'
   $main = New-TestRepo 'short-main'
   $longName = 'adjust-action-store-to-introduce-correct-return-actions'
@@ -334,6 +485,9 @@ try {
   Assert-That (-not $copyPath.Contains($longName)) 'The path of the cleanup copy does not hold the worktree name'
   Assert-That (Test-Cleaned $longFeature 'A') 'A file of the long-named worktree is cleaned'
 
+  }
+
+  if (Test-Section 'cleanup-changed') {
   Write-Host 'Proof: the copy under the old git path holds the worktree name'
   $oldPathDir = New-ModifiedHooks 'old-copy-path' 'cleanup-changed.ps1' `
     '--git-common-dir) ''cs''' '--git-path claude-cleanup-shadow) ''x'''
@@ -342,6 +496,9 @@ try {
   Remove-Item Env:FAKE_JB_SOLUTION_LOG
   Assert-That ((Get-Content (Join-Path $work 'solution-old.log') | Select-Object -First 1).Contains($longName)) 'Proof: with the old copy path, the path holds the worktree name'
 
+  }
+
+  if (Test-Section 'cleanup-changed') {
   Write-Host 'Lost update'
   $repo = New-TestRepo 'lost'
   $live = Join-Path $repo 'backend/App/A.cs'
@@ -351,6 +508,9 @@ try {
   Assert-That ((Get-Content $live -Raw).Trim() -eq '// OTHER WRITER') 'A file changed during the cleanup keeps the other writer content'
   Assert-That (Test-Cleaned $repo 'B') 'The other file of the same run is still cleaned'
 
+  }
+
+  if (Test-Section 'cleanup-changed') {
   Write-Host 'Deleted file'
   $repo = New-TestRepo 'deleted'
   $live = Join-Path $repo 'backend/App/A.cs'
@@ -359,6 +519,9 @@ try {
   Remove-Item Env:FAKE_JB_DELETE
   Assert-That (-not (Test-Path $live)) 'A file deleted during the cleanup is not created again'
 
+  }
+
+  if (Test-Section 'cleanup-changed') {
   Write-Host 'Proof: the same cases with the guard switched off'
   $unguardedDir = New-ModifiedHooks 'unguarded' 'cleanup-changed.ps1' `
     'if ($copied[$target] -ne $before[$target] -or (Get-FileHashText $live) -ne $before[$target]) {' 'if ($false) {'
@@ -378,6 +541,9 @@ try {
   Remove-Item Env:FAKE_JB_DELETE
   Assert-That (Test-Path $live) 'Proof: without the guard, the cleanup creates the deleted file again'
 
+  }
+
+  if (Test-Section 'cleanup-changed') {
   Write-Host 'Skipped cleanup is reported'
   $repo = New-TestRepo 'restore-fails'
   Set-Content (Join-Path $repo 'backend/App/App.csproj') '<Project><this is not xml'
@@ -385,60 +551,14 @@ try {
   Assert-That ($output -match 'Cleanup skipped: dotnet restore') 'A failed restore of the private copy prints a "Cleanup skipped" line'
   Assert-That (-not (Test-Cleaned $repo 'A')) 'A failed restore of the private copy cleans no file'
 
+  }
+
+  if (Test-Section 'cleanup-changed') {
   Write-Host 'Lock'
   # The first cleanup holds the lock inside the fake jb until the test writes the release file. The second cleanup
   # starts after the first one logged its start. The test releases the first one only after the second one reported
   # that it waits for the lock (-Verbose), or, with -WaitForSecondStart, after the second one started its own jb.
   # The checks compare the order of the logged events, never durations.
-  function Wait-Until([scriptblock] $condition, [string] $what) {
-    $deadline = [DateTime]::UtcNow.AddSeconds(180)
-    while (-not (& $condition)) {
-      if ([DateTime]::UtcNow -gt $deadline) { throw "Timeout while waiting for: $what" }
-      Start-Sleep -Milliseconds 100
-    }
-  }
-  function Measure-TwoCleanups(
-    [string] $repoOne, [string] $repoTwo, [string] $fileTwo, [string] $script = $cleanup, [switch] $WaitForSecondStart) {
-    $id = [Guid]::NewGuid().ToString('N')
-    $log = Join-Path $work "lock-$id.log"
-    $release = Join-Path $work "lock-$id.release"
-    $waiting = Join-Path $work "lock-$id.waiting"
-    New-Item -ItemType File $log | Out-Null
-    $env:FAKE_JB_LOG = $log
-    $env:FAKE_JB_HOLD = $release
-    $readLog = { @(Get-Content $log -ErrorAction SilentlyContinue) }
-    try {
-      $env:FAKE_JB_TAG = 'one'
-      $first = Start-Process pwsh -PassThru -WindowStyle Hidden -ArgumentList @(
-        '-NoProfile', '-File', $script, '-Files', 'backend/App/A.cs', '-Repo', $repoOne)
-      Wait-Until { (& $readLog) -match '^start \d+ one$' } 'the first cleanup holds the lock'
-
-      $env:FAKE_JB_TAG = 'two'
-      $second = Start-Process pwsh -PassThru -WindowStyle Hidden -RedirectStandardOutput $waiting -ArgumentList @(
-        '-NoProfile', '-File', $script, '-Files', $fileTwo, '-Repo', $repoTwo, '-Verbose')
-      Wait-Until { (Get-Content $waiting -ErrorAction SilentlyContinue) -match 'Waiting for the checkout lock' } `
-        'the second cleanup reports that it waits'
-      if ($WaitForSecondStart) {
-        Wait-Until { (& $readLog) -match '^start \d+ two$' } 'the second cleanup starts its jb'
-      }
-      Set-Content $release 'go'
-      $first.WaitForExit()
-      $second.WaitForExit()
-    }
-    finally {
-      Remove-Item Env:FAKE_JB_LOG, Env:FAKE_JB_HOLD, Env:FAKE_JB_TAG -ErrorAction SilentlyContinue
-    }
-    $events = @(& $readLog | ForEach-Object {
-        $parts = $_ -split ' '
-        [pscustomobject]@{ Kind = $parts[0]; Ticks = [long]$parts[1]; Tag = $parts[2] }
-      })
-    $secondStart = $events | Where-Object { $_.Kind -eq 'start' -and $_.Tag -eq 'two' }
-    $firstEnd = $events | Where-Object { $_.Kind -eq 'end' -and $_.Tag -eq 'one' }
-    [pscustomobject]@{
-      Runs = @($events | Where-Object Kind -eq 'start').Count
-      IsOverlapping = [bool]($secondStart -and $firstEnd -and $secondStart.Ticks -lt $firstEnd.Ticks)
-    }
-  }
   $same = New-TestRepo 'lock-same'
   $result = Measure-TwoCleanups $same $same 'backend/App/B.cs'
   Assert-That ($result.Runs -eq 2 -and -not $result.IsOverlapping) 'Two cleanups of one checkout run one after the other'
@@ -447,8 +567,10 @@ try {
   $result = Measure-TwoCleanups $one $two 'backend/App/A.cs' -WaitForSecondStart
   Assert-That ($result.Runs -eq 2 -and $result.IsOverlapping) 'Cleanups of two checkouts do not wait for each other'
 
+  }
+
+  if (Test-Section 'record-turn-start') {
   Write-Host 'Turn tree of non-ASCII paths'
-  . (Join-Path $HooksDir 'checkout-helpers.ps1')
   $repo = New-TestRepo 'turn-tree-ascii'
   $odd = Join-Path $repo "backend/App/$([char]0x00DC)ber.cs"
   [IO.File]::WriteAllText($odd, 'namespace Test; public class Uber { }')
@@ -459,10 +581,10 @@ try {
   [void](Invoke-Hook $repo 's1')
   Assert-That (Test-Cleaned $repo "$([char]0x00DC)ber") 'The Stop hook cleans an edited file with a non-ASCII name'
 
-  Write-Host 'Step state as a tree'
-  function Get-MarkCount([string] $path, [string] $mark) {
-    ([regex]::Matches((Get-Content $path -Raw), [regex]::Escape($mark))).Count
   }
+
+  if (Test-Section 'verify-changed') {
+  Write-Host 'Step state as a tree'
   $repo = New-TestRepo 'state-tree'
   [void](Invoke-Hook $repo 's1')
   Add-Content (Join-Path $repo 'backend/App/B.cs') '// edited after the clean stop'
@@ -476,20 +598,10 @@ try {
   [void](Invoke-Hook $repo 's2' $noState)
   Assert-That ((Get-MarkCount (Join-Path $repo 'backend/App/A.cs') $marker) -eq 2) 'Proof: without the saved step tree, the next stop cleans the unchanged file again'
 
+  }
+
+  if (Test-Section 'verify-changed') {
   Write-Host 'Frontend Prettier and lint'
-  function New-FrontendRepo([string] $name) {
-    $repo = New-TestRepo $name
-    Add-Content (Join-Path $repo '.gitignore') 'node_modules/'
-    New-Item -ItemType Directory -Force (Join-Path $repo 'frontend/src'), (Join-Path $repo 'frontend/node_modules') | Out-Null
-    foreach ($file in 'a', 'b') { "export const $file = 1;" | Set-Content (Join-Path $repo "frontend/src/$file.ts") }
-    git -C $repo add -A 2>&1 | Out-Null
-    git -C $repo commit -q -m frontend 2>&1 | Out-Null
-    foreach ($file in 'a', 'b') { Add-Content (Join-Path $repo "frontend/src/$file.ts") '// edited' }
-    $repo
-  }
-  function Test-Prettiered([string] $repo, [string] $file) {
-    (Get-Content (Join-Path $repo "frontend/src/$file.ts") -Raw) -match '// PRETTIER'
-  }
 
   $repo = New-FrontendRepo 'prettier-plain'
   $result = Invoke-Hook $repo
@@ -501,6 +613,9 @@ try {
   [void](Invoke-Hook $repo)
   Assert-That ((Get-Content (Join-Path $repo 'frontend/public/site.webmanifest') -Raw) -match '// PRETTIER') 'The frontend step formats a changed .webmanifest file'
 
+  }
+
+  if (Test-Section 'verify-changed') {
   Write-Host 'Lint output filter'
   $lintLine = '3:7  error  foo  42'
   $repo = New-FrontendRepo 'lint-line'
@@ -516,6 +631,9 @@ try {
   Remove-Item Env:FAKE_LINT_OUTPUT
   Assert-That (-not $result.Output.Contains($lintLine)) 'Proof: with the old pattern S, the same lint line is lost'
 
+  }
+
+  if (Test-Section 'verify-changed') {
   Write-Host 'Failed step keeps its tree'
   $repo = New-FrontendRepo 'lint-keeps-tree'
   $env:FAKE_LINT_OUTPUT = $lintLine
@@ -532,6 +650,9 @@ try {
   [void](Invoke-Hook $repo 'test' $failedSaves)
   Assert-That ((Get-MarkCount (Join-Path $repo 'frontend/src/a.ts') '// PRETTIER') -eq 1) 'Proof: when a failed step saves its tree, the next stop skips its files'
 
+  }
+
+  if (Test-Section 'command-line-batches') {
   Write-Host 'Long file lists'
   function New-LongListRepo([string] $name) {
     $repo = New-FrontendRepo $name
@@ -567,12 +688,15 @@ try {
   [void](Invoke-Hook $repo 'test' $onePrettierCall)
   Assert-That ((Get-UnmarkedCount $repo 'frontend/src/generated*/*.ts' '// PRETTIER') -eq 400) 'Proof: with one Prettier call for all files, no file is formatted'
 
+  }
+
+  if (Test-Section 'sarif-reader') {
   Write-Host 'SARIF reader'
   function New-SarifRoot([string] $repo, [string] $name) {
     $root = Join-Path $work $name
     New-Item -ItemType Directory -Force $root | Out-Null
     $repoUri = $repo.Replace('\', '/')
-    foreach ($sample in Get-ChildItem (Join-Path $PSScriptRoot 'sarif') -Filter '*.sarif') {
+    foreach ($sample in Get-ChildItem (Join-Path $PSScriptRoot 'sarif') -Filter 'two-projects-*.sarif') {
       (Get-Content $sample.FullName -Raw).Replace('@REPO@', $repoUri) | Set-Content (Join-Path $root $sample.Name)
     }
     $root
@@ -603,6 +727,12 @@ try {
   $skipped = 0
   $without = @(Get-SarifDiagnostics -Repo $sarifRepo -Root $sarifRoot -SkipRules 'IDE0007' -SkippedCount ([ref]$skipped))
   Assert-That ($without.Count -eq 3 -and -not ($without -match 'IDE0007') -and $skipped -eq 1) '-SkipRules IDE0007 drops the line and counts 1'
+  $oldFile = Join-Path $sarifRoot 'two-projects-a.sarif'
+  (Get-Item $oldFile).LastWriteTimeUtc = [DateTime]::UtcNow.AddDays(-2)
+  $sinceLines = @(Get-SarifDiagnostics -Repo $sarifRepo -Root $sarifRoot -Since ([DateTime]::UtcNow.AddDays(-1)))
+  Assert-That ($sinceLines.Count -eq 2 -and (@($sinceLines -match 'CS0162').Count -eq 1) -and -not ($sinceLines -match 'IDE0007|CS0168')) `
+    '-Since reads only the files written at or after that time'
+  (Get-Item $oldFile).LastWriteTimeUtc = [DateTime]::UtcNow
   $onlyA = @(Get-SarifDiagnostics -Repo $sarifRepo -Root $sarifRoot -Files 'backend/App/A.cs')
   Assert-That ($onlyA.Count -eq 2 -and -not ($onlyA -match 'B\.cs|Util\.cs')) '-Files keeps only the results of the named file'
   $sarifRepo2 = New-TestRepo 'cleanup-rules'
@@ -610,6 +740,9 @@ try {
   "IDE0007`n`nIDE0008`n" | Set-Content (Join-Path $sarifRepo2 '.claude/hooks/cleanup-fixed-rules.txt')
   Assert-That ((@(Get-CleanupFixedRules $sarifRepo2) -join ',') -eq 'IDE0007,IDE0008') 'The cleanup-fixed rules are the non-empty lines of the file'
 
+  }
+
+  if (Test-Section 'verify-changed') {
   Write-Host 'Stop hook reads SARIF'
   $repo = New-TestRepo 'hook-sarif'
   $sarifObj = Join-Path $repo 'artifacts/claude-verify/obj/App'
@@ -644,13 +777,33 @@ try {
           (& $failedResult 'CS0103' 'error' 'Z.cs' 9)) }) } |
     ConvertTo-Json -Depth 10 | Set-Content (Join-Path $sarifObj 'App.sarif')
   $env:FAKE_DOTNET_BUILD = 'fail'
+  $env:FAKE_DOTNET_TOUCH = Join-Path $sarifObj 'App.sarif'
   $result = Invoke-Hook $repo
-  Remove-Item Env:FAKE_DOTNET_BUILD
+  Remove-Item Env:FAKE_DOTNET_BUILD, Env:FAKE_DOTNET_TOUCH
   Assert-That ($result.ExitCode -eq 2 -and $result.Output.Contains('backend/App/A.cs(3,5): warning CS0219: Message of CS0219') -and
     $result.Output.Contains('backend/App/Z.cs(9,5): error CS0103: Message of CS0103')) `
     "A failed build reports the warning of a changed file and the error of an unchanged file (output: $($result.Output))"
   Assert-That (-not $result.Output.Contains('CS0168')) 'A failed build reports no warning of an unchanged file'
 
+  $repo = New-TestRepo 'hook-sarif-stale'
+  $staleObj = Join-Path $repo 'artifacts/claude-verify/obj'
+  New-Item -ItemType Directory -Force (Join-Path $staleObj 'Stale'), (Join-Path $staleObj 'App') | Out-Null
+  $staleFile = Join-Path $staleObj 'Stale/Stale.sarif'
+  (Get-Content (Join-Path $PSScriptRoot 'sarif/stale-project.sarif') -Raw).Replace('@REPO@', $repo.Replace('\', '/')) | Set-Content $staleFile
+  (Get-Item $staleFile).LastWriteTimeUtc = [DateTime]::UtcNow.AddDays(-2)
+  $repoUri = $repo.Replace('\', '/')
+  $freshFile = Join-Path $staleObj 'App/App.sarif'
+  @{ version = '2.1.0'; runs = @(@{ results = @(& $failedResult 'CS0219' 'warning' 'A.cs' 3) }) } | ConvertTo-Json -Depth 10 | Set-Content $freshFile
+  $env:FAKE_DOTNET_BUILD = 'fail'
+  $env:FAKE_DOTNET_TOUCH = $freshFile
+  $result = Invoke-Hook $repo
+  Remove-Item Env:FAKE_DOTNET_BUILD, Env:FAKE_DOTNET_TOUCH
+  Assert-That ($result.ExitCode -eq 2 -and $result.Output.Contains('CS0219') -and -not $result.Output.Contains('CS1002')) `
+    "A failed build does not report the error of an old SARIF file of a project that MSBuild skipped (output: $($result.Output))"
+
+  }
+
+  if (Test-Section 'verify-changed') {
   Write-Host 'Stop hook build text'
   $nuText = "$work\hook-text\backend\App\App.csproj : warning NU1903: Package 'X' 1.0 has a known vulnerability. [x.csproj]"
   $repo = New-TestRepo 'hook-text-warning'
@@ -669,9 +822,10 @@ try {
   @{ version = '2.1.0'; runs = @(@{ results = @(& $sarifResult 'CS0219' 'A.cs' 3) }) } |
     ConvertTo-Json -Depth 10 | Set-Content (Join-Path $textSarifObj 'App.sarif')
   $env:FAKE_DOTNET_BUILD = 'fail'
+  $env:FAKE_DOTNET_TOUCH = Join-Path $textSarifObj 'App.sarif'
   $env:FAKE_DOTNET_TEXT = 'D:\x\Directory.Build.targets(3,5): error MSB4057: The target "X" does not exist in the project. [y.csproj]'
   $result = Invoke-Hook $repo
-  Remove-Item Env:FAKE_DOTNET_BUILD, Env:FAKE_DOTNET_TEXT
+  Remove-Item Env:FAKE_DOTNET_BUILD, Env:FAKE_DOTNET_TEXT, Env:FAKE_DOTNET_TOUCH
   Assert-That ($result.ExitCode -eq 2 -and $result.Output.Contains('error MSB4057')) `
     "An MSB error of a failed build is reported (output: $($result.Output))"
 
@@ -685,6 +839,9 @@ try {
   Assert-That ($result.ExitCode -eq 2 -and $result.Output.Contains('MSB4025')) `
     "A changed .targets file starts the build (output: $($result.Output))"
 
+  }
+
+  if (Test-Section 'record-turn-start') {
   Write-Host 'Stale turn trees'
   $repo = New-TestRepo 'stale-turns'
   $turnOld = Get-TurnTreePath $repo 'ended-session'
@@ -696,6 +853,15 @@ try {
   [void](Invoke-Hook $repo 'new-session' $HooksDir 'record-turn-start.ps1')
   Assert-That (-not (Test-Path $turnOld)) 'A turn tree file older than 1 day is deleted at the start of a turn'
   Assert-That ((Test-Path $turnRecent) -and (Test-Path (Get-TurnTreePath $repo 'new-session'))) 'A younger turn tree file and the new one stay'
+
+  $onlyOutput = @(& pwsh -NoProfile -File $PSCommandPath -Only reviewer-write-scope 2>&1 | ForEach-Object { "$_" })
+  Assert-That ($LASTEXITCODE -eq 0 -and $onlyOutput[-1] -eq 'All checks passed (reviewer-write-scope).' -and
+    -not ($onlyOutput -contains 'Turn skip')) '-Only with one known name runs only that section and names it on the last line'
+  $unknownOutput = @(& pwsh -NoProfile -File $PSCommandPath -Only nosuchsection 2>&1 | ForEach-Object { "$_" })
+  Assert-That ($LASTEXITCODE -eq 1 -and $unknownOutput.Count -eq 1 -and $unknownOutput[0] -like "unknown section 'nosuchsection'; sections: *" -and
+    -not ($unknownOutput -match '^\s+ok ')) '-Only with an unknown name fails before any check'
+  }
+
 }
 finally {
   Remove-Item $work -Recurse -Force -ErrorAction SilentlyContinue
@@ -705,5 +871,5 @@ if ($failures.Count -gt 0) {
   Write-Host "$($failures.Count) check(s) failed." -ForegroundColor Red
   exit 1
 }
-Write-Host 'All checks passed.'
+Write-Host "All checks passed ($($ranSections -join ', '))."
 exit 0

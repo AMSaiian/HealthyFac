@@ -3,12 +3,12 @@
 # .gitignore does not exclude. Two equal IDs mean the same content, so the reviewer can tell that the code is the code
 # that the executor tested (.claude/agents/executor.md, reviewer.md). The logic is Get-TreeId in
 # hooks/checkout-helpers.ps1 (the areas, -Ref, and the copy of the index are described there).
-# Usage: pwsh .claude/tree-id.ps1 [-Repo <path>] [-Area all|backend|frontend] [-Ref <commit>]
+# Usage: pwsh .claude/tree-id.ps1 [-Repo <path>] [-Area all|backend|frontend|tooling] [-Ref <commit>]
 # Without -Repo, it reads the checkout that holds this script file, not the current folder.
 # Exit code 1 when git fails.
 param(
   [string]$Repo = (git -C $PSScriptRoot rev-parse --show-toplevel),
-  [ValidateSet('all', 'backend', 'frontend')][string]$Area = 'all',
+  [ValidateSet('all', 'backend', 'frontend', 'tooling')][string]$Area = 'all',
   [string]$Ref
 )
 

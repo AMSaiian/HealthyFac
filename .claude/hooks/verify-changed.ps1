@@ -146,17 +146,22 @@ function Invoke-Verification([string] $repo, [string] $currentTree) {
     # another session locks its DLLs in bin/, and a build into the same folder then fails with MSB3027 and blocks
     # the stop for a reason the agent cannot fix. Each worktree has its own folder, so worktrees never share files.
     $artifacts = Join-Path $repo 'artifacts/claude-verify'
+    $buildStartedAt = [DateTime]::UtcNow
     $output = & dotnet build $solution -nologo -clp:NoSummary --artifacts-path $artifacts 2>&1 |
       ForEach-Object { "$_" }
     $buildFailed = $LASTEXITCODE -ne 0
 
+    # After a failed build, a project that MSBuild skipped keeps its old SARIF file, so only the files of this build
+    # count. A passing build keeps every file: a project that MSBuild skipped as up to date still reports the
+    # warnings of its changed file.
+    $sinceArguments = if ($buildFailed) { @{ Since = $buildStartedAt } } else { @{} }
     $sarifRoot = Join-Path $artifacts 'obj'
     $diagnostics = @(Get-SarifDiagnostics -Repo $repo -Root $sarifRoot -BuildOutput $output -BuildOutputLevel error `
-        -Files $touched)
+        -Files $touched @sinceArguments)
     if ($buildFailed) {
       # A failed build reports the errors of every file (a changed signature breaks a caller in an unchanged file) and
       # the warnings of the changed files.
-      $diagnostics = @($diagnostics + @(Get-SarifDiagnostics -Repo $repo -Root $sarifRoot |
+      $diagnostics = @($diagnostics + @(Get-SarifDiagnostics -Repo $repo -Root $sarifRoot @sinceArguments |
           Where-Object { $_ -match '\): error ' }) | Sort-Object -Unique)
     }
 

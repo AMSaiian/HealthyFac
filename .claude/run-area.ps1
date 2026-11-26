@@ -2,17 +2,21 @@
 # run-area.ps1 - the full run of one test area for the executor (.claude/agents/executor.md, Execution). It formats the
 # changed files of the area first, so the tree of the Full run line is the tree that check-handoff.ps1 sees after its
 # own format step (a format change after a full run made the run stale and cost a second run).
-# Usage: pwsh .claude/run-area.ps1 -Area backend|frontend [-Repo <path>] [-Base <ref>] [-MainBranch <name>]
+# Usage: pwsh .claude/run-area.ps1 -Area backend|frontend|tooling [-Repo <path>] [-Base <ref>] [-MainBranch <name>]
 #        [-FormatScript <path>]
-# Defaults: -Repo is the checkout that holds this script file; -Base is the merge base of HEAD and -MainBranch
-# (develop); -FormatScript is format-changed.ps1 next to this file.
+# Defaults: -Repo is the checkout that holds this script file; -Base is the merge base of HEAD and origin/<MainBranch>
+# (develop; the local branch when origin has none, Get-DefaultBase); -FormatScript is format-changed.ps1 next to this file.
 # Lock: one full run per area at a time. Before step 1 the script creates run-<area>.lock (an exclusive create, so 2
 # runs that start together cannot both pass) with its process ID in the claude-runs folder of the git state. The script
 # keeps the file open for the whole run (read share only, so no other process can delete or write it), and it closes
 # and deletes the file when the run ends (also after RUN FAILED and an exception). A lock file that no run holds open
 # is stale: the next run deletes it. When a run holds the file open, the next run prints "RUN FAILED <area>: another
 # run of <area> is active (pid <id>)", leaves the lock, and exits 1 at once.
-# Steps, in order; the first failure ends the run:
+# Area tooling (.claude/, CLAUDE.md, scripts/): no format step, no long line check, no build. It runs each script test
+# suite whose pattern matches a path that changed since the base, once (the table $ScriptTests below; the suites run
+# at the same time, each with its own log). Last line: "Full run tooling: tree <id>; suites <names> -> passed" (or
+# "suites none" when no pattern matches), or "RUN FAILED tooling: <suite> - <first FAIL line>". The lock applies to it.
+# Steps of the other areas, in order; the first failure ends the run:
 # 1. The format script on the existing files of the area that changed since the base (tracked and untracked). Its notes
 #    are printed as "Formatter: <note>".
 # 2. The line length check of the changed C# files outside Migrations/ (hooks/checkout-helpers.ps1, Get-LongLines).
@@ -27,9 +31,10 @@
 # Last line: "Full run <area>: tree <id>; <commands> -> <passed counts> passed, 0 failed" (exit code 0), or
 # "RUN FAILED <area>: <reason>" (exit code 1). The executor copies the Full run line into plan.md with the Edit tool;
 # this script never writes plan.md (agent-workflow.md, Handoff Files). It runs longer than 180 seconds, so the executor
-# starts it in the background and waits for the last line with the Monitor tool.
+# runs it in the foreground with timeout 600000 (never in the background; a hook denies that). When the harness moves the
+# run to the background, the executor waits with one foreground loop on the output file until the last line shows.
 param(
-  [Parameter(Mandatory = $true)][ValidateSet('backend', 'frontend')][string]$Area,
+  [Parameter(Mandatory = $true)][ValidateSet('backend', 'frontend', 'tooling')][string]$Area,
   [string]$Repo = (git -C $PSScriptRoot rev-parse --show-toplevel),
   [string]$Base,
   [string]$MainBranch = 'develop',
@@ -38,8 +43,15 @@ param(
 
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'hooks/checkout-helpers.ps1')
-$FrontendPaths = @('frontend', 'keycloak-theme')
-$ToolPaths = @('.claude', 'CLAUDE.md')
+# The test script of each group of tool files (paths relative to the repo; a suite runs once when a changed path
+# matches its pattern).
+$ScriptTests = [ordered]@{
+  '.claude/tests/rules.tests.ps1'            = '^(\.claude/.+\.(md|ps1)$|CLAUDE\.md$)'
+  '.claude/hooks/tests/hook-scope.tests.ps1' = '^\.claude/hooks/'
+  '.claude/tests/flow-scripts.tests.ps1'     = '^\.claude/[^/]+\.ps1$|^\.claude/tests/flow-scripts|^\.claude/hooks/(checkout-helpers|command-line-batches|cleanup-changed)\.ps1$'
+  'scripts/tests/verify-slots.tests.ps1'     = '^scripts/(verify-|tests/verify-)'
+  'scripts/tests/agent-chrome.tests.ps1'     = '^scripts/(tests/)?agent-chrome'
+}
 $UnitModules = 'backend/tests/**/bin/Debug/net10.0/HealthyFac.*.UnitTests.dll;backend/tests/**/bin/Debug/net10.0/HealthyFac.*.ArchitectureTests.dll'
 $IntegrationModules = 'backend/tests/**/bin/Debug/net10.0/HealthyFac.*.IntegrationTests.dll;backend/tests/**/bin/Debug/net10.0/HealthyFac.*.ApiTests.dll'
 $IntegrationParallelModules = 4
@@ -103,9 +115,10 @@ function Stop-Lock([string] $holder) {
 }
 
 function Test-InArea([string] $path) {
-  $isFrontend = @($FrontendPaths | Where-Object { $path -eq $_ -or $path -like "$_/*" }).Count -gt 0
+  $isFrontend = @($script:AreaPaths.frontend | Where-Object { $path -eq $_ -or $path -like "$_/*" }).Count -gt 0
   if ($Area -eq 'frontend') { return $isFrontend }
-  $isTool = @($ToolPaths | Where-Object { $path -eq $_ -or $path -like "$_/*" }).Count -gt 0
+  if ($Area -eq 'tooling') { return @($script:AreaPaths.tooling | Where-Object { $path -eq $_ -or $path -like "$_/*" }).Count -gt 0 }
+  $isTool = @($script:AreaPaths.agentTools | Where-Object { $path -eq $_ -or $path -like "$_/*" }).Count -gt 0
   return -not $isFrontend -and -not $isTool
 }
 
@@ -123,14 +136,51 @@ function Get-FailedTests([string[]] $lines) {
     ForEach-Object { $_.Trim() })
 }
 
+# The tooling area: the suites whose pattern matches a changed path run at the same time, once each. The tree is read
+# before and after, like for the other areas.
+function Invoke-ToolingRun([string[]] $changed) {
+  $treeBefore = Get-TreeId -Repo $Repo -Area $Area
+  $suites = @($ScriptTests.Keys | Where-Object {
+      $suite = $_
+      $isMatch = @($changed | Where-Object { $_ -match $ScriptTests[$suite] }).Count -gt 0
+      $isMatch -and (Test-Path -LiteralPath (Join-Path $Repo $suite))
+    })
+  $logFolder = Get-GitStatePath $Repo 'claude-runs'
+  New-Item -ItemType Directory -Force $logFolder | Out-Null
+  $stamp = [DateTime]::Now.ToString('yyyyMMdd-HHmmss')
+  $runs = foreach ($suite in $suites) {
+    $log = Join-Path $logFolder "$Area-$stamp-$(Split-Path $suite -Leaf).log"
+    $process = Start-Process pwsh -ArgumentList @('-NoProfile', '-File', (Join-Path $Repo $suite)) -WorkingDirectory $Repo `
+      -RedirectStandardOutput $log -RedirectStandardError "$log.err" -NoNewWindow -PassThru
+    [pscustomobject]@{ Suite = $suite; Log = $log; Process = $process }
+  }
+  foreach ($run in $runs) { $run.Process.WaitForExit() }
+  foreach ($run in $runs) {
+    $lines = @(Get-Content -LiteralPath $run.Log -ErrorAction SilentlyContinue)
+    $exitCode = $run.Process.ExitCode
+    $result = if ($exitCode -eq 0) { 'passed' } else { 'failed' }
+    "$(Split-Path $run.Suite -Leaf): $result (exit $exitCode); log $($run.Log)"
+    if ($exitCode -ne 0) {
+      $firstFail = @($lines | Where-Object { $_ -match '^\s*FAIL ' } | Select-Object -First 1)
+      $reason = if ($firstFail) { $firstFail[0].Trim() } else { @($lines)[-1] }
+      Stop-Run "$(Split-Path $run.Suite -Leaf) - $reason"
+    }
+  }
+
+  $treeAfter = Get-TreeId -Repo $Repo -Area $Area
+  if ($treeAfter -ne $treeBefore) { Stop-Run 'the tree changed during the run' }
+  Remove-RunLock
+  $names = if ($suites.Count -gt 0) { @($suites | ForEach-Object { Split-Path $_ -Leaf }) -join ', ' } else { 'none' }
+  "Full run ${Area}: tree $treeBefore; suites $names -> passed"
+}
+
 # The steps of the header. Each failure prints its RUN FAILED line and exits; a throw (a tree ID, the format script,
 # a missing tool) reaches the catch below, so the last line is always a Full run or a RUN FAILED line.
 function Invoke-AreaRun {
   Enter-RunLock
   if (-not $Base) {
-    $Base = git -C $Repo merge-base HEAD $MainBranch 2>$null
-    if ($LASTEXITCODE -ne 0 -or -not $Base) { Stop-Run "no merge base of HEAD and $MainBranch. Pass -Base <ref>." }
-    $Base = $Base.Trim()
+    $Base = Get-DefaultBase $Repo $MainBranch
+    if (-not $Base) { Stop-Run "no merge base of HEAD and $MainBranch. Pass -Base <ref>." }
   }
 
   $changed = @(@((Get-GitLines $Repo @('diff', '--name-only', '--no-renames', $Base)).Lines) +
@@ -138,6 +188,11 @@ function Invoke-AreaRun {
       Where-Object { $_ } | ForEach-Object { $_.Replace('\', '/') } | Sort-Object -Unique |
       Where-Object { Test-InArea $_ })
   $existing = @($changed | Where-Object { Test-Path -LiteralPath (Join-Path $Repo $_) -PathType Leaf })
+
+  if ($Area -eq 'tooling') {
+    Invoke-ToolingRun $changed
+    return
+  }
 
   if ($existing.Count -gt 0 -and $FormatScript) {
     foreach ($note in @(& $FormatScript -Repo $Repo -Files $existing)) { "Formatter: $note" }
@@ -173,6 +228,7 @@ function Invoke-AreaRun {
   foreach ($command in $commands) {
     $number++
     $log = Join-Path $logFolder "$Area-$stamp-$number.log"
+    $commandStartedAt = [DateTime]::UtcNow
     Push-Location (Join-Path $Repo $command.Folder)
     try {
       & $command.Tool @($command.Arguments) *> $log
@@ -186,7 +242,7 @@ function Invoke-AreaRun {
     "$($command.Label): $result (exit $exitCode) -> $countText; log $log"
     if ($exitCode -ne 0) {
       if ($command.Label -eq 'build') {
-        $diagnostics = @(Get-SarifDiagnostics -Repo $Repo -Root (Join-Path $Repo 'backend') -BuildOutput $lines)
+        $diagnostics = @(Get-SarifDiagnostics -Repo $Repo -Root (Join-Path $Repo 'backend') -BuildOutput $lines -Since $commandStartedAt)
         $diagnostics | Where-Object { $_ -match ': error ' }
         $diagnostics | Where-Object { $_ -notmatch ': error ' }
       }

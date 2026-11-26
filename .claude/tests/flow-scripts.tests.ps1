@@ -35,9 +35,31 @@
 # - plan-sections and check-plan: the Fixup lines, the inline fix entries, the reviewed mark, and each Fixup problem.
 # - check-review-routing: a Scope: branch review routes branch approved and branch findings.
 # Red: run it with -ScriptsDir <folder of empty stubs> to see each case fail first.
-# Run:  pwsh .claude/tests/flow-scripts.tests.ps1 [-ScriptsDir <folder>]
+# Sections: tree-id, check-plan, plan-sections, check-handoff, check-review-routing, commit-cycle, format-changed,
+# run-area. -Only <names> (comma-separated) runs the shared setup and only the named sections; an unknown name exits 1
+# before any check. The last line names the sections that ran. Without -Only, every section runs.
+# Run:  pwsh .claude/tests/flow-scripts.tests.ps1 [-ScriptsDir <folder>] [-Only <names>]
 # It exits 1 when a check fails.
-param([string]$ScriptsDir = [IO.Path]::GetFullPath((Split-Path $PSScriptRoot -Parent)))
+param([string]$ScriptsDir = [IO.Path]::GetFullPath((Split-Path $PSScriptRoot -Parent)), [string]$Only = '')
+
+$SectionNames = @('tree-id', 'check-plan', 'plan-sections', 'check-handoff', 'check-review-routing', 'commit-cycle',
+  'format-changed', 'run-area')
+$onlyNames = @($Only -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+foreach ($name in $onlyNames) {
+  if ($name -notin $SectionNames) {
+    Write-Host "unknown section '$name'; sections: $($SectionNames -join ', ')."
+    exit 1
+  }
+}
+$ranSections = [Collections.Generic.List[string]]::new()
+
+# True when the section runs: always without -Only, else when one of the names is in -Only. -Quiet leaves the section
+# out of the list on the last line (the shared setup of several sections).
+function Test-Section([string[]] $Names, [switch] $Quiet) {
+  $isSelected = $onlyNames.Count -eq 0 -or @($Names | Where-Object { $_ -in $onlyNames }).Count -gt 0
+  if ($isSelected -and -not $Quiet) { $ranSections.Add($Names[0]) }
+  return $isSelected
+}
 
 $ErrorActionPreference = 'Stop'
 $work = Join-Path ([IO.Path]::GetTempPath()) "hf-flow-tests-$([Guid]::NewGuid().ToString('N').Substring(0, 8))"
@@ -51,9 +73,14 @@ function Assert-That([bool] $condition, [string] $message) {
   }
 }
 
+# Output holds the lines of the script without its base notes ("Note: origin/<branch> not found; ..."), which the
+# default base helper writes to the host; Notes holds those lines.
 function Invoke-Script([string] $name, [string[]] $arguments) {
   $output = & pwsh -NoProfile -File (Join-Path $ScriptsDir $name) @arguments 2>&1
-  return [pscustomobject]@{ Output = @($output | ForEach-Object { "$_" }); Exit = $LASTEXITCODE }
+  $lines = @($output | ForEach-Object { "$_" })
+  return [pscustomobject]@{
+    Output = @($lines | Where-Object { $_ -notlike 'Note: origin/*' }); Exit = $LASTEXITCODE
+    Notes = @($lines | Where-Object { $_ -like 'Note: origin/*' }) }
 }
 
 function New-Repo([string] $name) {
@@ -87,7 +114,13 @@ function Get-RepoState([string] $repo) {
   }
 }
 
+function Get-AreaTreeId([string] $repo, [string] $area) {
+  $result = Invoke-Script 'tree-id.ps1' @('-Repo', $repo, '-Area', $area)
+  return ($result.Output -join '').Trim()
+}
+
 # --- tree-id ---------------------------------------------------------------------------------------------------
+if (Test-Section 'tree-id') {
 Write-Host 'tree-id'
 $repo = New-Repo 'tree'
 Set-Content (Join-Path $repo '.gitignore') '*.log'
@@ -149,7 +182,45 @@ foreach ($area in @('backend', 'frontend')) {
     "-Area $area -Ref <base> works when the branch has a commit after the base"
 }
 
+# The tooling area: .claude/, CLAUDE.md, and scripts/ only (Step 86).
+$toolRepo = New-Repo 'tree-tooling'
+foreach ($folder in 'src', '.claude', 'scripts') { New-Item -ItemType Directory -Force (Join-Path $toolRepo $folder) | Out-Null }
+Set-Content (Join-Path $toolRepo 'src/a.cs') 'class A {}'
+Set-Content (Join-Path $toolRepo '.claude/tool.ps1') 'Write-Host 1'
+Set-Content (Join-Path $toolRepo 'scripts/verify.ps1') 'Write-Host 1'
+Set-Content (Join-Path $toolRepo 'CLAUDE.md') 'rules'
+Save-Commit $toolRepo 'base'
+$toolingBefore = Get-AreaTreeId $toolRepo 'tooling'
+$backendBefore = Get-AreaTreeId $toolRepo 'backend'
+Add-Content (Join-Path $toolRepo 'src/a.cs') '// edit'
+Assert-That ($toolingBefore -match '^[0-9a-f]{40}$' -and (Get-AreaTreeId $toolRepo 'tooling') -eq $toolingBefore) `
+  'the tooling tree ID does not change with a backend file'
+Assert-That ((Get-AreaTreeId $toolRepo 'backend') -ne $backendBefore) 'the backend tree ID changes with a backend file'
+$toolingMark = Get-AreaTreeId $toolRepo 'tooling'
+Add-Content (Join-Path $toolRepo 'scripts/verify.ps1') '# edit'
+Assert-That ((Get-AreaTreeId $toolRepo 'tooling') -ne $toolingMark) 'the tooling tree ID changes with scripts/verify.ps1'
+$backendMid = Get-AreaTreeId $toolRepo 'backend'
+foreach ($toolFile in '.claude/tool.ps1', 'CLAUDE.md') {
+  $toolingMark = Get-AreaTreeId $toolRepo 'tooling'
+  Add-Content (Join-Path $toolRepo $toolFile) '# edit'
+  Assert-That ((Get-AreaTreeId $toolRepo 'tooling') -ne $toolingMark) "the tooling tree ID changes with $toolFile"
+}
+Assert-That ((Get-AreaTreeId $toolRepo 'backend') -eq $backendMid) 'the backend tree ID does not change with .claude/ or CLAUDE.md'
+
+# The -Only switch, run as child processes (the known section has no switch test, so the child does not recurse).
+$onlyOutput = @(& pwsh -NoProfile -File (Join-Path $PSScriptRoot 'flow-scripts.tests.ps1') -ScriptsDir $ScriptsDir -Only plan-sections 2>&1 |
+    ForEach-Object { "$_" })
+Assert-That ($LASTEXITCODE -eq 0 -and $onlyOutput[-1] -eq 'All checks passed (plan-sections).' -and
+  -not ($onlyOutput -contains 'tree-id')) '-Only with one known name runs only that section and names it on the last line'
+$unknownOutput = @(& pwsh -NoProfile -File (Join-Path $PSScriptRoot 'flow-scripts.tests.ps1') -Only nosuchsection 2>&1 |
+    ForEach-Object { "$_" })
+Assert-That ($LASTEXITCODE -eq 1 -and $unknownOutput.Count -eq 1 -and $unknownOutput[0] -like "unknown section 'nosuchsection'; sections: *" -and
+  -not ($unknownOutput -match '^\s+ok ')) '-Only with an unknown name fails before any check'
+
+}
+
 # --- check-plan ------------------------------------------------------------------------------------------------
+if (Test-Section 'check-plan') {
 Write-Host 'check-plan'
 
 function New-PlanFolder([string] $name, [hashtable] $change = @{}) {
@@ -372,6 +443,21 @@ Assert-That ($cancelledPlan.Exit -eq 0 -and $cancelledPlan.Output.Count -eq 0) `
 # A cycle of only fixup steps needs no Commit line. Step 62.
 $fixupOnly = Invoke-PlanInRepo 'plan-fixup-only' @{ Step2Fixup = 'feature(sample): added a'; Cycle2Commits = @() } $fixupRepo
 Assert-That ($fixupOnly.Exit -eq 0 -and $fixupOnly.Output.Count -eq 0) 'a cycle of only Fixup steps without a Commit line passes'
+$fixupBrowser = Invoke-PlanInRepo 'plan-fixup-browser' @{
+  Step2Fixup = 'feature(sample): added a'; Step3Files = 'none'; Cycle2Commits = @() } $fixupRepo
+Assert-That ($fixupBrowser.Exit -eq 0 -and $fixupBrowser.Output.Count -eq 0) 'a Fixup step and a step with Files: none pass without a Commit line'
+$mainRepo = New-Repo 'fixup-origin-main'
+Set-Content (Join-Path $mainRepo 'a.txt') 'a'
+Save-Commit $mainRepo 'base'
+git -C $mainRepo update-ref refs/remotes/origin/main HEAD
+git -C $mainRepo checkout -q -b feature
+Add-Content (Join-Path $mainRepo 'a.txt') 'b'
+Save-Commit $mainRepo 'feature(sample): added a'
+git -C $mainRepo branch -f main HEAD
+$mainBranchRun = Invoke-Script 'check-plan.ps1' @((New-PlanFolder 'plan-main-branch' @{ Step2Fixup = 'feature(sample): added a'; Cycle2Commits = @() }),
+  '-Repo', $mainRepo, '-MainBranch', 'main')
+Assert-That ($mainBranchRun.Exit -eq 0 -and $mainBranchRun.Output.Count -eq 0 -and $mainBranchRun.Notes.Count -eq 0) `
+  'check-plan -MainBranch main takes the base from origin/main, not from the local main'
 $fixupAndPlain = Invoke-PlanInRepo 'plan-fixup-plain-nocommit' @{
   Step2Fixup = 'feature(sample): added a'; Step3Files = '`src/c.cs`'; Cycle2Commits = @() } $fixupRepo
 Assert-That ($fixupAndPlain.Exit -eq 1 -and $fixupAndPlain.Output.Count -eq 1 -and $fixupAndPlain.Output[0] -eq 'Cycle 2: no Commit line.') `
@@ -401,6 +487,11 @@ $inlineVsPlain = Invoke-PlanInRepo 'plan-inline-plain' @{
 Assert-That ($inlineVsPlain.Exit -eq 1 -and $inlineVsPlain.Output.Count -eq 1 -and
   $inlineVsPlain.Output[0] -eq 'Cycle 2: src/c.cs is in an inline fix with Fixup and in Step 3 without Fixup.') `
   'a path in an inline fix with Fixup and in a plain step fails with its line'
+$inlineUnknown = Invoke-PlanInRepo 'plan-inline-unknown' @{
+  DeviationLines = @('*   Inline fix 1: changed c. Fixup: feature(sample): added z; files: `src/c.cs`') } $fixupRepo
+Assert-That ($inlineUnknown.Exit -eq 1 -and $inlineUnknown.Output.Count -eq 1 -and
+  $inlineUnknown.Output[0] -like "Cycle 2: the Fixup subject 'feature(sample): added z' matches no commit of *..HEAD.") `
+  'an inline fix with an unknown Fixup subject fails with its line'
 $inlineVsStep = Invoke-PlanInRepo 'plan-inline-step' @{
   Step2Fixup = 'feature(sample): added a'; Step2Files = '`src/b.cs`'; Cycle2Commits = @()
   DeviationLines = @('*   Inline fix 1: changed b. Fixup: feature(sample): added z; files: `src/b.cs`') } $fixupTwoSubjects
@@ -409,7 +500,10 @@ Assert-That ($inlineVsStep.Exit -eq 1 -and $inlineVsStep.Output.Count -eq 1 -and
   'a path in a Fixup step and in an inline fix with another subject fails with its line'
 
 
+}
+
 # --- plan-sections ---------------------------------------------------------------------------------------------
+if (Test-Section 'plan-sections') {
 Write-Host 'plan-sections'
 . (Join-Path $ScriptsDir 'plan-sections.ps1')
 
@@ -423,6 +517,15 @@ foreach ($case in @(
 $cycleLines = @('Cycle: 1', '', '### Cycle 1', 'Spec: a', '', '### Cycle 2', 'Spec: b')
 Assert-That ((Get-PlanCycle $cycleLines 0).Number -eq 1) 'cycle 0 reads the Cycle: line of plan.md'
 Assert-That ((Get-PlanCycle ($cycleLines | Select-Object -Skip 1) 0).Number -eq 2) 'cycle 0 without a Cycle: line takes the highest cycle'
+
+foreach ($case in @(
+    @('- [!] Step 5: Browser check of the page. WAITING: no Chrome; retried: once', 'waiting'),
+    @('- [!] Step 5: Browser check of the page. BLOCKED: flow 2 failed', 'blocked'),
+    @('- [!] Step 5: Run the tests. WAITING: step 4', $null),
+    @('- [ ] Step 5: Browser check of the page.', $null))) {
+  $mark = Get-BrowserCheckMark -Step ([pscustomobject]@{ Mark = $case[0].Substring(3, 1); Number = '5'; Lines = @($case[0]) })
+  Assert-That ($mark -eq $case[1]) "Get-BrowserCheckMark returns '$($case[1])' for '$($case[0])'"
+}
 
 $commitSection = @('Spec: a', 'Commit code: bug(machines): fixed a', 'Commit docs: feature(docs): described a', '', '- [ ] Step 1: x',
   '#### Deviations', 'Commit tooling: feature(setup): not a commit line')
@@ -468,18 +571,45 @@ Assert-That ($wrappedFixups.Count -eq 2 -and $wrappedFixups[0].Subject -eq 'feat
 $cancelledSteps = @([pscustomobject]@{ Number = '3'; Mark = '~'; Lines = @('- [~] Step 3: Cancelled.', '    *   Files: `a.cs`',
       '    *   Fixup: feature(setup): added a') })
 Assert-That (@(Get-StepFixups $cancelledSteps).Count -eq 0) 'Get-StepFixups skips a cancelled step'
+$subjectEntries = @([pscustomobject]@{ Step = '3'; Subject = 'feature(setup): added a'; Files = @('x.cs') },
+  [pscustomobject]@{ Subject = 'feature(setup): added z'; Files = @('y.cs') },
+  [pscustomobject]@{ Subject = 'feature(setup): added b'; Files = @('z.cs') })
+$subjectProblems = @(Get-FixupSubjectProblems -Entries $subjectEntries -Base 'abc1234' `
+    -Subjects @('feature(setup): added a', 'feature(setup): added b', 'feature(setup): added b'))
+Assert-That ($subjectProblems.Count -eq 2 -and
+  $subjectProblems[0] -eq "the Fixup subject 'feature(setup): added z' matches no commit of abc1234..HEAD." -and
+  $subjectProblems[1] -eq "the Fixup subject 'feature(setup): added b' matches 2 commits of abc1234..HEAD.") `
+  'Get-FixupSubjectProblems reports an entry with 0 or 2 matching subjects and none for 1 match'
+$stepSubjectProblems = @(Get-FixupSubjectProblems -Entries @($subjectEntries[0]) -Base 'abc1234' -Subjects @())
+Assert-That ($stepSubjectProblems.Count -eq 1 -and
+  $stepSubjectProblems[0] -eq "Step 3: the Fixup subject 'feature(setup): added a' matches no commit of abc1234..HEAD.") `
+  'Get-FixupSubjectProblems names the step of a Fixup step entry'
+$pathSteps = @(
+  [pscustomobject]@{ Number = '3'; Mark = ' '; Lines = @('- [ ] Step 3: Fix a.', '    *   Files: `a/b.cs`', '    *   Fixup: feature(setup): added a') },
+  [pscustomobject]@{ Number = '4'; Mark = ' '; Lines = @('- [ ] Step 4: Plain.', '    *   Files: `a/b.cs`.') })
+$pathProblems = @(Get-FixupPathProblems 2 $pathSteps @())
+Assert-That ($pathProblems.Count -eq 1 -and $pathProblems[0] -eq 'Cycle 2: Step 3: a/b.cs is in a Fixup step and in Step 4 without Fixup.') `
+  'Get-FixupPathProblems reports a path of a Fixup step that a plain step lists'
+$onlySteps = @(
+  [pscustomobject]@{ Number = '3'; Mark = ' '; Lines = @('- [ ] Step 3: Fix a.', '    *   Files: `a.cs`', '    *   Fixup: feature(setup): added a') },
+  [pscustomobject]@{ Number = '4'; Mark = ' '; Lines = @('- [ ] Step 4: Browser check.', '    *   Files: none') },
+  [pscustomobject]@{ Number = '5'; Mark = ' '; Lines = @('- [ ] Step 5: Browser check list.') })
+Assert-That (Test-FixupOnlyCycle $onlySteps) 'Test-FixupOnlyCycle is true for a Fixup step and steps without files'
+$plainSteps = $onlySteps + @([pscustomobject]@{ Number = '6'; Mark = ' '; Lines = @('- [ ] Step 6: Plain.', '    *   Files: `d.cs`') })
+Assert-That (-not (Test-FixupOnlyCycle $plainSteps)) 'Test-FixupOnlyCycle is false when a step with files has no Fixup line'
+Assert-That (-not (Test-FixupOnlyCycle @($onlySteps[1], $onlySteps[2]))) 'Test-FixupOnlyCycle is false without a fixup entry'
+Assert-That (Test-FixupOnlyCycle @($onlySteps[1]) @([pscustomobject]@{ Subject = 'feature(setup): added a'; Files = @('x.cs') })) `
+  'Test-FixupOnlyCycle counts an inline fixup entry'
 $markSha = 'a' * 40
 Assert-That ((Get-ReviewedMark @('Cycle: 1', "Reviewed by Artur: $markSha")) -eq $markSha) 'Get-ReviewedMark reads the SHA from the header'
 Assert-That ($null -eq (Get-ReviewedMark (@('Cycle: 1') + (1..25 | ForEach-Object { '' }) + @("Reviewed by Artur: $markSha")))) `
   'Get-ReviewedMark ignores a mark below line 20'
 
-# --- check-handoff ---------------------------------------------------------------------------------------------
-Write-Host 'check-handoff'
-
-function Get-AreaTreeId([string] $repo, [string] $area) {
-  $result = Invoke-Script 'tree-id.ps1' @('-Repo', $repo, '-Area', $area)
-  return ($result.Output -join '').Trim()
 }
+
+# --- check-handoff ---------------------------------------------------------------------------------------------
+if (Test-Section 'check-handoff') {
+Write-Host 'check-handoff'
 
 # A plan with a "Full run backend:" line and "#### Deviations" in the cycle.
 function New-HandoffCase([string] $name, [hashtable] $change = @{}) {
@@ -513,6 +643,7 @@ function New-HandoffCase([string] $name, [hashtable] $change = @{}) {
     New-Item -ItemType Directory -Force (Join-Path $repoDir '.claude/commands') | Out-Null
     Set-Content (Join-Path $repoDir '.claude/commands/late.md') '# a late command change'
   }
+  $toolingTree = Get-AreaTreeId $repoDir 'tooling'
 
   $folder = Join-Path $work "$name-folder"
   New-Item -ItemType Directory -Force $folder | Out-Null
@@ -529,11 +660,14 @@ function New-HandoffCase([string] $name, [hashtable] $change = @{}) {
   $lines += '- [x] Step 1: Change the code with a TDD red step.', '    *   Files: `src/a.cs`, `src/b.cs`, `src/Migrations/m.cs`, `frontend/app.ts`, `.claude/tree-id.ps1`, `.claude/tests/flow-scripts.tests.ps1`'
   if (-not $change.NoRedLine) { $lines += '    *   Red: the new test fails first with `Expected 1, found 0`.' }
   $step2Text = if ($change.Step2Tdd) { 'Document it with a TDD red step.' } elseif ($change.Step2ProofRequired) { 'Test it. Proof required.' } else { 'Document it.' }
-  $lines += "- [$step2Mark] Step 2: $step2Text", '    *   Files: `src/a.cs`'
+  $step2Line = if ($change.Step2Line) { $change.Step2Line } else { "- [$step2Mark] Step 2: $step2Text" }
+  $lines += $step2Line, '    *   Files: `src/a.cs`'
   if ($change.Step2Red) { $lines += '    *   Red: the doc test fails first with `Expected 2, found 0`.' }
+  if ($change.Step2Proof) { $lines += '    *   Proof: the doc test fails without the guard; restored, checked with git diff' }
   if ($change.Step2Lines) { $lines += $change.Step2Lines }
   $lines += ''
   if (-not $change.NoFullRun) { $lines += "*   Full run backend: tree $backendTree; dotnet test -> 12 passed, 0 failed" }
+  if ($change.ToolingRun) { $lines += "*   Full run tooling: tree $toolingTree; suites none -> passed" }
   $lines += '', '#### Deviations', ''
   if ($change.DeviationFile) { $lines += "*   Steps 1-2: Added $($change.DeviationFile) because the helper was missing." }
   if ($change.DeviationProof) { $lines += '*   Step 1: Proof: ATest -> Expected 1, found 0; restored, checked with git diff' }
@@ -570,30 +704,58 @@ $flowCases = @(
   @('ho-flow-transient', '    *   fail: Chrome screenshots timed out', "a transient error without 'retried:'"))
 foreach ($case in $flowCases) {
   $flowCase = Invoke-Handoff (New-HandoffCase $case[0] @{ Step2Lines = @($case[1]) })
-  Assert-That ($flowCase.Exit -eq 1 -and $flowCase.Output.Count -eq 1 -and $flowCase.Output[0] -like "Step 2: *$($case[2])*") `
+  Assert-That ($flowCase.Exit -eq 1 -and $flowCase.Output.Count -eq 2 -and $flowCase.Output[1] -like 'Text checks failed*' -and $flowCase.Output[0] -like "Step 2: *$($case[2])*") `
     "the flow line '$($case[1].Trim())' fails with its line"
 }
 $retriedFail = Invoke-Handoff (New-HandoffCase 'ho-flow-retried' @{ Step2Lines = @('    *   fail: the slot did not start; retried: up') })
 Assert-That ($retriedFail.Exit -eq 0 -and $retriedFail.Output.Count -eq 0) 'a fail line of a transient error with retried: passes'
 
+$waitingTransient = Invoke-Handoff (New-HandoffCase 'ho-waiting-transient' @{
+    Step2Line = '- [!] Step 2: Browser check of the page. WAITING: Chrome timed out' })
+Assert-That ($waitingTransient.Exit -eq 1 -and @($waitingTransient.Output | Where-Object { $_ -like "Step 2: a transient error without 'retried:'*" }).Count -eq 1) `
+  'a waiting browser check step with a transient error and no retried: fails with its line'
+
+$waitingCheck = Invoke-Handoff (New-HandoffCase 'ho-waiting' @{
+    Step2Line = '- [!] Step 2: Browser check of the page. WAITING: Docker is down; retried: restarted Docker Desktop' })
+Assert-That ($waitingCheck.Exit -eq 0 -and $waitingCheck.Output.Count -eq 0) 'a waiting browser check step with retried: passes'
+$waitingNoRetry = Invoke-Handoff (New-HandoffCase 'ho-waiting-noretry' @{
+    Step2Line = '- [!] Step 2: Browser check of the page. WAITING: Docker is down' })
+Assert-That ($waitingNoRetry.Exit -eq 1 -and $waitingNoRetry.Output[0] -eq 'Step 2 is not done ([!]).') 'a waiting browser check step without retried: fails'
+$waitingOther = Invoke-Handoff (New-HandoffCase 'ho-waiting-other' @{
+    Step2Line = '- [!] Step 2: Document it. WAITING: step 1; retried: none' })
+Assert-That ($waitingOther.Exit -eq 1 -and $waitingOther.Output[0] -eq 'Step 2 is not done ([!]).') 'a waiting step that is no browser check fails'
+
 $openStep = Invoke-Handoff (New-HandoffCase 'ho-open' @{ Step2Open = $true })
-Assert-That ($openStep.Exit -eq 1 -and $openStep.Output.Count -eq 1 -and $openStep.Output[0] -match 'Step 2 is not done') `
+Assert-That ($openStep.Exit -eq 1 -and $openStep.Output.Count -eq 2 -and $openStep.Output[1] -like 'Text checks failed*' -and $openStep.Output[0] -match 'Step 2 is not done') `
   'a step that is not done fails with its line'
 
 $noRed = Invoke-Handoff (New-HandoffCase 'ho-nored' @{ NoRedLine = $true })
-Assert-That ($noRed.Exit -eq 1 -and $noRed.Output.Count -eq 1 -and $noRed.Output[0] -match 'Step 1 names TDD, Red, or Proof required') `
+Assert-That ($noRed.Exit -eq 1 -and $noRed.Output.Count -eq 2 -and $noRed.Output[1] -like 'Text checks failed*' -and $noRed.Output[0] -match 'Step 1 names TDD, Red, or Proof required') `
   'a TDD step without a Red: line fails with its line'
 
 $secondNoRed = Invoke-Handoff (New-HandoffCase 'ho-second' @{ Step2Tdd = $true })
-Assert-That ($secondNoRed.Exit -eq 1 -and $secondNoRed.Output.Count -eq 1 -and
+Assert-That ($secondNoRed.Exit -eq 1 -and $secondNoRed.Output.Count -eq 2 -and $secondNoRed.Output[1] -like 'Text checks failed*' -and
   $secondNoRed.Output[0] -match 'Step 2 names TDD, Red, or Proof required') `
   'a second TDD step without a Red: line fails, although the first step has one'
+
+$mentionsTdd = Invoke-Handoff (New-HandoffCase 'ho-mentions-tdd' @{
+    Step2Lines = @('    *   A TDD step needs `Red: <test>` and not only Proof: lines.', '    *   Proof: the guard test fails without it; restored, checked with git diff') })
+Assert-That ($mentionsTdd.Exit -eq 0 -and $mentionsTdd.Output.Count -eq 0) `
+  'a step without TDD on its first line that mentions TDD, Red:, and Proof: in its text passes'
+$tddProofOnly = Invoke-Handoff (New-HandoffCase 'ho-tdd-proof-only' @{ Step2Tdd = $true; Step2Proof = $true })
+Assert-That ($tddProofOnly.Exit -eq 1 -and $tddProofOnly.Output[0] -eq
+  'Step 2 is TDD, but its block has only Proof: lines: a TDD step needs the Red: line of its red run.') `
+  'a TDD step with only a Proof: line fails with its line'
+$tddRedAndProof = Invoke-Handoff (New-HandoffCase 'ho-tdd-red-proof' @{ Step2Tdd = $true; Step2Red = $true; Step2Proof = $true })
+Assert-That ($tddRedAndProof.Exit -eq 0 -and $tddRedAndProof.Output.Count -eq 0) 'a TDD step with a Red: line and a Proof: line passes'
+$requiredProof = Invoke-Handoff (New-HandoffCase 'ho-required-proof' @{ Step2ProofRequired = $true; Step2Proof = $true })
+Assert-That ($requiredProof.Exit -eq 0 -and $requiredProof.Output.Count -eq 0) 'a Proof required step with a Proof: line passes'
 
 $bothRed = Invoke-Handoff (New-HandoffCase 'ho-both' @{ Step2Tdd = $true; Step2Red = $true })
 Assert-That ($bothRed.Exit -eq 0 -and $bothRed.Output.Count -eq 0) 'two TDD steps that each have a Red: line pass'
 
 $extra = Invoke-Handoff (New-HandoffCase 'ho-extra' @{ ExtraFile = 'src/extra.cs' })
-Assert-That ($extra.Exit -eq 1 -and $extra.Output.Count -eq 1 -and $extra.Output[0] -match 'src/extra.cs is in no Files') `
+Assert-That ($extra.Exit -eq 1 -and $extra.Output.Count -eq 2 -and $extra.Output[1] -like 'Text checks failed*' -and $extra.Output[0] -match 'src/extra.cs is in no Files') `
   'a changed file that no Files: line names fails with its line'
 
 $logged = Invoke-Handoff (New-HandoffCase 'ho-logged' @{ ExtraFile = 'src/extra.cs'; DeviationFile = 'src/extra.cs' })
@@ -635,7 +797,7 @@ $earlierDeviation = Invoke-Handoff (New-HandoffCase 'ho-earlier-dev' @{ExtraFile
 Assert-That ($earlierDeviation.Exit -eq 0 -and $earlierDeviation.Output.Count -eq 0) `
   'a changed file in the #### Deviations of an earlier cycle passes'
 
-$lateClaude = Invoke-Handoff (New-HandoffCase 'ho-late-claude' @{LateClaudeFile = $true; DeviationFile = '.claude/commands/late.md' })
+$lateClaude = Invoke-Handoff (New-HandoffCase 'ho-late-claude' @{LateClaudeFile = $true; ToolingRun = $true; DeviationFile = '.claude/commands/late.md' })
 Assert-That ($lateClaude.Exit -eq 0 -and $lateClaude.Output.Count -eq 0) `
   'a .claude change after the Full run backend line keeps the backend run current'
 
@@ -645,19 +807,19 @@ Assert-That ($cycleLogged.Exit -eq 0 -and $cycleLogged.Output.Count -eq 0) 'a ch
 $planWide = New-HandoffCase 'ho-plan-wide' @{ ExtraFile = 'src/extra.cs' }
 Add-Content (Join-Path $planWide.Folder 'plan.md') @('', '## Deviations', '', '*   Steps 1-2: Added src/extra.cs because the helper was missing.')
 $planWideResult = Invoke-Handoff $planWide
-Assert-That ($planWideResult.Exit -eq 1 -and $planWideResult.Output.Count -eq 1 -and $planWideResult.Output[0] -match 'src/extra.cs is in no Files') `
+Assert-That ($planWideResult.Exit -eq 1 -and $planWideResult.Output.Count -eq 2 -and $planWideResult.Output[1] -like 'Text checks failed*' -and $planWideResult.Output[0] -match 'src/extra.cs is in no Files') `
   'a changed file that only an old plan-wide ## Deviations entry names fails'
 
 $devProof = Invoke-Handoff (New-HandoffCase 'ho-dev-proof' @{DeviationProof = $true })
-Assert-That ($devProof.Exit -eq 1 -and $devProof.Output.Count -eq 1 -and $devProof.Output[0] -match 'holds a Red: or Proof: line') `
+Assert-That ($devProof.Exit -eq 1 -and $devProof.Output.Count -eq 2 -and $devProof.Output[1] -like 'Text checks failed*' -and $devProof.Output[0] -match 'holds a Red: or Proof: line') `
   'a Proof: line in the Deviations fails, and it does not count for the step block'
 
 $devDone = Invoke-Handoff (New-HandoffCase 'ho-dev-done' @{DeviationDone = $true })
-Assert-That ($devDone.Exit -eq 1 -and $devDone.Output.Count -eq 1 -and $devDone.Output[0] -match 'only logs a run') `
+Assert-That ($devDone.Exit -eq 1 -and $devDone.Output.Count -eq 2 -and $devDone.Output[1] -like 'Text checks failed*' -and $devDone.Output[0] -match 'only logs a run') `
   'a "Step N: done" entry in the Deviations fails with its line'
 
 $proofRequired = Invoke-Handoff (New-HandoffCase 'ho-proof-required' @{Step2ProofRequired = $true })
-Assert-That ($proofRequired.Exit -eq 1 -and $proofRequired.Output.Count -eq 1 -and $proofRequired.Output[0] -match 'Step 2 names TDD, Red, or Proof required') `
+Assert-That ($proofRequired.Exit -eq 1 -and $proofRequired.Output.Count -eq 2 -and $proofRequired.Output[1] -like 'Text checks failed*' -and $proofRequired.Output[0] -match 'Step 2 names TDD, Red, or Proof required') `
   'a Proof required step without a Red: or Proof: line fails with its line'
 
 $longLine = Invoke-Handoff (New-HandoffCase 'ho-long' @{LongLine = $true })
@@ -667,26 +829,69 @@ Assert-That ($longLine.Exit -eq 1 -and $longLine.Output.Count -eq 1 -and $longLi
 $defaultBase = Invoke-Handoff (New-HandoffCase 'ho-default-base' @{}) @() @('-MainBranch', 'main')
 Assert-That ($defaultBase.Exit -eq 0 -and $defaultBase.Output.Count -eq 0) 'without -Base, the merge base of HEAD and the main branch is the base'
 
+# A branch that holds a commit of another feature (a main branch that moved): origin/main points at it, the local
+# main is behind (Step 82).
+function New-OriginCase([string] $name, [bool] $hasOrigin, [bool] $hasBaseLine = $false) {
+  $case = New-HandoffCase $name
+  if ($hasBaseLine) {
+    $planFile = Join-Path $case.Folder 'plan.md'
+    $planText = @(Get-Content $planFile)
+    Set-Content $planFile (@($planText[0], "Base: $(git -C $case.Repo rev-parse base)") + $planText[1..($planText.Count - 1)])
+  }
+  git -C $case.Repo switch -q -c feature
+  New-Item -ItemType Directory -Force (Join-Path $case.Repo '.claude/commands') | Out-Null
+  Set-Content (Join-Path $case.Repo '.claude/commands/other.md') '# another feature'
+  git -C $case.Repo add .claude/commands/other.md
+  git -C $case.Repo commit -q -m 'another feature' -- .claude/commands/other.md
+  if ($hasOrigin) { git -C $case.Repo update-ref refs/remotes/origin/main HEAD }
+  return $case
+}
+$originBase = Invoke-Handoff (New-OriginCase 'ho-origin' $true) @() @('-MainBranch', 'main')
+Assert-That ($originBase.Exit -eq 0 -and $originBase.Output.Count -eq 0 -and $originBase.Notes.Count -eq 0) `
+  'with origin/main ahead of the local main, the base is the merge base with origin/main and only the files of the branch count'
+$noOrigin = Invoke-Handoff (New-OriginCase 'ho-no-origin' $false) @() @('-MainBranch', 'main')
+Assert-That ($noOrigin.Exit -eq 1 -and $noOrigin.Output[0] -like '*.claude/commands/other.md is in no Files*' -and
+  $noOrigin.Notes.Count -eq 1 -and $noOrigin.Notes[0] -eq 'Note: origin/main not found; the base is the merge base with the local main.') `
+  'without origin/main, the base is the merge base with the local main and the note is printed'
+$planBaseLine = Invoke-Handoff (New-OriginCase 'ho-plan-base' $true $true) @() @('-MainBranch', 'main')
+Assert-That ($planBaseLine.Exit -eq 1 -and $planBaseLine.Output[0] -like '*.claude/commands/other.md is in no Files*' -and
+  $planBaseLine.Notes.Count -eq 0) 'a Base: line of the plan wins over origin/main'
+$explicitBase = Invoke-Handoff (New-OriginCase 'ho-explicit-base' $true) @() @('-Base', 'base', '-MainBranch', 'main')
+Assert-That ($explicitBase.Exit -eq 1 -and $explicitBase.Output[0] -like '*.claude/commands/other.md is in no Files*' -and
+  $explicitBase.Notes.Count -eq 0) 'an explicit -Base wins over origin/main'
+
 $noBase = Invoke-Handoff (New-HandoffCase 'ho-no-base' @{}) @() @('-MainBranch', 'nope')
 Assert-That ($noBase.Exit -eq 1 -and ($noBase.Output -join ' ') -match 'No merge base') 'without -Base and without the main branch, the check fails with a message'
 
-$scriptTest = Invoke-Handoff (New-HandoffCase 'ho-script-test' @{ScriptChange = $true })
-Assert-That ($scriptTest.Exit -eq 1 -and $scriptTest.Output.Count -eq 1 -and
-  $scriptTest.Output[0] -match 'script test \.claude/tests/flow-scripts\.tests\.ps1 fails: FAIL the sample check') `
-  'a changed flow script runs its test script, and a failing test fails the check'
+$toolingNoRun = Invoke-Handoff (New-HandoffCase 'ho-tooling-norun' @{ScriptChange = $true })
+Assert-That ($toolingNoRun.Exit -eq 1 -and $toolingNoRun.Output.Count -eq 1 -and $toolingNoRun.Output[0] -match "no 'Full run tooling") `
+  'a changed .claude/ file without a Full run tooling line fails with its line, and no script test suite runs'
 
+$toolingRun = Invoke-Handoff (New-HandoffCase 'ho-tooling-run' @{ScriptChange = $true; ToolingRun = $true })
+Assert-That ($toolingRun.Exit -eq 0 -and $toolingRun.Output.Count -eq 0) 'a Full run tooling line with the current tree passes'
 $fakeFormat = Join-Path $work 'fake-format.ps1'
 Set-Content $fakeFormat @(
   'param([string]$Repo, [string[]]$Files)',
   'Add-Content (Join-Path $Repo ''src/b.cs'') ''// formatted''',
   '''Cleanup skipped: the test note.''')
+$markerFormat = Join-Path $work 'marker-format.ps1'
+$formatMarker = Join-Path $work 'format-ran.txt'
+Set-Content $markerFormat @('param([string]$Repo, [string[]]$Files)', "Set-Content '$formatMarker' 'ran'")
+if (Test-Path $formatMarker) { Remove-Item $formatMarker }
+$textFirst = Invoke-Handoff (New-HandoffCase 'ho-text-first' @{ Step2Open = $true }) @('-FormatScript', $markerFormat)
+Assert-That ($textFirst.Exit -eq 1 -and $textFirst.Output.Count -eq 2 -and $textFirst.Output[0] -match 'Step 2 is not done' -and
+  $textFirst.Output[1] -eq 'Text checks failed: the format pass and the run lines were not checked.' -and -not (Test-Path $formatMarker)) `
+  'a text problem exits with the Text checks failed line before the format script runs'
 $formatted = Invoke-Handoff (New-HandoffCase 'ho-format' @{}) @('-FormatScript', $fakeFormat)
 Assert-That ($formatted.Exit -eq 1 -and ($formatted.Output -match 'The formatter changed src/b.cs').Count -eq 1 -and
   ($formatted.Output -match '^Formatter: Cleanup skipped').Count -eq 1 -and
   ($formatted.Output -match 'not the current backend tree').Count -eq 1) `
   'a file that the formatter changes fails, with its note and a stale Full run line'
 
+}
+
 # --- check-review-routing --------------------------------------------------------------------------------------
+if (Test-Section 'check-review-routing') {
 Write-Host 'check-review-routing'
 
 $oldReview = Join-Path $work 'review-old-layout.md'
@@ -707,13 +912,16 @@ function New-OpenReviewFile([string] $name, [hashtable] $change = @{}) {
   $verdict = if ($change.Approve) { 'APPROVE' } else { 'CHANGES_REQUESTED' }
   $scopeLine = if ($change.Branch) { 'Scope: branch' } else { '' }
   $lateScope = if ($change.ScopeLate) { @('Scope: branch', '') } else { @() }
+  $codeBlock = if ($change.NoOpen -or $change.OnlySpec) { @() } else { @($heading, $status, '*   Where: `src/a.cs:10`', '') }
+  $specBlock = if ($change.SpecFinding -or $change.OnlySpec) { @('### F3 MINOR [SPEC] The spec has a gap', '*   Status: NEW', '*   Where: `spec.md`', '') } else { @() }
+  $table = if ($change.NoTable) { @() } else {
+    @('| Severity | [CODE] | [SPEC] |', '|---|---|---|', '| BLOCKER | 0 | 0 |', "| MAJOR | $majorCode | 0 |", '| MINOR | 0 | 0 |', '') }
   $lines = @(
     'Cycle: 1', 'Round: 2', 'Reviewed tree: 0123456789abcdef0123456789abcdef01234567', $scopeLine, '# Review', '') + $lateScope + @(
-    '## Open', '') + $(if ($change.NoOpen) { @() } else { @($heading, $status, '*   Where: `src/a.cs:10`', '') }) + @(
+    '## Open', '') + $codeBlock + $specBlock + @(
     '## Closed', '', '*   F2 MINOR [SPEC] An old spec gap: REOPENED (2), then ACCEPTED (Artur, 2026-11-13).', '',
     '## Rounds', '', '*   Cycle 1, round 1: tree 0123456789abcdef0123456789abcdef01234567.', '',
-    '## Summary', '', '| Severity | [CODE] | [SPEC] |', '|---|---|---|',
-    '| BLOCKER | 0 | 0 |', "| MAJOR | $majorCode | 0 |", '| MINOR | 0 | 0 |', '', "Verdict: $verdict")
+    '## Summary', '') + $table + @("Verdict: $verdict")
   Set-Content $path $lines
   return $path
 }
@@ -727,8 +935,24 @@ Assert-That ($openReopened.Exit -eq 0 -and ($openReopened.Output -join '') -matc
   'a REOPENED (2) in ## Open routes to the spec session'
 
 $wrongTable = Invoke-Script 'check-review-routing.ps1' @((New-OpenReviewFile 'review-open-table' @{ WrongTable = $true }), '-Scope', 'cycle')
-Assert-That ($wrongTable.Exit -eq 1 -and ($wrongTable.Output -join ' ') -match 'summary row MAJOR') `
-  'a summary table that differs from ## Open fails'
+Assert-That ($wrongTable.Exit -eq 0 -and ($wrongTable.Output -join '') -eq 'executor code-fixes (cycle 1, round 2)') `
+  'a summary table that differs from ## Open is ignored'
+
+$noTable = Invoke-Script 'check-review-routing.ps1' @((New-OpenReviewFile 'review-no-table' @{ NoTable = $true }), '-Scope', 'cycle')
+Assert-That ($noTable.Exit -eq 0 -and ($noTable.Output -join '') -eq 'executor code-fixes (cycle 1, round 2)') `
+  'a review.md without a summary table routes'
+
+$mixed = Invoke-Script 'check-review-routing.ps1' @((New-OpenReviewFile 'review-mixed' @{ SpecFinding = $true }), '-Scope', 'cycle')
+Assert-That ($mixed.Exit -eq 0 -and ($mixed.Output -join '') -eq 'executor code-fixes (cycle 1, round 2, open [SPEC] 1)') `
+  'a round with 1 [CODE] and 1 [SPEC] finding routes to the executor and names the open [SPEC] count'
+
+$onlySpec = Invoke-Script 'check-review-routing.ps1' @((New-OpenReviewFile 'review-only-spec' @{ OnlySpec = $true }), '-Scope', 'cycle')
+Assert-That ($onlySpec.Exit -eq 0 -and ($onlySpec.Output -join '') -eq 'spec spec-findings (cycle 1, round 2, open [SPEC] 1)') `
+  'a round with only [SPEC] findings routes to the spec session'
+
+$mixedNotConverging = Invoke-Script 'check-review-routing.ps1' @((New-OpenReviewFile 'review-mixed-reopened' @{ SpecFinding = $true; OpenReopened = $true }), '-Scope', 'cycle')
+Assert-That ($mixedNotConverging.Exit -eq 0 -and ($mixedNotConverging.Output -join '') -match '^spec not-converging') `
+  'a not-converging round with [CODE] and [SPEC] findings routes to the spec session'
 
 $badHeading = Invoke-Script 'check-review-routing.ps1' @((New-OpenReviewFile 'review-open-heading' @{ BadHeading = $true }), '-Scope', 'cycle')
 Assert-That ($badHeading.Exit -eq 1 -and ($badHeading.Output -join ' ') -match 'is not .### F<n>') `
@@ -770,7 +994,10 @@ $branchBadApprove =Invoke-Script 'check-review-routing.ps1' @((New-OpenReviewFil
 Assert-That ($branchBadApprove.Exit -eq 1 -and ($branchBadApprove.Output -join ' ') -match 'APPROVE with 1 open') `
   'a Scope: branch review with APPROVE and an open MAJOR still fails'
 
+}
+
 # --- commit-cycle ----------------------------------------------------------------------------------------------
+if (Test-Section 'commit-cycle') {
 Write-Host 'commit-cycle'
 
 # A repo with the base commit on main, a branch develop at the base, and a bare remote origin with the base pushed.
@@ -800,12 +1027,20 @@ function New-CommitCase([string] $name, [hashtable] $change = @{}) {
   $folder = Join-Path $work "$name-folder"
   New-Item -ItemType Directory -Force $folder | Out-Null
   $docsLine = if ($change.NoDocsCommit) { @() } else { @('Commit docs: feature(docs): described b') }
+  $waitingLines = if ($change.WaitingBrowser) { @('- [!] Step 0: Browser check of the page. WAITING: Docker is down; retried: restarted Docker Desktop') }
+  elseif ($change.BlockedBrowser) { @('- [!] Step 0: Browser check of the page. BLOCKED: flow 2 failed; proposal: fix the drawer') } else { @() }
+  $nextCycleLines = if ($change.NextCycle) { @('### Cycle 2', '', 'Spec: **Feature A**, AC1.', '', '- [ ] Step 5: Plan the next thing.') } else { @() }
   $codeSubject = if ($change.BadSubject) { 'Feature(sample): Changed a' } else { 'feature(sample): changed a and b' }
-  Set-Content (Join-Path $folder 'plan.md') (@('Cycle: 1', '', '# Plan', '', '### Cycle 1', '', 'Spec: **Feature A**, AC1.',
+  $openCycle = if ($change.EarlierWaiting) { 2 } else { 1 }
+  $earlierLines = if ($change.EarlierWaiting) {
+    @('### Cycle 1', '', 'Spec: **Feature A**, AC1.', '',
+      '- [!] Step 0: Browser check of the page. WAITING: Docker is down; retried: restarted Docker Desktop', '', '#### Deviations', '')
+  } else { @() }
+  Set-Content (Join-Path $folder 'plan.md') (@("Cycle: $openCycle", '', '# Plan', '') + $earlierLines + @("### Cycle $openCycle", '', 'Spec: **Feature A**, AC1.',
       'Commit tooling: feature(setup): changed x') + $docsLine + @("Commit code: $codeSubject", '',
-      '- [x] Step 1: Change the code.', '    *   Files: `src/a.cs`', '', '#### Deviations', ''))
+      '- [x] Step 1: Change the code.', '    *   Files: `src/a.cs`') + $waitingLines + @('', '#### Deviations', '') + $nextCycleLines)
   $verdict = if ($change.ChangesRequested) { 'CHANGES_REQUESTED' } else { 'APPROVE' }
-  $reviewCycle = if ($change.ReviewCycle) { $change.ReviewCycle } else { 1 }
+  $reviewCycle = if ($change.ReviewCycle) { $change.ReviewCycle } else { $openCycle }
   Set-Content (Join-Path $folder 'review.md') @("Cycle: $reviewCycle", 'Round: 1', "Reviewed tree: $(Get-TreeId $repoDir)", '',
     '## Open', '', '## Closed', '', '## Summary', '', '| Severity | [CODE] | [SPEC] |', '|---|---|---|',
     '| BLOCKER | 0 | 0 |', '| MAJOR | 0 | 0 |', '| MINOR | 0 | 0 |', '', "Verdict: $verdict")
@@ -816,6 +1051,33 @@ function New-CommitCase([string] $name, [hashtable] $change = @{}) {
 function Invoke-Commit($case) {
   return Invoke-Script 'commit-cycle.ps1' @($case.Folder, '-Repo', $case.Repo)
 }
+
+$waitingLast = New-CommitCase 'cc-waiting-last' @{ WaitingBrowser = $true }
+$waitingLastHead = git -C $waitingLast.Repo rev-parse HEAD
+$waitingLastRun = Invoke-Commit $waitingLast
+Assert-That ($waitingLastRun.Exit -eq 1 -and
+  ($waitingLastRun.Output -contains 'Step 0 is a waiting browser check: the last cycle commits after its flows pass.') -and
+  (git -C $waitingLast.Repo rev-parse HEAD) -eq $waitingLastHead) 'the last cycle with a waiting browser check step makes no commit'
+$waitingEarlier = New-CommitCase 'cc-waiting-earlier' @{ EarlierWaiting = $true }
+$waitingEarlierHead = git -C $waitingEarlier.Repo rev-parse HEAD
+$waitingEarlierRun = Invoke-Commit $waitingEarlier
+Assert-That ($waitingEarlierRun.Exit -eq 1 -and
+  ($waitingEarlierRun.Output -contains 'Step 0 is a waiting browser check: the last cycle commits after its flows pass.') -and
+  (git -C $waitingEarlier.Repo rev-parse HEAD) -eq $waitingEarlierHead) 'the last cycle with a waiting browser check step of an earlier cycle makes no commit'
+$blockedLast = New-CommitCase 'cc-blocked-last' @{ BlockedBrowser = $true }
+$blockedLastHead = git -C $blockedLast.Repo rev-parse HEAD
+$blockedLastRun = Invoke-Commit $blockedLast
+Assert-That ($blockedLastRun.Exit -eq 1 -and
+  ($blockedLastRun.Output -contains 'Step 0 is a blocked browser check: the last cycle commits after its flows pass.') -and
+  (git -C $blockedLast.Repo rev-parse HEAD) -eq $blockedLastHead) 'the last cycle with a blocked browser check step makes no commit'
+$blockedMiddle = New-CommitCase 'cc-blocked-middle' @{ BlockedBrowser = $true; NextCycle = $true }
+$blockedMiddleRun = Invoke-Commit $blockedMiddle
+Assert-That ($blockedMiddleRun.Exit -eq 0 -and @(git -C $blockedMiddle.Repo log --format=%s "$($blockedMiddle.Base)..HEAD").Count -eq 3) `
+  'a middle cycle with a blocked browser check step commits'
+$waitingMiddle = New-CommitCase 'cc-waiting-middle' @{ WaitingBrowser = $true; NextCycle = $true }
+$waitingMiddleRun = Invoke-Commit $waitingMiddle
+Assert-That ($waitingMiddleRun.Exit -eq 0 -and @(git -C $waitingMiddle.Repo log --format=%s "$($waitingMiddle.Base)..HEAD").Count -eq 3) `
+  'a middle cycle with a waiting browser check step commits'
 
 $commitCase = New-CommitCase 'cc-ok'
 $committed = Invoke-Commit $commitCase
@@ -895,10 +1157,12 @@ function New-FixupCase([string] $name, [hashtable] $change = @{}) {
   $subject = if ($change.Subject) { $change.Subject } else { 'feature(sample): added a' }
   $header = @('Cycle: 1')
   if ($change.Reviewed) { $header += "Reviewed by Artur: $reviewed" }
+  if ($change.BaseLine) { $header += "Base: $base" }
   if ($change.StaleMark) { $header += 'Reviewed by Artur: 0123456789012345678901234567890123456789' }
-  $commitLines = if ($change.NoCommitLine) { @() } else { @('Commit code: feature(sample): added c') }
-  $plainFiles = if ($change.CancelledFixup) { '`src/a.cs`, `src/c.cs`' } else { '`src/c.cs`' }
+  $commitLines = if ($change.NoCommitLine) { @() } elseif ($change.CommitLine) { @($change.CommitLine) } else { @('Commit code: feature(sample): added c') }
+  $plainFiles = if ($change.CancelledFixup -or $change.PlainShares) { '`src/a.cs`, `src/c.cs`' } else { '`src/c.cs`' }
   $plainStep = if ($change.FixupOnly) { @() } else { @('- [x] Step 2: Add c.', "    *   Files: $plainFiles", '') }
+  if ($change.BrowserStep) { $plainStep += @('- [x] Step 4: Browser check.', '    *   Files: none', '') }
   $step1Mark = if ($change.CancelledFixup) { '~' } else { 'x' }
   $step3Subject = if ($change.Step3Subject) { $change.Step3Subject } else { $subject }
   $step3Files = if ($change.Step3Files) { $change.Step3Files } else { '`src/e.cs`' }
@@ -1073,6 +1337,25 @@ Assert-That ($inlinePlain.Exit -eq 1 -and
   (git -C $inlinePlainCase.Repo rev-parse HEAD) -eq $inlinePlainHead) `
   'a path in an inline fix with Fixup and in a plain step makes no commit'
 
+$browserCase = New-FixupCase 'cc-browser-step' @{ FixupOnly = $true; NoCommitLine = $true; BrowserStep = $true }
+$browser = Invoke-Commit $browserCase
+$browserSubjects = Get-LogSubjects $browserCase
+Assert-That ($browser.Exit -eq 0 -and $browserSubjects.Count -eq 2 -and $browserSubjects[0] -eq 'feature(sample): added b') `
+  'a Fixup step and a step with Files: none commit as a fixup only'
+
+$basedCase = New-FixupCase 'cc-plan-base' @{ FixupOnly = $true; BaseLine = $true; CommitLine = 'Commit code: feature(sample): added a' }
+git -C $basedCase.Repo branch -f develop (git -C $basedCase.Repo rev-parse 'HEAD~1')
+$based = Invoke-Commit $basedCase
+Assert-That ($based.Exit -eq 0) 'a Commit line without changed files is done by a commit since the Base: line of the plan'
+
+$stepPlainCase = New-FixupCase 'cc-step-plain' @{ PlainShares = $true }
+$stepPlainHead = git -C $stepPlainCase.Repo rev-parse HEAD
+$stepPlain = Invoke-Commit $stepPlainCase
+Assert-That ($stepPlain.Exit -eq 1 -and
+  ($stepPlain.Output -contains 'Cycle 1: Step 1: src/a.cs is in a Fixup step and in Step 2 without Fixup.') -and
+  (git -C $stepPlainCase.Repo rev-parse HEAD) -eq $stepPlainHead) `
+  'a path in a fixup step and in a plain step makes no commit'
+
 $inlineStepCase = New-FixupCase 'cc-inline-step' @{
   DeviationLines = @('*   Inline fix 1: changed a. Fixup: feature(sample): added b; files: `src/a.cs`') }
 $inlineStep = Invoke-Commit $inlineStepCase
@@ -1080,7 +1363,10 @@ Assert-That ($inlineStep.Exit -eq 1 -and
   ($inlineStep.Output -contains "Cycle 1: src/a.cs is in the Fixup entries of 'feature(sample): added a' and 'feature(sample): added b'.")) `
   'a path in a fixup step and in an inline fix with another subject makes no commit'
 
+}
+
 # --- fake tools for format-changed and run-area ------------------------------------------------------------------
+if (Test-Section 'format-changed', 'run-area' -Quiet) {
 # Each fake logs "<tool> <arguments> @ <folder name>" to FAKE_LOG. The fake npx prettier appends "// PRETTIER" to each
 # file it gets. The fake dotnet answers like the Microsoft Testing Platform summary; FAKE_UNIT_FAIL makes the unit
 # command fail, and FAKE_TOUCH names a file that the integration command changes.
@@ -1117,7 +1403,10 @@ function Get-MarkCount([string] $path, [string] $mark) {
   ([regex]::Matches((Get-Content $path -Raw), [regex]::Escape($mark))).Count
 }
 
+}
+
 # --- format-changed --------------------------------------------------------------------------------------------
+if (Test-Section 'format-changed') {
 Write-Host 'format-changed'
 $formatRepo = New-Repo 'format-skip'
 Set-Content (Join-Path $formatRepo '.gitignore') 'node_modules/'
@@ -1138,7 +1427,10 @@ Set-Content (Join-Path $formatRepo 'frontend/src/c.ts') 'export const c = 1;'
 [void](Invoke-Script 'format-changed.ps1' @('-Repo', $formatRepo, '-Files', 'frontend/src/a.ts'))
 Assert-That ((Get-MarkCount $fileA '// PRETTIER') -eq 2) 'a call after an edit of another file formats the file again'
 
+}
+
 # --- run-area --------------------------------------------------------------------------------------------------
+if (Test-Section 'run-area') {
 Write-Host 'run-area'
 $areaFormat = Join-Path $work 'fake-area-format.ps1'
 Set-Content $areaFormat @(
@@ -1195,6 +1487,40 @@ $buildFail = Invoke-Area $buildRepo 'backend' @{ FAKE_BUILD_FAIL = $buildRepo }
 Assert-That ($buildFail.Exit -eq 1 -and $buildFail.Last -eq 'RUN FAILED backend: build failed' -and
   ($buildFail.Output -contains 'backend/App/A.cs(7,9): error CS0103: The name x does not exist') -and
   ($buildFail.Log -notcontains 'dotnet unit')) 'a failing build prints its SARIF errors as typed lines before the RUN FAILED line'
+
+$staleRepo = New-AreaRepo 'ra-build-stale'
+$staleFolder = Join-Path $staleRepo 'backend/Old/obj/Debug'
+New-Item -ItemType Directory -Force $staleFolder | Out-Null
+$staleUri = 'file:///' + $staleRepo.Replace('\', '/') + '/backend/Old/B.cs'
+@{ version = '2.1.0'; runs = @(@{ results = @(@{ ruleId = 'CS0246'; level = 'error'; message = @{ text = 'An old error' }
+          locations = @(@{ physicalLocation = @{ artifactLocation = @{ uri = $staleUri }; region = @{ startLine = 3; startColumn = 4 } } }) }) }) } |
+  ConvertTo-Json -Depth 10 | Set-Content (Join-Path $staleFolder 'Old.sarif')
+(Get-Item (Join-Path $staleFolder 'Old.sarif')).LastWriteTimeUtc = [DateTime]::UtcNow.AddHours(-1)
+$staleFail = Invoke-Area $staleRepo 'backend' @{ FAKE_BUILD_FAIL = $staleRepo }
+Assert-That ($staleFail.Exit -eq 1 -and ($staleFail.Output -contains 'backend/App/A.cs(7,9): error CS0103: The name x does not exist') -and
+  -not ($staleFail.Output -match 'An old error')) 'a failing build does not print the results of an old SARIF file'
+
+$sharedScripts = Join-Path $work 'shared-area-scripts'
+New-Item -ItemType Directory -Force (Join-Path $sharedScripts 'hooks') | Out-Null
+foreach ($script in 'run-area.ps1', 'tree-id.ps1') { Copy-Item (Join-Path $ScriptsDir $script) $sharedScripts }
+$sharedHelpers = (Get-Content (Join-Path $ScriptsDir 'hooks/checkout-helpers.ps1') -Raw).Replace("'keycloak-theme'", "'keycloak-theme', 'extra-front'")
+Set-Content (Join-Path $sharedScripts 'hooks/checkout-helpers.ps1') $sharedHelpers -NoNewline
+$sharedRepo = New-AreaRepo 'ra-shared-paths'
+$sharedTreeBefore = (& pwsh -NoProfile -File (Join-Path $sharedScripts 'tree-id.ps1') -Repo $sharedRepo -Area frontend 2>&1) -join ''
+New-Item -ItemType Directory -Force (Join-Path $sharedRepo 'extra-front') | Out-Null
+Set-Content (Join-Path $sharedRepo 'extra-front/e.ts') 'export const e = 1;'
+$sharedTreeAfter = (& pwsh -NoProfile -File (Join-Path $sharedScripts 'tree-id.ps1') -Repo $sharedRepo -Area frontend 2>&1) -join ''
+$sharedLog = Join-Path $work 'ra-shared.log'
+New-Item -ItemType File $sharedLog | Out-Null
+$env:FAKE_LOG = $sharedLog
+try {
+  $sharedOutput = & pwsh -NoProfile -File (Join-Path $sharedScripts 'run-area.ps1') -Area frontend -Repo $sharedRepo -Base base -FormatScript $areaFormat 2>&1
+}
+finally { Remove-Item Env:FAKE_LOG -ErrorAction SilentlyContinue }
+$sharedTreeRun = (& pwsh -NoProfile -File (Join-Path $sharedScripts 'tree-id.ps1') -Repo $sharedRepo -Area frontend 2>&1) -join ''
+Assert-That ($sharedTreeBefore -ne $sharedTreeAfter -and (@(Get-Content $sharedLog) -contains 'format extra-front/e.ts,frontend/app.ts') -and
+  ("$(@($sharedOutput)[-1])" -eq "Full run frontend: tree $sharedTreeRun; lint, ng build, ng test -> 3 passed, 0 failed")) `
+  'a path added only to the shared frontend path list changes the tree ID and the files of the run'
 
 $longRun = Invoke-Area (New-AreaRepo 'ra-long' @{ LongLine = $true }) 'backend'
 Assert-That ($longRun.Exit -eq 1 -and ($longRun.Output -contains 'src/b.cs:2 has 53 characters; max_line_length is 40.') -and
@@ -1303,11 +1629,65 @@ Assert-That ($openRun.Exit -eq 1 -and $openRun.Last -like 'RUN FAILED backend: a
   (Test-Path $openLock) -and ($openRun.Log -notcontains 'dotnet build')) `
   'a run while another run holds the lock file open with an exclusive create fails at once and leaves the lock'
 
-$env:PATH = $previousPath
+
+
+
+
+# --- tooling area (Step 86) ---
+function New-ToolingRepo([string] $name, [string[]] $changed) {
+  $dir = New-Repo $name
+  foreach ($folder in '.claude/rules', '.claude/agents', '.claude/commands', '.claude/hooks/tests', '.claude/tests', 'scripts/tests', 'src') {
+    New-Item -ItemType Directory -Force (Join-Path $dir $folder) | Out-Null
+  }
+  $suiteTemplate = @('param()', 'Add-Content $env:FAKE_LOG "suite @SUITE@"', 'if ($env:FAKE_SUITE_FAIL -eq "@SUITE@") { Write-Host "  FAIL a sample check"; exit 1 }', 'Write-Host "All checks passed."')
+  foreach ($suite in '.claude/tests/rules.tests.ps1', '.claude/hooks/tests/hook-scope.tests.ps1', '.claude/tests/flow-scripts.tests.ps1',
+    'scripts/tests/verify-slots.tests.ps1', 'scripts/tests/agent-chrome.tests.ps1') {
+    Set-Content (Join-Path $dir $suite) ($suiteTemplate | ForEach-Object { $_.Replace('@SUITE@', (Split-Path $suite -Leaf)) })
+  }
+  foreach ($file in $changed + @('src/a.cs')) { Set-Content (Join-Path $dir $file) 'x' }
+  Save-Commit $dir 'base'
+  git -C $dir tag base
+  foreach ($file in $changed) { Add-Content (Join-Path $dir $file) '# edit' }
+  return $dir
+}
+
+$rulesRepo = New-ToolingRepo 'ra-tooling-rules' @('.claude/rules/sample.md')
+$rulesRun = Invoke-Area $rulesRepo 'tooling'
+$rulesTree = Get-AreaTreeId $rulesRepo 'tooling'
+Assert-That ($rulesRun.Exit -eq 0 -and $rulesRun.Last -eq "Full run tooling: tree $rulesTree; suites rules.tests.ps1 -> passed") `
+  'a changed .claude/rules/ file runs only rules.tests.ps1 and prints the Full run tooling line'
+Assert-That (($rulesRun.Log -join '|') -eq 'suite rules.tests.ps1') 'a tooling run starts no format step and no build, only the matching suite'
+
+foreach ($rulesCase in @(@('ra-tooling-agent', '.claude/agents/executor.md'), @('ra-tooling-command', '.claude/commands/spec.md'))) {
+  $rulesFileRun = Invoke-Area (New-ToolingRepo $rulesCase[0] @($rulesCase[1])) 'tooling'
+  Assert-That ($rulesFileRun.Exit -eq 0 -and ($rulesFileRun.Log -join '|') -eq 'suite rules.tests.ps1') `
+    "a changed $($rulesCase[1]) runs rules.tests.ps1"
+}
+$backendOnlyRun = Invoke-Area (New-ToolingRepo 'ra-tooling-backend' @('src/b.cs')) 'tooling'
+Assert-That ($backendOnlyRun.Exit -eq 0 -and $backendOnlyRun.Last -like 'Full run tooling: tree *; suites none -> passed' -and $backendOnlyRun.Log.Count -eq 0) `
+  'a changed backend file runs no tool suite'
+$sharedHelperRun = Invoke-Area (New-ToolingRepo 'ra-tooling-helper' @('.claude/hooks/checkout-helpers.ps1')) 'tooling'
+Assert-That ($sharedHelperRun.Exit -eq 0 -and (($sharedHelperRun.Log | Sort-Object) -join '|') -eq 'suite flow-scripts.tests.ps1|suite hook-scope.tests.ps1|suite rules.tests.ps1') `
+  'a changed shared hook helper (checkout-helpers.ps1) runs hook-scope.tests.ps1 and flow-scripts.tests.ps1 (and rules.tests.ps1, which reads every .ps1 of .claude/)'
+$otherHookRun = Invoke-Area (New-ToolingRepo 'ra-tooling-hook' @('.claude/hooks/verify-changed.ps1')) 'tooling'
+Assert-That ($otherHookRun.Exit -eq 0 -and (($otherHookRun.Log | Sort-Object) -join '|') -eq 'suite hook-scope.tests.ps1|suite rules.tests.ps1') `
+  'a changed hook file that no script dot-sources (verify-changed.ps1) runs hook-scope.tests.ps1 and rules.tests.ps1, not flow-scripts.tests.ps1'
+
+$noSuiteRun = Invoke-Area (New-ToolingRepo 'ra-tooling-none' @('.claude/commands/note.txt')) 'tooling'
+Assert-That ($noSuiteRun.Exit -eq 0 -and $noSuiteRun.Last -like 'Full run tooling: tree *; suites none -> passed' -and $noSuiteRun.Log.Count -eq 0) `
+  'a tooling run with no matching pattern runs no suite and says suites none'
+
+$suiteFail = Invoke-Area (New-ToolingRepo 'ra-tooling-fail' @('.claude/hooks/x.ps1')) 'tooling' @{ FAKE_SUITE_FAIL = 'hook-scope.tests.ps1' }
+Assert-That ($suiteFail.Exit -eq 1 -and $suiteFail.Last -eq 'RUN FAILED tooling: hook-scope.tests.ps1 - FAIL a sample check') `
+  'a failing suite prints RUN FAILED tooling with the suite and its first FAIL line'
+
+}
+
+if ($previousPath) { $env:PATH = $previousPath }
 
 Remove-Item -Recurse -Force $work -ErrorAction SilentlyContinue
 if ($failures.Count -gt 0) {
   Write-Host "`n$($failures.Count) check(s) failed." -ForegroundColor Red
   exit 1
 }
-Write-Host "`nAll checks passed."
+Write-Host "`nAll checks passed ($($ranSections -join ', '))."
