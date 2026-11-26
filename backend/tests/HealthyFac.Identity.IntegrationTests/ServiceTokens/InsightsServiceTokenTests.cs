@@ -1,39 +1,29 @@
 using System.Net;
 using HealthyFac.Identity.IntegrationTests.Realm.Data;
 using HealthyFac.Identity.IntegrationTests.ServiceTokens.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Identity.IntegrationTests.ServiceTokens;
 
 [Collection(KeycloakRealmCollection.Name)]
+[Feature(TestFeatures.Identity)]
 public sealed class InsightsServiceTokenTests(KeycloakRealmCollectionFixture fixture)
 {
     private readonly KeycloakRealmFixture _realm = fixture.Realm;
 
-    [Fact]
-    public async Task ServiceToken_WithFilesScope_CarriesOnlyTheFilesReadPermission()
+    [Theory]
+    [MemberData(nameof(InsightsServiceTokenTestData.Scopes), MemberType = typeof(InsightsServiceTokenTestData))]
+    public async Task ServiceToken_WithScope_CarriesOnlyThePermissionsOfThatScope(
+        string caseName,
+        string scope,
+        string[] expectedPermissions,
+        string expectedAudience
+    )
     {
-        var claims = await RequestClaimsAsync(InsightsServiceTokenTestData.FilesScope);
+        var claims = await RequestClaimsAsync(scope);
 
-        claims.Permissions().Should().BeEquivalentTo(InsightsServiceTokenTestData.FilesPermissions);
-        claims.Audiences().Should().Contain(RealmTestData.DocumentClientId);
-    }
-
-    [Fact]
-    public async Task ServiceToken_WithTelemetryScope_CarriesOnlyTheTelemetryReads()
-    {
-        var claims = await RequestClaimsAsync(InsightsServiceTokenTestData.TelemetryScope);
-
-        claims.Permissions().Should().BeEquivalentTo(InsightsServiceTokenTestData.TelemetryPermissions);
-        claims.Audiences().Should().Contain(RealmTestData.TelemetryClientId);
-    }
-
-    [Fact]
-    public async Task ServiceToken_WithWorkOrdersScope_CarriesOnlyTheWorkOrderRead()
-    {
-        var claims = await RequestClaimsAsync(InsightsServiceTokenTestData.WorkOrdersScope);
-
-        claims.Permissions().Should().BeEquivalentTo(InsightsServiceTokenTestData.WorkOrdersPermissions);
-        claims.Audiences().Should().Contain(RealmTestData.CoreClientId);
+        claims.Permissions().Should().BeEquivalentTo(expectedPermissions, caseName);
+        claims.Audiences().Should().Contain(expectedAudience);
     }
 
     [Fact]

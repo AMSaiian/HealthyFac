@@ -2,10 +2,13 @@ using HealthyFac.Seeder.IntegrationTests.Hosting;
 using HealthyFac.Seeder.IntegrationTests.WorkOrders.Data;
 using HealthyFac.Seeder.Moments;
 using HealthyFac.Seeder.SeedFiles;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Seeder.IntegrationTests.WorkOrders;
 
 [Collection(SeederCollection.Name)]
+[Feature(TestFeatures.Seeding)]
+[Feature(TestFeatures.WorkOrders)]
 public sealed class WorkOrdersSeedTests(SeederFixture fixture)
 {
     private readonly SeederFixture _fixture = fixture;

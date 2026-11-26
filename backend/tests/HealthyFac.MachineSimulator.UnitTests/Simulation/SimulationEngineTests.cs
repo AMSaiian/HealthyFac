@@ -6,6 +6,7 @@ using HealthyFac.MachineSimulator.Scenarios.Modules;
 using HealthyFac.MachineSimulator.Simulation;
 using HealthyFac.MachineSimulator.UnitTests.Simulation.Data;
 using HealthyFac.Shared.Application.Observability;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.Metrics.Testing;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -14,6 +15,7 @@ using Microsoft.Extensions.Time.Testing;
 
 namespace HealthyFac.MachineSimulator.UnitTests.Simulation;
 
+[Feature(TestFeatures.Simulation)]
 public sealed class SimulationEngineTests
 {
     private readonly FakeTimeProvider _time = new(SimulationEngineTestData.Start);

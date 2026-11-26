@@ -3,9 +3,11 @@ using HealthyFac.MachineSimulator.Scenarios.Machines;
 using HealthyFac.MachineSimulator.Scenarios.Modules;
 using HealthyFac.MachineSimulator.UnitTests.Scenarios.Data;
 using HealthyFac.Telemetry.Domain.MetricDefinitions;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.MachineSimulator.UnitTests.Scenarios;
 
+[Feature(TestFeatures.Simulation)]
 public sealed class GenericScenarioTests
 {
     private readonly GenericScenario _scenario = new();

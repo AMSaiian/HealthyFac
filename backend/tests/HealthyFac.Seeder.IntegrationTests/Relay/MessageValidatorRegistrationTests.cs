@@ -1,11 +1,14 @@
 using FluentValidation;
 using HealthyFac.Seeder.IntegrationTests.Hosting;
 using HealthyFac.Shared.Infrastructure.Messaging.Transport;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Seeder.IntegrationTests.Relay;
 
 [Collection(SeederCollection.Name)]
+[Feature(TestFeatures.Seeding)]
+[Feature(TestFeatures.Messaging)]
 public sealed class MessageValidatorRegistrationTests(SeederFixture fixture)
 {
     private readonly SeederFixture _fixture = fixture;

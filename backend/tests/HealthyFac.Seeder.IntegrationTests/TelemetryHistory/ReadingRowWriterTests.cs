@@ -6,12 +6,16 @@ using HealthyFac.Seeder.TelemetryHistory.Persistence;
 using HealthyFac.Telemetry.Application.Intake;
 using HealthyFac.Telemetry.Domain.Intake;
 using HealthyFac.Telemetry.Infrastructure.Database;
+using HealthyFac.Testing.Features;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Seeder.IntegrationTests.TelemetryHistory;
 
 [Collection(SeederCollection.Name)]
+[Feature(TestFeatures.Seeding)]
+[Feature(TestFeatures.Intake)]
+[Feature(TestFeatures.Evaluation)]
 public sealed class ReadingRowWriterTests(SeederFixture fixture)
 {
     private readonly SeederFixture _fixture = fixture;

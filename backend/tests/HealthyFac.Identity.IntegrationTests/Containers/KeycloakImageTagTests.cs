@@ -1,7 +1,10 @@
 using HealthyFac.Testing.Containers;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Identity.IntegrationTests.Containers;
 
+[Feature(TestFeatures.Identity)]
+[Feature(TestFeatures.Conventions)]
 public sealed class KeycloakImageTagTests
 {
     private const string FromPrefix = "FROM ";

@@ -15,10 +15,14 @@ using HealthyFac.Seeder.IntegrationTests.Timeline.Data;
 using HealthyFac.Seeder.IntegrationTests.WorkOrders.Data;
 using HealthyFac.Seeder.SeedFiles;
 using HealthyFac.Seeder.TelemetryHistory;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Seeder.IntegrationTests.TelemetryHistory;
 
 [Collection(SeederCollection.Name)]
+[Feature(TestFeatures.Seeding)]
+[Feature(TestFeatures.Intake)]
+[Feature(TestFeatures.Evaluation)]
 public sealed class TelemetryHistorySeedTests(SeederFixture fixture)
 {
     private readonly SeederFixture _fixture = fixture;

@@ -3,10 +3,13 @@ using HealthyFac.Seeder.IntegrationTests.Hosting;
 using HealthyFac.Seeder.IntegrationTests.Ingest.Data;
 using HealthyFac.Seeder.IntegrationTests.Machines.Data;
 using HealthyFac.Seeder.IntegrationTests.People.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Seeder.IntegrationTests.Machines;
 
 [Collection(SeederCollection.Name)]
+[Feature(TestFeatures.Seeding)]
+[Feature(TestFeatures.Machines)]
 public sealed class MachinesSeedTests(SeederFixture fixture)
 {
     private readonly SeederFixture _fixture = fixture;

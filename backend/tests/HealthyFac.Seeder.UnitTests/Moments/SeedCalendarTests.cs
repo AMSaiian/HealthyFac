@@ -1,9 +1,11 @@
 using System.Globalization;
 using HealthyFac.Seeder.Moments;
 using HealthyFac.Seeder.UnitTests.Moments.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Seeder.UnitTests.Moments;
 
+[Feature(TestFeatures.Seeding)]
 public sealed class SeedCalendarTests
 {
     private static readonly TimeZoneInfo Kyiv = TimeZoneInfo.FindSystemTimeZoneById(SeedCalendarTestData.KyivZoneId);

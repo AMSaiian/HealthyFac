@@ -1,7 +1,9 @@
 using HealthyFac.Identity.IntegrationTests.Realm.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Identity.IntegrationTests.Realm;
 
+[Feature(TestFeatures.Identity)]
 public sealed class RealmRoleFileTests
 {
     [Theory]

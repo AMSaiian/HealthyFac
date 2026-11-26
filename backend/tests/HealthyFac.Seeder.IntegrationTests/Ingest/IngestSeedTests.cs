@@ -2,10 +2,13 @@ using System.Security.Cryptography;
 using HealthyFac.Document.Domain.Files;
 using HealthyFac.Seeder.IntegrationTests.Hosting;
 using HealthyFac.Seeder.IntegrationTests.Ingest.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Seeder.IntegrationTests.Ingest;
 
 [Collection(SeederCollection.Name)]
+[Feature(TestFeatures.Seeding)]
+[Feature(TestFeatures.Ingest)]
 public sealed class IngestSeedTests(SeederFixture fixture)
 {
     private readonly SeederFixture _fixture = fixture;

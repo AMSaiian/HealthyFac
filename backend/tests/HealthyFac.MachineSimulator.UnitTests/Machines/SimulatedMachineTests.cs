@@ -3,13 +3,16 @@ using HealthyFac.MachineSimulator.Scenarios;
 using HealthyFac.MachineSimulator.Scenarios.Machines.Snapshots;
 using HealthyFac.MachineSimulator.Scenarios.Modules;
 using HealthyFac.MachineSimulator.UnitTests.Machines.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.MachineSimulator.UnitTests.Machines;
 
+[Feature(TestFeatures.Simulation)]
 public sealed class SimulatedMachineTests
 {
     [Theory]
     [MemberData(nameof(SimulatedMachineTestData.GoLiveGates), MemberType = typeof(SimulatedMachineTestData))]
+    [Feature(TestFeatures.Machines)]
     public void IsLive_AtLateEveningUtcInKyiv_UsesTheCompanyDay(string caseName, DateOnly goLiveOn, bool expected)
     {
         var machine = SimulatedMachineTestData.Create(SimulatedMachineTestData.Snapshot(goLiveOn: goLiveOn));
@@ -20,6 +23,7 @@ public sealed class SimulatedMachineTests
     }
 
     [Fact]
+    [Feature(TestFeatures.Machines)]
     public void Tick_WithoutRegistration_MakesNoMessage()
     {
         var snapshot = SimulatedMachineTestData.Snapshot(isRegistered: false);
@@ -31,6 +35,7 @@ public sealed class SimulatedMachineTests
     }
 
     [Fact]
+    [Feature(TestFeatures.Machines)]
     public void Tick_WithRegistration_MakesAMessage()
     {
         var machine = SimulatedMachineTestData.Create(SimulatedMachineTestData.Snapshot());
@@ -88,6 +93,7 @@ public sealed class SimulatedMachineTests
     }
 
     [Fact]
+    [Feature(TestFeatures.Machines)]
     public void Tick_GenericMachineInMaintenance_MakesNoMessage()
     {
         var snapshot = SimulatedMachineTestData.Snapshot(
@@ -102,6 +108,7 @@ public sealed class SimulatedMachineTests
     }
 
     [Fact]
+    [Feature(TestFeatures.Machines)]
     public void Tick_DetailedMachineInMaintenance_SendsStoppedValuesAndFreezesTheRunTime()
     {
         var snapshot = SimulatedMachineTestData.Snapshot(
@@ -122,6 +129,7 @@ public sealed class SimulatedMachineTests
     }
 
     [Fact]
+    [Feature(TestFeatures.Machines)]
     public void Apply_WithMaintenanceThenOperationalAfterDiscovery_ResetsTheModules()
     {
         var snapshot = SimulatedMachineTestData.Snapshot(SimulatedMachineTestData.CncSerialNumber);
@@ -144,6 +152,7 @@ public sealed class SimulatedMachineTests
     }
 
     [Fact]
+    [Feature(TestFeatures.Machines)]
     public void Apply_WithOutOfServiceThenOperational_KeepsTheFailure()
     {
         var snapshot = SimulatedMachineTestData.Snapshot(SimulatedMachineTestData.CncSerialNumber);
@@ -164,6 +173,7 @@ public sealed class SimulatedMachineTests
     }
 
     [Fact]
+    [Feature(TestFeatures.Machines)]
     public void Apply_WithMaintenanceEndBeforeDiscovery_ResetsNothing()
     {
         var snapshot = SimulatedMachineTestData.Snapshot(SimulatedMachineTestData.CncSerialNumber);

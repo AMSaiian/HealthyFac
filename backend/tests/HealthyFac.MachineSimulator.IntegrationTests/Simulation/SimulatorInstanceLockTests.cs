@@ -1,6 +1,7 @@
 using HealthyFac.MachineSimulator.IntegrationTests.Simulation.Data;
 using HealthyFac.MachineSimulator.Machines;
 using HealthyFac.MachineSimulator.Simulation;
+using HealthyFac.Testing.Features;
 using HealthyFac.Testing.Logging;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -9,6 +10,7 @@ using Npgsql;
 namespace HealthyFac.MachineSimulator.IntegrationTests.Simulation;
 
 [Collection(SimulatorCollection.Name)]
+[Feature(TestFeatures.Simulation)]
 public sealed class SimulatorInstanceLockTests(SimulatorFixture fixture)
 {
     private readonly SimulatorFixture _fixture = fixture;

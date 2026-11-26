@@ -4,10 +4,13 @@ using HealthyFac.Insights.Domain.Cases.Signals;
 using HealthyFac.Seeder.IntegrationTests.Cases.Data;
 using HealthyFac.Seeder.IntegrationTests.Hosting;
 using HealthyFac.Seeder.IntegrationTests.Machines.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Seeder.IntegrationTests.Cases;
 
 [Collection(SeederCollection.Name)]
+[Feature(TestFeatures.Seeding)]
+[Feature(TestFeatures.Cases)]
 public sealed class CasesSeedTests(SeederFixture fixture)
 {
     private readonly SeederFixture _fixture = fixture;

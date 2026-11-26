@@ -3,10 +3,12 @@ using HealthyFac.Auth.Application.Identities.IdentityAdmin;
 using HealthyFac.Auth.Application.Locales;
 using HealthyFac.Auth.IntegrationTests.Identities.Data;
 using HealthyFac.Auth.IntegrationTests.Keycloak.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Auth.IntegrationTests.Keycloak;
 
 [Collection(KeycloakCollection.Name)]
+[Feature(TestFeatures.Identity)]
 public sealed class KeycloakIdentityAdminTests(ProvisioningFixture fixture)
 {
     private readonly KeycloakAdminFixture _fixture = fixture.Keycloak;

@@ -2,11 +2,13 @@ using System.Text.Json;
 using HealthyFac.MachineSimulator.IntegrationTests.Simulation.Data;
 using HealthyFac.Shared.Application.Observability;
 using HealthyFac.Shared.Infrastructure.Messaging.Transport;
+using HealthyFac.Testing.Features;
 using HealthyFac.Testing.Tracing;
 
 namespace HealthyFac.MachineSimulator.IntegrationTests.Simulation;
 
 [Collection(SimulatorCollection.Name)]
+[Feature(TestFeatures.Simulation)]
 public sealed class PayloadTests(SimulatorFixture fixture)
 {
     private readonly SimulatorFixture _fixture = fixture;

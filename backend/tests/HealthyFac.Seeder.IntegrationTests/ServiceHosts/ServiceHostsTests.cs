@@ -9,6 +9,7 @@ using HealthyFac.Shared.Application.BackgroundQueues;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.Realtime;
 using HealthyFac.Telemetry.Messaging.MetricUnits;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Rebus.Bus;
@@ -17,6 +18,7 @@ using SeederHosts = HealthyFac.Seeder.ServiceHosts.ServiceHosts;
 namespace HealthyFac.Seeder.IntegrationTests.ServiceHosts;
 
 [Collection(SeederCollection.Name)]
+[Feature(TestFeatures.Seeding)]
 public sealed class ServiceHostsTests(SeederFixture fixture)
 {
     private readonly SeederFixture _fixture = fixture;

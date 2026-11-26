@@ -10,10 +10,12 @@ using HealthyFac.Seeder.IntegrationTests.Relay.Data;
 using HealthyFac.Seeder.IntegrationTests.TelemetryHistory.Data;
 using HealthyFac.Seeder.IntegrationTests.WorkOrders.Data;
 using HealthyFac.Seeder.Moments;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Seeder.IntegrationTests.FullSeed;
 
 [Collection(SeederCollection.Name)]
+[Feature(TestFeatures.Seeding)]
 public sealed class FullSeedTests(SeederFixture fixture)
 {
     private readonly SeederFixture _fixture = fixture;

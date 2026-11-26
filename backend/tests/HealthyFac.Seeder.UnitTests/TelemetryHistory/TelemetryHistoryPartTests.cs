@@ -2,9 +2,13 @@ using System.Text.Json.Nodes;
 using HealthyFac.Seeder.SeedFiles;
 using HealthyFac.Seeder.TelemetryHistory;
 using HealthyFac.Seeder.UnitTests.TelemetryHistory.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Seeder.UnitTests.TelemetryHistory;
 
+[Feature(TestFeatures.Seeding)]
+[Feature(TestFeatures.Intake)]
+[Feature(TestFeatures.Evaluation)]
 public sealed class TelemetryHistoryPartTests
 {
     [Fact(Explicit = true)]

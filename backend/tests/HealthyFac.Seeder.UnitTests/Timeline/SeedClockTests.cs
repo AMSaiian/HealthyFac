@@ -1,7 +1,9 @@
 using HealthyFac.Seeder.Timeline;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Seeder.UnitTests.Timeline;
 
+[Feature(TestFeatures.Seeding)]
 public sealed class SeedClockTests
 {
     private static readonly DateTimeOffset Moment = new(

@@ -1,9 +1,11 @@
 using System.Text.Json;
 using HealthyFac.MachineSimulator.Scenarios.Payloads;
 using HealthyFac.MachineSimulator.UnitTests.Publishing.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.MachineSimulator.UnitTests.Publishing;
 
+[Feature(TestFeatures.Simulation)]
 public sealed class MachinePayloadBuilderTests
 {
     [Fact]

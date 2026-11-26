@@ -4,10 +4,13 @@ using HealthyFac.Seeder.IntegrationTests.Hosting;
 using HealthyFac.Seeder.IntegrationTests.People.Data;
 using HealthyFac.Seeder.IntegrationTests.Relay.Data;
 using HealthyFac.Seeder.SeedFiles;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Seeder.IntegrationTests.People;
 
 [Collection(SeederCollection.Name)]
+[Feature(TestFeatures.Seeding)]
+[Feature(TestFeatures.Companies)]
 public sealed class PeopleSeedTests(SeederFixture fixture)
 {
     private readonly SeederFixture _fixture = fixture;

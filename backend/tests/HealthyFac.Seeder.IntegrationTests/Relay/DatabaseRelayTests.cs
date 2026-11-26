@@ -3,11 +3,14 @@ using HealthyFac.Seeder.IntegrationTests.Hosting;
 using HealthyFac.Seeder.IntegrationTests.Relay.Data;
 using HealthyFac.Shared.Infrastructure.Messaging.Receiving;
 using HealthyFac.Telemetry.Application.MachineRegistrations;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Seeder.IntegrationTests.Relay;
 
 [Collection(SeederCollection.Name)]
+[Feature(TestFeatures.Seeding)]
+[Feature(TestFeatures.Messaging)]
 public sealed class DatabaseRelayTests(SeederFixture fixture)
 {
     private readonly SeederFixture _fixture = fixture;

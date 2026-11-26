@@ -8,9 +8,11 @@ using HealthyFac.Seeder.TelemetryHistory;
 using HealthyFac.Seeder.Timeline;
 using HealthyFac.Seeder.UnitTests.SeedFiles.Data;
 using HealthyFac.Seeder.WorkOrders;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Seeder.UnitTests.SeedFiles;
 
+[Feature(TestFeatures.Seeding)]
 public sealed class CommittedSeedCheckTests
 {
     private const int CatchUpBatchReadings = 10000;

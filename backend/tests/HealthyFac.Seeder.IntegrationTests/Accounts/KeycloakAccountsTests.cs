@@ -1,10 +1,13 @@
 using HealthyFac.Seeder.Accounts;
 using HealthyFac.Seeder.IntegrationTests.Accounts.Data;
 using HealthyFac.Seeder.IntegrationTests.Hosting;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Seeder.IntegrationTests.Accounts;
 
 [Collection(SeederCollection.Name)]
+[Feature(TestFeatures.Seeding)]
+[Feature(TestFeatures.Identity)]
 public sealed class KeycloakAccountsTests(SeederFixture fixture)
 {
     private readonly SeederFixture _fixture = fixture;

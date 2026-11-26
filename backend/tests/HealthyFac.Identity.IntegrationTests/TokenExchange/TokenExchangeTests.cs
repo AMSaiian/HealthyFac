@@ -1,10 +1,12 @@
 using System.Net;
 using HealthyFac.Identity.IntegrationTests.Realm.Data;
 using HealthyFac.Identity.IntegrationTests.TokenExchange.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Identity.IntegrationTests.TokenExchange;
 
 [Collection(KeycloakRealmCollection.Name)]
+[Feature(TestFeatures.Identity)]
 public sealed class TokenExchangeTests(KeycloakRealmCollectionFixture fixture)
 {
     private readonly TokenExchangeFixture _fixture = fixture.TokenExchange;

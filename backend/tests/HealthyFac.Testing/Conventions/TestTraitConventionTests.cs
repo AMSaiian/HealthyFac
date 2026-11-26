@@ -1,7 +1,6 @@
 using System.Reflection;
 using System.Text.RegularExpressions;
 using HealthyFac.Testing.Features;
-using HealthyFac.Testing.Repository;
 using Xunit.v3;
 
 namespace HealthyFac.Testing.Conventions;
@@ -11,7 +10,6 @@ public sealed partial class TestTraitConventionTests
 {
     private const string KindTraitName = "Kind";
     private const string ServiceTraitName = "Service";
-    private const string PendingFilePath = "backend/tests/feature-audit-pending.txt";
 
     [Fact]
     public void Assembly_WithItsName_HasOneKindAndOneServiceTrait()
@@ -31,11 +29,6 @@ public sealed partial class TestTraitConventionTests
     public void TestMethods_OfTheAssembly_HaveKnownFeatureTraits()
     {
         var assembly = typeof(TestTraitConventionTests).Assembly;
-
-        if (IsPending(assembly.GetName().Name!))
-        {
-            return;
-        }
 
         var knownFeatures = TestFeatures.All.ToHashSet();
 
@@ -77,13 +70,6 @@ public sealed partial class TestTraitConventionTests
 
     private static IEnumerable<KeyValuePair<string, string>> ReadTraits(IEnumerable<object> attributes) =>
         attributes.OfType<ITraitAttribute>().SelectMany(attribute => attribute.GetTraits());
-
-    private static bool IsPending(string assemblyName)
-    {
-        var path = Path.Combine(RepositoryRoot.Find().FullName, PendingFilePath);
-
-        return File.Exists(path) && File.ReadAllLines(path).Select(line => line.Trim()).Contains(assemblyName);
-    }
 
     [GeneratedRegex(@"^HealthyFac\.(?<service>.+)\.(?<kind>Unit|Architecture|Integration|Api)Tests$")]
     private static partial Regex TestProjectNamePattern();

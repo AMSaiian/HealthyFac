@@ -1,9 +1,0 @@
-HealthyFac.Auth.ArchitectureTests
-HealthyFac.Auth.IntegrationTests
-HealthyFac.Identity.IntegrationTests
-HealthyFac.MachineSimulator.ArchitectureTests
-HealthyFac.MachineSimulator.IntegrationTests
-HealthyFac.MachineSimulator.UnitTests
-HealthyFac.Seeder.ArchitectureTests
-HealthyFac.Seeder.IntegrationTests
-HealthyFac.Seeder.UnitTests

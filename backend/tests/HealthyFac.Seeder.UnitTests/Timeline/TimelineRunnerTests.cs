@@ -1,8 +1,10 @@
 using HealthyFac.Seeder.Timeline;
 using HealthyFac.Seeder.UnitTests.Timeline.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Seeder.UnitTests.Timeline;
 
+[Feature(TestFeatures.Seeding)]
 public sealed class TimelineRunnerTests
 {
     private static readonly TimeZoneInfo Kyiv = TimeZoneInfo.FindSystemTimeZoneById(id: "Europe/Kyiv");

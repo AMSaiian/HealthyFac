@@ -2,9 +2,11 @@ using HealthyFac.MachineSimulator.Scenarios.Curves;
 using HealthyFac.MachineSimulator.Scenarios.Modules;
 using HealthyFac.MachineSimulator.Scenarios.Presets;
 using HealthyFac.MachineSimulator.UnitTests.Scenarios.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.MachineSimulator.UnitTests.Scenarios;
 
+[Feature(TestFeatures.Simulation)]
 public sealed class CncTurningCenterScenarioTests
 {
     private readonly CncTurningCenterScenario _scenario = new();

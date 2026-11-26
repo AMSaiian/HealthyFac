@@ -1,10 +1,13 @@
 using HealthyFac.Auth.IntegrationTests.Identities.Data;
 using HealthyFac.Auth.IntegrationTests.Keycloak.Data;
+using HealthyFac.Testing.Features;
 using StackExchange.Redis;
 
 namespace HealthyFac.Auth.IntegrationTests.Identities;
 
 [Collection(KeycloakCollection.Name)]
+[Feature(TestFeatures.Identity)]
+[Feature(TestFeatures.Companies)]
 public sealed class RevokeIdentityTests(ProvisioningFixture fixture)
 {
     private readonly ProvisioningFixture _fixture = fixture;

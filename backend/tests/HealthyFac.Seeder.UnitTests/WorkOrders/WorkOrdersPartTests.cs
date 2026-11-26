@@ -2,9 +2,12 @@ using System.Text.Json.Nodes;
 using HealthyFac.Seeder.SeedFiles;
 using HealthyFac.Seeder.UnitTests.SeedFiles.Data;
 using HealthyFac.Seeder.WorkOrders;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Seeder.UnitTests.WorkOrders;
 
+[Feature(TestFeatures.Seeding)]
+[Feature(TestFeatures.WorkOrders)]
 public sealed class WorkOrdersPartTests
 {
     private const string OrderKey = "coolant-check";

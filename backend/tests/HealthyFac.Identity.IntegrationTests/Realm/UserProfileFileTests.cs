@@ -1,8 +1,10 @@
 using System.Text.Json.Nodes;
 using HealthyFac.Identity.IntegrationTests.Realm.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Identity.IntegrationTests.Realm;
 
+[Feature(TestFeatures.Identity)]
 public sealed class UserProfileFileTests
 {
     [Fact]

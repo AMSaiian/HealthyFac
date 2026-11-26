@@ -1,11 +1,14 @@
 using HealthyFac.Seeder.Reset;
 using HealthyFac.Seeder.UnitTests.Reset.Data;
 using HealthyFac.Shared.Application.CurrentUser.Actors;
+using HealthyFac.Testing.Features;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace HealthyFac.Seeder.UnitTests.Reset;
 
+[Feature(TestFeatures.Seeding)]
+[Feature(TestFeatures.Persistence)]
 public sealed class TruncateTablesTests
 {
     [Theory(Explicit = true)]

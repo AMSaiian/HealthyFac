@@ -3,10 +3,12 @@ using HealthyFac.Seeder.IntegrationTests.Ingest.Data;
 using HealthyFac.Seeder.IntegrationTests.Relay.Data;
 using HealthyFac.Seeder.IntegrationTests.Timeline.Data;
 using HealthyFac.Seeder.IntegrationTests.WorkOrders.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Seeder.IntegrationTests.Timeline;
 
 [Collection(SeederCollection.Name)]
+[Feature(TestFeatures.Seeding)]
 public sealed class SeedCompletionTests(SeederFixture fixture)
 {
     private readonly SeederFixture _fixture = fixture;

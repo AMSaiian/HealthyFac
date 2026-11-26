@@ -31,4 +31,10 @@ public static class ModuleStateTestData
             { "AtAlarm", 144, [DrainMilestone.NormalLimit, DrainMilestone.Alarm] },
             { "AtTrip", 180, [DrainMilestone.NormalLimit, DrainMilestone.Alarm, DrainMilestone.Trip] },
         };
+
+    public static TheoryData<string, ModuleMode> ModesBeforeDraining => new()
+    {
+        { "after expected", ModuleMode.Expected },
+        { "after failure", ModuleMode.Failure },
+    };
 }

@@ -1,8 +1,10 @@
 using HealthyFac.Identity.IntegrationTests.Realm.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Identity.IntegrationTests.Realm;
 
 [Collection(KeycloakRealmCollection.Name)]
+[Feature(TestFeatures.Identity)]
 public sealed class RealmImportTests(KeycloakRealmCollectionFixture fixture)
 {
     private readonly KeycloakRealmFixture _fixture = fixture.Realm;

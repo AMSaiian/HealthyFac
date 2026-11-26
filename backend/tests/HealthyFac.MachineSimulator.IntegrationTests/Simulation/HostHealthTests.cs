@@ -3,6 +3,7 @@ using System.Net;
 using System.Text;
 using HealthyFac.MachineSimulator.IntegrationTests.Simulation.Data;
 using HealthyFac.Shared.Application.Observability;
+using HealthyFac.Testing.Features;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Diagnostics.Metrics.Testing;
 using Microsoft.Extensions.Logging;
@@ -10,6 +11,7 @@ using Microsoft.Extensions.Logging;
 namespace HealthyFac.MachineSimulator.IntegrationTests.Simulation;
 
 [Collection(SimulatorOutageCollection.Name)]
+[Feature(TestFeatures.Simulation)]
 public sealed class HostHealthTests(SimulatorFixture fixture)
 {
     private readonly SimulatorFixture _fixture = fixture;

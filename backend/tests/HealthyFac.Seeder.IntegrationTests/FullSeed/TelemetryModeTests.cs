@@ -2,10 +2,12 @@ using HealthyFac.Seeder.IntegrationTests.FullSeed.Data;
 using HealthyFac.Seeder.IntegrationTests.Hosting;
 using HealthyFac.Seeder.IntegrationTests.TelemetryHistory.Data;
 using HealthyFac.Seeder.IntegrationTests.Timeline.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Seeder.IntegrationTests.FullSeed;
 
 [Collection(SeederCollection.Name)]
+[Feature(TestFeatures.Seeding)]
 public sealed class TelemetryModeTests(SeederFixture fixture)
 {
     private readonly SeederFixture _fixture = fixture;

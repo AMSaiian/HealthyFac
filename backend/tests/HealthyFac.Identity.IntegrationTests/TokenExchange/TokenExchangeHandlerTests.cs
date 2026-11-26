@@ -6,12 +6,14 @@ using HealthyFac.Shared.Infrastructure.Caching;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Shared.Infrastructure.CurrentUser.ServiceIdentity;
 using HealthyFac.Shared.Infrastructure.ServiceTokens;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Identity.IntegrationTests.TokenExchange;
 
 [Collection(KeycloakRealmCollection.Name)]
+[Feature(TestFeatures.Identity)]
 public sealed class TokenExchangeHandlerTests(KeycloakRealmCollectionFixture fixture)
 {
     private readonly TokenExchangeFixture _fixture = fixture.TokenExchange;

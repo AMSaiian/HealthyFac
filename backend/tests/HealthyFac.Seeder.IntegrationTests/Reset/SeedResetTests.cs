@@ -4,11 +4,14 @@ using HealthyFac.Seeder.IntegrationTests.People.Data;
 using HealthyFac.Seeder.IntegrationTests.Reset.Data;
 using HealthyFac.Seeder.IntegrationTests.Timeline.Data;
 using HealthyFac.Seeder.Moments;
+using HealthyFac.Testing.Features;
 using Npgsql;
 
 namespace HealthyFac.Seeder.IntegrationTests.Reset;
 
 [Collection(SeederCollection.Name)]
+[Feature(TestFeatures.Seeding)]
+[Feature(TestFeatures.Persistence)]
 public sealed class SeedResetTests(SeederFixture fixture)
 {
     private readonly SeederFixture _fixture = fixture;

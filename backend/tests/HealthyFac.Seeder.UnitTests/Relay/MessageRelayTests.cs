@@ -1,8 +1,11 @@
 using HealthyFac.Seeder.Relay;
 using HealthyFac.Seeder.UnitTests.Relay.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Seeder.UnitTests.Relay;
 
+[Feature(TestFeatures.Seeding)]
+[Feature(TestFeatures.Messaging)]
 public sealed class MessageRelayTests
 {
     [Fact(Explicit = true)]

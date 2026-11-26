@@ -4,11 +4,15 @@ using HealthyFac.Seeder.IntegrationTests.Hosting;
 using HealthyFac.Seeder.IntegrationTests.TelemetryHistory.Data;
 using HealthyFac.Seeder.IntegrationTests.Timeline.Data;
 using HealthyFac.Seeder.IntegrationTests.WorkOrders.Data;
+using HealthyFac.Testing.Features;
 using Npgsql;
 
 namespace HealthyFac.Seeder.IntegrationTests.TelemetryHistory;
 
 [Collection(SeederCollection.Name)]
+[Feature(TestFeatures.Seeding)]
+[Feature(TestFeatures.Intake)]
+[Feature(TestFeatures.Evaluation)]
 public sealed class CommittedTelemetrySeedTests(SeederFixture fixture)
 {
     private readonly SeederFixture _fixture = fixture;

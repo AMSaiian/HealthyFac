@@ -3,9 +3,12 @@ using HealthyFac.Seeder.Cases;
 using HealthyFac.Seeder.SeedFiles;
 using HealthyFac.Seeder.UnitTests.Cases.Data;
 using HealthyFac.Seeder.UnitTests.SeedFiles.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Seeder.UnitTests.Cases;
 
+[Feature(TestFeatures.Seeding)]
+[Feature(TestFeatures.Cases)]
 public sealed class CasesPartTests
 {
     [Fact(Explicit = true)]

@@ -2,6 +2,7 @@ using System.Diagnostics.Metrics;
 using HealthyFac.MachineSimulator.Publishing;
 using HealthyFac.MachineSimulator.Scenarios;
 using HealthyFac.Shared.Application.Observability;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.Metrics.Testing;
 using Instruments = HealthyFac.Shared.Application.Observability.ObservabilityConstants.Simulator.Instruments;
@@ -9,6 +10,7 @@ using Tags = HealthyFac.Shared.Application.Observability.ObservabilityConstants.
 
 namespace HealthyFac.MachineSimulator.UnitTests.Publishing;
 
+[Feature(TestFeatures.Simulation)]
 public sealed class SimulatorMetricsTests
 {
     private readonly IMeterFactory _meterFactory = new ServiceCollection()
