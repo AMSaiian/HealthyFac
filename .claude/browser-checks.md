@@ -51,8 +51,16 @@ The executor, the reviewer, the spec writer, and `/fix` follow this file for eve
 ## Errors
 - A transient error (a screenshot timeout, a slot that does not start, a tool call that times out, a flaky test):
   fix what you can (`restore`, `up`), then run the same command once more. Name it in the line (`retried: <what>`).
-- It fails again: the executor marks the step `[!] ... WAITING: <error>; retried: <what>` and sends `BLOCKED` to
-  `main`; the reviewer reports it. The main session tries once more (`restore`, `up`, the same call), then sends
-  `continue`, or asks Artur.
+- Before a `BLOCKED` or a `WAITING` for the browser, triage in this order: (1) read `outerWidth`, `outerHeight`,
+  `innerWidth`, and `innerHeight` on the page: a tiny outer size means a minimized window; an inner size that does not
+  follow the window means a maximized window or an old tab; (2) run `pwsh scripts/agent-chrome.ps1 restore`; (3) open a
+  new tab; (4) test on an app host (`https://app.s<n>.hfverify.test` or `https://app.healthyfac.test`): the extension
+  has site access only to the HealthyFac hosts, so a page like example.com proves nothing; (5) check with
+  `list_connected_browsers` that the agent Chrome is the browser in use. Write each step taken into the `retried:` part.
+- It fails again, or the environment blocks the step (Docker down, no slot, the agent Chrome not reachable): the
+  executor marks the browser check step `[!] ... WAITING: <error>; retried: <what>`. The cycle goes on, the executor
+  tries the step again at the start of each run, and the last cycle commits only after its flows pass
+  (`commit-cycle.ps1`). The reviewer reports `browser waiting` and files no finding for a waiting step with `retried:`.
+  Never plan a deferred or manual-only browser check.
 - A permission denial is no transient error. Never run the command in another form. Report it; the main session runs
   it.

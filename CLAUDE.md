@@ -11,18 +11,19 @@ HealthyFac is built using a strict layered Clean Architecture: Domain, Applicati
 *   `docs/` — architecture and design documents.
 *   `frontend/` — Angular 22 app (PrimeNG, Tailwind, ngx-translate, SignalStore).
 *   `.claude/` — rules, commands, agents, hooks, and the flow scripts. `scripts/` — the verify stack.
-*   Feature flow: `/spec <feature>` (`.claude/commands/spec.md`) is the only session of a feature. It runs the executor and the reviewer subagents (`.claude/agents/`) and routes their handoffs; `/fix` stays in that session.
+*   Feature flow: `/spec <feature>` (`.claude/commands/spec.md`) is the only session of a feature. It runs the executor and the reviewer subagents (`.claude/agents/`) and routes their handoffs; `/fix` stays in that session. Commits, fixups, and the autosquash follow `.claude/rules/git-commits.md`, **History**.
 
 ## Build and Test
-The repo has two test areas. A change in one area needs only the full commands of that area.
+The repo has three test areas: backend, frontend, and tooling (`.claude/`, `CLAUDE.md`, and `scripts/`). A change in one area needs only the full commands of that area.
 *   **Backend area** (every path outside `frontend/`, `keycloak-theme/`, `.claude/`, and `CLAUDE.md`; the script tests below cover the last two): xUnit v3 on Microsoft Testing Platform (set in `global.json`). A full run is the build and two test commands. `--test-modules` runs the built files and does not build, so the build comes first. Run the integration command only when the unit command passes.
     *   Build: `dotnet build backend/HealthyFac.slnx`
+    *   Agent build (quiet): `dotnet build backend/HealthyFac.slnx -v:q -nologo -clp:NoSummary`. Each project writes its diagnostics to `<project>.sarif` in its intermediate folder (`obj/<Configuration>/<TargetFramework>/`, e.g. `obj/Debug/net10.0/`). The Stop hook build writes it to `artifacts/claude-verify/obj/<project>/debug/`. The Stop hook and the run scripts print them as typed lines.
     *   Unit and architecture tests (no containers, default limit): `dotnet test --test-modules "backend/tests/**/bin/Debug/net10.0/HealthyFac.*.UnitTests.dll;backend/tests/**/bin/Debug/net10.0/HealthyFac.*.ArchitectureTests.dll"`
     *   Integration and API tests (containers, at most 4 projects at a time): `dotnet test --test-modules "backend/tests/**/bin/Debug/net10.0/HealthyFac.*.IntegrationTests.dll;backend/tests/**/bin/Debug/net10.0/HealthyFac.*.ApiTests.dll" --max-parallel-test-modules 4`
     *   Without `--max-parallel-test-modules`, `dotnet test` runs `Environment.ProcessorCount` test projects at a time. The unit command uses that default.
     *   One project: `dotnet test --project <project> --filter <VSTest filter>`.
 *   **Frontend area** (`frontend/`, `keycloak-theme/`): `cd frontend && npm run lint && npx ng build && npx ng test --watch=false`. When `keycloak-theme/` changed, also `cd keycloak-theme && npm run lint && npm test`.
-*   **Script tests:** after a change under `.claude/` or `scripts/`, run the test script of the changed file: `pwsh .claude/tests/flow-scripts.tests.ps1`, `pwsh .claude/tests/rules.tests.ps1`, `pwsh .claude/hooks/tests/hook-scope.tests.ps1`, `pwsh scripts/tests/verify-slots.tests.ps1`, or `pwsh scripts/tests/agent-chrome.tests.ps1`. `check-handoff.ps1` runs them for a feature.
+*   **Script tests:** after a change under `.claude/` or `scripts/`, run the test script of the changed file: `pwsh .claude/tests/flow-scripts.tests.ps1`, `pwsh .claude/tests/rules.tests.ps1`, `pwsh .claude/hooks/tests/hook-scope.tests.ps1`, `pwsh scripts/tests/verify-slots.tests.ps1`, or `pwsh scripts/tests/agent-chrome.tests.ps1`. While you work, run `-Only <the sections of the scripts you changed>` of `flow-scripts.tests.ps1` and `hook-scope.tests.ps1`. `pwsh .claude/run-area.ps1 -Area tooling` runs the whole suites of the changed tool files once per cycle.
 
 ## Rules
 `.claude/rules/` holds every rule, one file per rule, with its full text. That directory is the single source of truth.

@@ -7,8 +7,9 @@
 # rules from the project root in which a session starts, and the hook verifies the checkout of its own script file:
 # a session that starts in the main checkout never formats, builds, or lints the files of the worktree. The subagents
 # work in the checkout of the session.
-# - Without -Resume: creates the worktree <main checkout>-worktrees\<feature> on the branch feature/<feature> from
-#   -MainBranch when the branch has no worktree yet, then starts the session '<feature>-spec' with '/spec <feature>'.
+# - Without -Resume: creates the worktree <main checkout>-worktrees\<feature> on the branch feature/<feature> when the
+#   branch has no worktree yet: it fetches origin/<-MainBranch> and starts the branch from it (else from the local
+#   -MainBranch), with --no-track, then starts the session '<feature>-spec' with '/spec <feature>'.
 # - With -Resume: reopens the session by name (claude --resume '<feature>-spec'), in the worktree of the branch. The
 #   resumed session can resume its executor by its agent ID (agents.md in the feature folder); each reviewer task
 #   starts a new reviewer. It creates the worktree too when the branch has none.
@@ -27,6 +28,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'hooks/checkout-helpers.ps1')
 $commonDir = git -C $PSScriptRoot rev-parse --path-format=absolute --git-common-dir 2>$null
 if ($LASTEXITCODE -ne 0 -or -not $commonDir) { Write-Error 'This script is not inside a git checkout.'; exit 1 }
 $main = (Split-Path $commonDir -Parent) -replace '/', '\'
@@ -46,7 +48,12 @@ if (-not $worktree) {
   $worktree = Join-Path (Split-Path $main -Parent) "$(Split-Path $main -Leaf)-worktrees\$Feature"
   git -C $main show-ref --verify --quiet "refs/heads/$branch"
   if ($LASTEXITCODE -eq 0) { git -C $main worktree add $worktree $branch }
-  else { git -C $main worktree add $worktree -b $branch $MainBranch }
+  else {
+    git -C $main fetch origin $MainBranch 2>&1 | Out-Null
+    if ($LASTEXITCODE -ne 0) { Write-Host "Note: git fetch origin $MainBranch failed; the new branch starts from the local ref." }
+    $startPoint = Get-MainBranchRef $main $MainBranch 'the new branch starts from'
+    git -C $main worktree add --no-track $worktree -b $branch $startPoint
+  }
   if ($LASTEXITCODE -ne 0) { Write-Error "git worktree add failed for $worktree."; exit 1 }
   Write-Host "Created the worktree $worktree on $branch. Run 'npm ci' in its frontend folder before the first frontend test (docs/local-setup.md)."
 }

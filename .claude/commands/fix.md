@@ -69,10 +69,14 @@ Do not make a plan item: propose its step in the report. When I answer "inline a
 ## Log
 - `plan.md`, `#### Deviations` of the open cycle, one entry per call: `*   Inline fix, cycle N (Artur, YYYY-MM-DD: "<my words>"): <each change with its
   files>.` N is the `Cycle:` line. The words "cycle N" let `check-handoff.ps1` count the files.
+  An item that corrects code of an earlier commit of the branch ends its entry with
+  `Fixup: <subject>; files: `<path>`, ...` (`git-commits.md`, **History**). This part comes
+  last in the entry; the entry may wrap over several lines. The next
+  `commit-cycle.ps1` run commits those files as a fixup.
 - `spec.md`: when an item changes what a line describes (a layout, a text, a control),
   update that line in place and add a line to `## Changes` (`spec.md` command).
 - `review.md`: move each finding that an item fixes from `## Open` to `## Closed` as
-  `FIXED INLINE (Artur, YYYY-MM-DD)`, and update the summary table.
+  `FIXED INLINE (Artur, YYYY-MM-DD)`.
 - Run `pwsh <worktree>/.claude/check-plan.ps1 <feature folder>` and fix each line it prints.
 
 ## Review
@@ -84,4 +88,5 @@ Do not make a plan item: propose its step in the report. When I answer "inline a
 - One table: item, verdict, files, check result. Then the plan items, each with the failed
   condition and the proposed step. Then the app URL and the log path.
 - End with: "Check in the browser and tell me 'tested' or the next fix."
+- Name the fixup subject of each item that has one.
 - Never commit. Commit only when I ask. An inline fix after the review of a cycle changes its tree, so commit-cycle.ps1 refuses that cycle until a new review round.

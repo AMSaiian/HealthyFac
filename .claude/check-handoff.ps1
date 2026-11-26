@@ -3,23 +3,29 @@
 # (.claude/agents/executor.md, Handoff).
 # Usage: pwsh .claude/check-handoff.ps1 <feature folder> [-Repo <path>] [-Base <ref>] [-Cycle <N>]
 #        [-MainBranch <name>] [-FormatScript <path>]
-# Defaults: -Repo is the checkout that holds this script file (not the current folder); -Base is the merge base of
-# HEAD and -MainBranch (develop), so a main branch that moved adds no files of other features; -Cycle is the Cycle:
+# Defaults: -Repo is the checkout that holds this script file (not the current folder); -Base is the "Base:" SHA of the
+# plan header, else the merge base of HEAD and origin/-MainBranch (develop; the local branch when origin has none, Get-DefaultBase), so a main branch that
+# moved adds no files of other features; -Cycle is the Cycle:
 # line of plan.md (the highest cycle when plan.md has none); -FormatScript is format-changed.ps1 next to this file.
 # Output: one line for each problem. Exit code 1 when there is one.
-# It runs the format script on the changed files first, so it can change files: each changed file is a problem. After
-# run-area.ps1, the format script skips the files that it formatted at the same tree.
+# Phase 1, the text checks in this order: the step ticks, the Red: and Proof: lines, the browser flow lines and the
+# WAITING marks, the Deviations entries, the Files: lines. When phase 1 has a problem, the script prints the problems,
+# then "Text checks failed: the format pass and the run lines were not checked.", and exits 1.
+# Phase 2 runs the format script on the changed files, so it can change files: each changed file is a problem. After
+# run-area.ps1, the format script skips the files that it formatted at the same tree. Then it checks the long lines and
+# the Full run lines. It runs no script test suite: run-area.ps1 -Area tooling does (CLAUDE.md, Build and Test).
 # Problems:
-# - a step of the cycle that is not [x] or [~];
+# - a step of the cycle that is not [x] or [~] (a browser check step marked [!] with WAITING: and retried: passes);
 # - a step whose text says TDD, Red, or "Proof required", with no Red: or Proof: line in its own block (under the step);
+# - a TDD step (TDD on its first line) whose block has a line that starts with Proof: but none that starts with Red: (a
+#   "Proof required" step keeps the Red: or Proof: rule);
 # - a Deviations entry of the cycle that holds a Red: or Proof: line, or that only logs a run ("Step N: done");
 # - a changed or untracked file whose path or file name is in no "Files:" line and no "#### Deviations" entry of any
 #   cycle (the base holds the earlier cycles of the branch too);
 # - a file that the format script changed, and each note of a skipped cleanup;
 # - a line of a changed C# file (outside Migrations/) that is longer than max_line_length of .editorconfig;
-# - a failing script test, when the change touches the flow scripts, the rules, the hooks, or the verify stack;
-# - a test area (tree-id.ps1 -Area backend|frontend) that differs from the base and has no "Full run <area>: tree <id>"
-#   line with its current tree in plan.md;
+# - a test area (tree-id.ps1 -Area backend|frontend|tooling) that differs from the base and has no "Full run <area>:
+#   tree <id>" line with its current tree in plan.md (also for tooling, in every cycle);
 # - a browser flow line of a step (.claude/browser-checks.md, Flow Lines): a "pass" line without "seen:", or with a
 #   caveat (a timeout, "not checked", a minimized window, a faked size, a script drag, a stubbed function, a DOM-only
 #   measurement; the text of a "retried:" part does not count); a "fail" line or a WAITING step that names a transient
@@ -37,25 +43,14 @@ param(
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'plan-sections.ps1')
 . (Join-Path $PSScriptRoot 'hooks/checkout-helpers.ps1')
-$Areas = @('backend', 'frontend')
-# The test script of each group of tool files (paths relative to the repo; the first pattern that matches a changed
-# file runs the script once).
-$ScriptTests = [ordered]@{
-  '.claude/tests/rules.tests.ps1'         = '^(\.claude/rules/|CLAUDE\.md$)'
-  '.claude/hooks/tests/hook-scope.tests.ps1' = '^\.claude/hooks/'
-  '.claude/tests/flow-scripts.tests.ps1'  = '^\.claude/[^/]+\.ps1$|^\.claude/tests/flow-scripts'
-  'scripts/tests/verify-slots.tests.ps1'  = '^scripts/(verify-|tests/verify-)'
-  'scripts/tests/agent-chrome.tests.ps1'  = '^scripts/(tests/)?agent-chrome'
-}
-
+$Areas = @('backend', 'frontend', 'tooling')
 $planPath = Join-Path $Folder 'plan.md'
 if (-not (Test-Path -LiteralPath $planPath)) { Write-Error "No file: $planPath"; exit 1 }
 $planLines = Get-Content -LiteralPath $planPath
 
 if (-not $Base) {
-  $Base = (git -C $Repo merge-base HEAD $MainBranch 2>$null)
-  if ($LASTEXITCODE -ne 0 -or -not $Base) { Write-Error "No merge base of HEAD and $MainBranch in $Repo. Pass -Base <ref>."; exit 1 }
-  $Base = $Base.Trim()
+  $Base = Get-FeatureBase -Repo $Repo -PlanLines $planLines -MainBranch $MainBranch
+  if (-not $Base) { Write-Error "No merge base of HEAD and $MainBranch in $Repo. Pass -Base <ref>."; exit 1 }
 }
 
 $planCycle = Get-PlanCycle $planLines $Cycle
@@ -66,8 +61,14 @@ $deviationLines = @(Get-CycleDeviations $section)
 
 $problems = [Collections.Generic.List[string]]::new()
 
+# A browser check step is a step whose first line says "browser check". Marked "[!] ... WAITING: <error>; retried:
+# <what>", it passes (the executor retries it at the start of each run, and the last cycle commits only after its flows
+# pass, commit-cycle.ps1).
 foreach ($step in $steps) {
-  if ($step.Mark -notin @('x', '~')) { $problems.Add("Step $($step.Number) is not done ([$($step.Mark)]).") }
+  if ($step.Mark -in @('x', '~')) { continue }
+  $first = $step.Lines[0]
+  $isWaitingBrowserCheck = (Get-BrowserCheckMark $step) -eq 'waiting' -and $first -match '(?i)\bretried:'
+  if (-not $isWaitingBrowserCheck) { $problems.Add("Step $($step.Number) is not done ([$($step.Mark)]).") }
 }
 
 # A Red: or Proof: line goes under its step in the cycle section, so each step is checked on its own text.
@@ -76,6 +77,9 @@ foreach ($step in $steps) {
   $hasProofLine = $text -cmatch '(?m)\b(Red|Proof)(\s*\([^)]*\))?:'
   if (($text -cmatch '\b(TDD|Red)\b' -or $text -cmatch '\bProof required\b') -and -not $hasProofLine) {
     $problems.Add("Step $($step.Number) names TDD, Red, or Proof required, but its block has no Red: or Proof: line.")
+  } elseif ($step.Lines[0] -cmatch '\bTDD\b' -and $text -cmatch '(?m)^\s*(?:[*-]\s+)?Proof(\s*\([^)]*\))?:' -and
+    $text -cnotmatch '(?m)^\s*(?:[*-]\s+)?Red(\s*\([^)]*\))?:') {
+    $problems.Add("Step $($step.Number) is TDD, but its block has only Proof: lines: a TDD step needs the Red: line of its red run.")
   }
 }
 
@@ -87,7 +91,7 @@ foreach ($step in $steps) {
   foreach ($line in $step.Lines) {
     $start = $line.Trim().Substring(0, [Math]::Min(70, $line.Trim().Length))
     $flow = [regex]::Match($line, $FlowLinePattern)
-    $isWaiting = $line -match '^- \[!\].*\bWAITING:'
+    $isWaiting = $line -eq $step.Lines[0] -and (Get-BrowserCheckMark $step) -eq 'waiting'
     if (-not $flow.Success -and -not $isWaiting) { continue }
     $hasRetry = $line -match '(?i)\bretried:'
     if ($flow.Success -and $flow.Groups[1].Value -eq 'pass') {
@@ -132,6 +136,12 @@ foreach ($path in $changed) {
   }
 }
 
+if ($problems.Count -gt 0) {
+  $problems
+  'Text checks failed: the format pass and the run lines were not checked.'
+  exit 1
+}
+
 $existing = @($changed | Where-Object { Test-Path -LiteralPath (Join-Path $Repo $_) -PathType Leaf })
 if ($existing.Count -gt 0 -and $FormatScript -and (Test-Path -LiteralPath $FormatScript)) {
   $before = @{}
@@ -149,17 +159,7 @@ foreach ($line in @(Get-LongLines -Repo $Repo -Files $existing)) {
   $problems.Add("$($line.File):$($line.Line) has $($line.Length) characters; max_line_length is $($line.Limit). Split the line.")
 }
 
-foreach ($test in $ScriptTests.Keys) {
-  $testPath = Join-Path $Repo $test
-  if (-not ($changed -match $ScriptTests[$test]) -or -not (Test-Path -LiteralPath $testPath)) { continue }
-  $output = @(& pwsh -NoProfile -File $testPath 2>&1 | ForEach-Object { "$_" })
-  if ($LASTEXITCODE -ne 0) {
-    $failed = @($output | Where-Object { $_ -match '^\s*FAIL ' } | ForEach-Object { $_.Trim() } | Select-Object -First 5)
-    $problems.Add("The script test $test fails: $(if ($failed) { $failed -join '; ' } else { $output | Select-Object -Last 1 })")
-  }
-}
-
-$areaRuns = [regex]::Matches(($planLines -join "`n"), 'Full run (backend|frontend):\s*tree\s+([0-9a-f]{40})')
+$areaRuns = [regex]::Matches(($planLines -join "`n"), 'Full run (backend|frontend|tooling):\s*tree\s+([0-9a-f]{40})')
 foreach ($area in $Areas) {
   $current = Get-TreeId -Repo $Repo -Area $area
   $atBase = Get-TreeId -Repo $Repo -Area $area -Ref $Base
