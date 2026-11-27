@@ -1,6 +1,7 @@
 using System.Text.Json.Nodes;
 using HealthyFac.Gateway.IntegrationTests.Composition.Data;
 using HealthyFac.Testing.Features;
+using HealthyFac.Testing.Repository;
 
 namespace HealthyFac.Gateway.IntegrationTests.Composition;
 
@@ -21,15 +22,8 @@ public sealed class ComposedClusterConfigurationTests
 
     private static string FindRepositoryFile(string relativePath)
     {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        var path = Path.Combine(RepositoryRoot.Find().FullName, relativePath);
 
-        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, relativePath)))
-        {
-            directory = directory.Parent;
-        }
-
-        return directory is null
-            ? throw new FileNotFoundException(relativePath)
-            : Path.Combine(directory.FullName, relativePath);
+        return File.Exists(path) ? path : throw new FileNotFoundException(relativePath);
     }
 }

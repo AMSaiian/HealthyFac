@@ -2,8 +2,6 @@ namespace HealthyFac.Shared.UnitTests.Conventions.Data;
 
 internal static class OptionsValidatorPlacementConstants
 {
-    public const string SolutionFileName = "HealthyFac.slnx";
-
     public const string BackendFolderName = "backend";
 
     public const string SourceFolderName = "src";
