@@ -5,6 +5,7 @@ import { patchState, signalStore, withComputed, withMethods, withProps, withStat
 import { ActionStore } from '@shared/actions/action.store';
 import { type Reloadable, withActionResultReload } from '@shared/actions/with-action-result-reload';
 import { withGridState } from '@shared/grid/with-grid-state';
+import { withGridRefresh } from '@shared/grid/with-grid-refresh';
 import { createLookup } from '@shared/lookups/create-lookup';
 import { LookupsApi } from '@shared/lookups/lookups-api';
 import { AuthStore } from '@shared/security/auth-store/auth.store';
@@ -92,6 +93,9 @@ export const WorkOrdersGridStore = signalStore(
     store.workOrders.reload();
   }),
   withRealtimeReload<{ workOrders: Reloadable }>([RealtimeTopic.WorkOrders], (store) => {
+    store.workOrders.reload();
+  }),
+  withGridRefresh<{ workOrders: Reloadable }>((store) => {
     store.workOrders.reload();
   }),
   withStoreDevtools('work-orders-grid'),

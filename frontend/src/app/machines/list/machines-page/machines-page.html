@@ -19,6 +19,8 @@
   [rows]="page().items"
   [totalCount]="page().totalCount"
   [isLoading]="store.machines.isLoading()"
+  [refreshSecondsLeft]="store.refreshSecondsLeft()"
+  (refreshRequested)="store.refresh()"
   [hasLoaded]="store.machines.hasValue()"
   [columns]="store.visibleColumns()"
   [offset]="store.offset()"

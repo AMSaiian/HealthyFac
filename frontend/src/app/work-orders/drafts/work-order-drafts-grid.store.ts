@@ -11,6 +11,7 @@ import { withStoreDevtools } from '@shared/devtools/with-store-devtools';
 import { RealtimeTopic } from '@shared/realtime/realtime';
 import { withRealtimeReload } from '@shared/realtime/with-realtime-reload';
 import { withGridState } from '@shared/grid/with-grid-state';
+import { withGridRefresh } from '@shared/grid/with-grid-refresh';
 import { httpErrorKey, skipErrorToast } from '@shared/http/http-error-key';
 import { AuthStore } from '@shared/security/auth-store/auth.store';
 import { Permission } from '@shared/security/permissions';
@@ -171,6 +172,9 @@ export const WorkOrderDraftsGridStore = signalStore(
     };
   }),
   withRealtimeReload<{ drafts: { reload: () => boolean } }>([RealtimeTopic.WorkOrders], (store) => {
+    store.drafts.reload();
+  }),
+  withGridRefresh<{ drafts: { reload: () => boolean } }>((store) => {
     store.drafts.reload();
   }),
   withStoreDevtools('work-order-drafts-grid'),

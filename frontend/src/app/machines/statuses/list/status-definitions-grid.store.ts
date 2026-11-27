@@ -5,8 +5,10 @@ import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { EMPTY, exhaustMap, type Observable, pipe, tap } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
+import type { Reloadable } from '@shared/actions/with-action-result-reload';
 import { withConfirm } from '@shared/confirm/with-confirm';
 import { withGridState } from '@shared/grid/with-grid-state';
+import { withGridRefresh } from '@shared/grid/with-grid-refresh';
 import { HistoryStore } from '@shared/history/history.store';
 import { formatCompose } from '@shared/history/history.store.utils';
 import { AuthStore } from '@shared/security/auth-store/auth.store';
@@ -135,6 +137,9 @@ export const StatusDefinitionsGridStore = signalStore(
     onInit(store) {
       inject(DestroyRef).onDestroy(store._history.registerComposeNames([STATUS_COMPOSE_NAME]));
     },
+  }),
+  withGridRefresh<{ statuses: Reloadable }>((store) => {
+    store.statuses.reload();
   }),
   withStoreDevtools('status-definitions-grid'),
 );

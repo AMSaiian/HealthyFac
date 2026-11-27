@@ -607,4 +607,14 @@ describe('MachineDraftsStore', { tags: ['Drafts'] }, () => {
       payload: { machineId: 'machine-1', attemptId: 'a1', draftId: 'draft-5' },
     });
   });
+
+  it('refresh_AfterTheFirstLoad_ReloadsTheDraftsAndThePendingCount', async () => {
+    const { store, http } = await setup_loaded();
+
+    store.refresh();
+    TestBed.tick();
+
+    answerSearches(http, [ITEM], ALL_PENDING_COUNT);
+    expect(store.refreshSecondsLeft()).toBe(5);
+  });
 });

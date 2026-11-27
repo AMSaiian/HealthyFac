@@ -22,6 +22,8 @@
   [rows]="page().items"
   [totalCount]="page().totalCount"
   [isLoading]="store.drafts.isLoading()"
+  [refreshSecondsLeft]="store.refreshSecondsLeft()"
+  (refreshRequested)="store.refresh()"
   [hasLoaded]="store.drafts.hasValue()"
   [columns]="store.visibleColumns()"
   [offset]="store.offset()"

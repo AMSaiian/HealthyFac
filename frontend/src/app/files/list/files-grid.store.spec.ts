@@ -363,4 +363,28 @@ describe('FilesGridStore', { tags: ['Files'] }, () => {
     expect(messages.add).toHaveBeenCalledWith(expect.objectContaining({ detail: 'FILES.ERRORS.NOT_FOUND' }));
     expect(search.mock.calls.length).toBe(searches + 1);
   });
+
+  it('refresh_AfterAFilterSortAndPageChange_SendsTheSameSearchAgain', async () => {
+    const { store, search } = await setup();
+    store.setScope({ kind: 'company' });
+    store.setFilter({ fileName: 'man' });
+    store.setSort({ column: FileSortColumn.FileName, direction: SortDirection.Ascending });
+    store.setPage(25, 25);
+    await settle();
+    const before = search.mock.calls.length;
+    const lastCall = search.mock.calls.at(-1);
+    expect(lastCall?.[1]).toMatchObject({
+      offset: 25,
+      limit: 25,
+      sort: { column: FileSortColumn.FileName, direction: SortDirection.Ascending },
+      filter: expect.objectContaining({ fileName: { value: 'man' } }),
+    });
+
+    store.refresh();
+    await settle();
+
+    expect(search.mock.calls.length).toBe(before + 1);
+    expect(search.mock.calls.at(-1)).toEqual(lastCall);
+    expect(store.refreshSecondsLeft()).toBe(5);
+  });
 });

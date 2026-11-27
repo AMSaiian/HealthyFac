@@ -6,6 +6,7 @@ import { ActionStore } from '@shared/actions/action.store';
 import { type Reloadable, withActionResultReload } from '@shared/actions/with-action-result-reload';
 import { withConfirm } from '@shared/confirm/with-confirm';
 import { withGridState } from '@shared/grid/with-grid-state';
+import { withGridRefresh } from '@shared/grid/with-grid-refresh';
 
 import type { InviteColumn, InviteFilter, InviteRow, InviteSortColumn } from '@employees/employee';
 import { EmployeeActionType } from '@employees/employee-actions';
@@ -64,6 +65,9 @@ export const InvitesGridStore = signalStore(
     },
   })),
   withActionResultReload<{ invites: Reloadable }>([EmployeeActionType.Saved], (store) => {
+    store.invites.reload();
+  }),
+  withGridRefresh<{ invites: Reloadable }>((store) => {
     store.invites.reload();
   }),
   withStoreDevtools('invites-grid'),

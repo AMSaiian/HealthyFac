@@ -16,6 +16,7 @@ import { type Chip, lookupChips, toChips } from '@shared/chips/chip-summary/chip
 import { ColumnChooser } from '@shared/grid/table/column-chooser/column-chooser';
 import { CellText } from '@shared/grid/table/cell-text/cell-text';
 import { createGridTable } from '@shared/grid/table/grid-table';
+import { GridRefreshButton } from '@shared/grid/table/grid-refresh-button/grid-refresh-button';
 import { createRowMenu } from '@shared/grid/table/row-menu';
 import { RowMenuPopup } from '@shared/grid/table/row-menu-popup/row-menu-popup';
 import { PAGE_SIZES } from '@shared/grid/requests/grid-limits';
@@ -69,6 +70,7 @@ const ALL_COLUMNS: readonly WorkOrderColumn[] = Object.values(WorkOrderColumn);
 
 @Component({
   imports: [
+    GridRefreshButton,
     CellText,
     ButtonDirective,
     ChipSummary,
@@ -111,6 +113,8 @@ export class WorkOrderGrid {
   protected readonly showEmployeesLoading = delayedLoading(this.isEmployeesLoading);
   protected readonly showMachinesLoading = delayedLoading(this.isMachinesLoading);
 
+  readonly refreshSecondsLeft = input(0);
+  readonly refreshRequested = output<void>();
   readonly filterChange = output<Partial<WorkOrderFilter>>();
   readonly sortChange = output<GridSort<WorkOrderSortColumn> | null>();
   readonly pageChange = output<{ offset: number; limit: number }>();

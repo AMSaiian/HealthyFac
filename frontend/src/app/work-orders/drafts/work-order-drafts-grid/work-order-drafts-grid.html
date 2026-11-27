@@ -53,12 +53,17 @@
         alignFrozen="right"
         [frozen]="true"
       >
-        <hf-column-chooser
-          [columns]="allColumns"
-          [visible]="grid.tableColumns()"
-          [labelKeys]="columnLabelKeys"
-          (toggled)="grid.onColumnToggle($any($event.column), $event.isVisible)"
-        />
+        <div class="flex items-center justify-end gap-1">
+          <hf-grid-refresh-button
+            [secondsLeft]="refreshSecondsLeft()"
+            (refreshRequested)="refreshRequested.emit()"
+          /><hf-column-chooser
+            [columns]="allColumns"
+            [visible]="grid.tableColumns()"
+            [labelKeys]="columnLabelKeys"
+            (toggled)="grid.onColumnToggle($any($event.column), $event.isVisible)"
+          />
+        </div>
       </th>
     </tr>
   </ng-template>

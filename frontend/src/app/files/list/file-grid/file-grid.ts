@@ -20,6 +20,7 @@ import { ChipSummary } from '@shared/chips/chip-summary/chip-summary';
 import { type Chip, labelChipsOf, toChips } from '@shared/chips/chip-summary/chip-summary.utils';
 import { CellText } from '@shared/grid/table/cell-text/cell-text';
 import { createGridTable } from '@shared/grid/table/grid-table';
+import { GridRefreshButton } from '@shared/grid/table/grid-refresh-button/grid-refresh-button';
 import { createRowMenu } from '@shared/grid/table/row-menu';
 import { RowMenuPopup } from '@shared/grid/table/row-menu-popup/row-menu-popup';
 import { EmptyState } from '@shared/loading/empty-state/empty-state';
@@ -67,6 +68,7 @@ const ALL_COLUMNS: readonly FileColumn[] = Object.values(FileColumn);
 
 @Component({
   imports: [
+    GridRefreshButton,
     CellText,
     ChipSummary,
     ButtonDirective,
@@ -111,6 +113,8 @@ export class FileGrid {
   readonly machineOptions = input<readonly MachineOption[]>([]);
   readonly access = input<FileRowAccess>(NO_ROW_ACCESS);
 
+  readonly refreshSecondsLeft = input(0);
+  readonly refreshRequested = output<void>();
   readonly filterChange = output<Partial<FileFilter>>();
   readonly sortChange = output<GridSort<FileSortColumn> | null>();
   readonly pageChange = output<{ offset: number; limit: number }>();

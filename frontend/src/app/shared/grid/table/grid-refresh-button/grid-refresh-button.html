@@ -1,0 +1,24 @@
+<span
+  [pTooltip]="
+    isCoolingDown()
+      ? ('ACTIONS.TOOLTIPS.RELOAD_WAIT' | translate: { seconds: secondsLeft() })
+      : ('ACTIONS.TOOLTIPS.RELOAD' | translate)
+  "
+  tooltipPosition="bottom"
+>
+  <button
+    type="button"
+    pButton
+    iconOnly
+    severity="secondary"
+    [text]="true"
+    [pTooltip]="''"
+    [tooltipDisabled]="true"
+    tooltipPosition="bottom"
+    [disabled]="isCoolingDown()"
+    [attr.aria-label]="'ACTIONS.RELOAD' | translate"
+    (click)="requestRefresh()"
+  >
+    <i class="pi pi-refresh"></i>
+  </button>
+</span>

@@ -12,6 +12,7 @@ import { withConfirm } from '@shared/confirm/with-confirm';
 import { FileDownloader } from '@shared/files/file-downloader';
 import { FilesLinksApi } from '@shared/files/files-links-api';
 import { withGridState } from '@shared/grid/with-grid-state';
+import { withGridRefresh } from '@shared/grid/with-grid-refresh';
 import { httpErrorKey, isHttpStatus, skipErrorToast } from '@shared/http/http-error-key';
 import { AuthStore } from '@shared/security/auth-store/auth.store';
 import { Permission } from '@shared/security/permissions';
@@ -320,6 +321,9 @@ export const FilesGridStore = signalStore(
     },
   }),
   withActionResultReload<{ files: Reloadable }>([FileActionType.Saved], (store) => {
+    store.files.reload();
+  }),
+  withGridRefresh<{ files: Reloadable }>((store) => {
     store.files.reload();
   }),
   withStoreDevtools('files-grid'),

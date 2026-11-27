@@ -8,6 +8,8 @@
     [rows]="page().items"
     [totalCount]="page().totalCount"
     [isLoading]="store.workOrders.isLoading()"
+    [refreshSecondsLeft]="store.refreshSecondsLeft()"
+    (refreshRequested)="store.refresh()"
     [hasLoaded]="store.workOrders.hasValue()"
     [columns]="store.visibleColumns()"
     [offset]="store.offset()"

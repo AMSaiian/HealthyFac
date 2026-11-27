@@ -2,6 +2,8 @@
   [rows]="page().items"
   [totalCount]="page().totalCount"
   [isLoading]="store.files.isLoading()"
+  [refreshSecondsLeft]="store.refreshSecondsLeft()"
+  (refreshRequested)="store.refresh()"
   [hasLoaded]="store.files.hasValue()"
   [columns]="store.visibleColumns()"
   [offset]="store.offset()"

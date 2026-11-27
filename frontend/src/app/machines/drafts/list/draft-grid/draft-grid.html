@@ -134,7 +134,12 @@
           </div>
         </th>
       }
-      <th></th>
+      <th>
+        <hf-grid-refresh-button
+          [secondsLeft]="refreshSecondsLeft()"
+          (refreshRequested)="refreshRequested.emit()"
+        />
+      </th>
     </tr>
   </ng-template>
   <ng-template
