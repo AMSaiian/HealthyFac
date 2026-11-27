@@ -18,6 +18,13 @@ public static class PhaseDraftConstraintTestData
     public static TheoryData<string, string, string> InvalidRows => new()
     {
         {
+            "a phase draft with an empty proposal entry",
+            "UPDATE operating_phase_drafts SET proposal_entry_id = "
+            + DefinitionDraftTestData.EmptyGuidSql
+            + " WHERE id = {0}",
+            DefinitionDraftTestData.PhaseEntryNotEmpty
+        },
+        {
             "a condition with a metric definition and a metric draft",
             ConditionInsert + "gen_random_uuid(), gen_random_uuid(), NULL, NULL" + ConditionTail,
             DefinitionDraftCheckNames.PhaseConditionSource
@@ -46,6 +53,10 @@ public static class PhaseDraftConstraintTestData
 
     public static TheoryData<string, string> ValidRows => new()
     {
+        {
+            "a phase draft without a proposal entry",
+            "UPDATE operating_phase_drafts SET proposal_entry_id = NULL WHERE id = {0}"
+        },
         { "a condition on a status draft", ConditionInsert + "NULL, NULL, NULL, gen_random_uuid()" + ConditionTail },
         {
             "a condition on a metric definition",

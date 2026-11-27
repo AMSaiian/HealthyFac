@@ -10,12 +10,12 @@ namespace HealthyFac.Core.Web.Authorization;
 public static class AccessScopes
 {
     /// <summary>
-    /// Resolves the scope: <see cref="AccessScope.Company"/> when the token holds the manage permission of the feature,
-    /// else <see cref="AccessScope.Own"/>.
+    /// Resolves the scope: <see cref="AccessScope.Company"/> when the token holds the company permission of the
+    /// operation (read-company for a read, write-company for a write), else <see cref="AccessScope.Own"/>.
     /// </summary>
     /// <param name="user">The user of the request.</param>
-    /// <param name="managePermission">The manage permission of the feature.</param>
+    /// <param name="companyPermission">The company permission of the operation.</param>
     /// <returns>The scope of the actor.</returns>
-    public static AccessScope Resolve(ClaimsPrincipal user, string managePermission) =>
-        user.HasClaim(KeycloakClaimTypes.Permissions, managePermission) ? AccessScope.Company : AccessScope.Own;
+    public static AccessScope Resolve(ClaimsPrincipal user, string companyPermission) =>
+        user.HasClaim(KeycloakClaimTypes.Permissions, companyPermission) ? AccessScope.Company : AccessScope.Own;
 }

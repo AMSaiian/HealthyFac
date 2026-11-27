@@ -38,6 +38,7 @@ const DEFINITIONS_URL = '/api/telemetry/v1/machines/m1/metric-definitions';
 const UNITS_URL = '/api/telemetry/v1/metric-units';
 const FILES_SEARCH_URL = '/api/document/v1/machines/m1/files/search';
 const COMPANY_FILES_SEARCH_URL = '/api/document/v1/files/search';
+const CHAT_DRAFTS_URL = '/api/core/v1/chats/c1/drafts';
 const ATTEMPT_DRAFTS_URL = '/api/core/v1/ingest-attempts/a1/drafts';
 const STATUS_SEARCH_URL = '/api/telemetry/v1/machines/m1/status-definitions/search';
 
@@ -604,6 +605,21 @@ describe('machines routes', { tags: ['Machines', 'SignalModel', 'Drafts', 'Files
       expect(TestBed.inject(Router).url).toBe('/machines?compose=machine-drafts:m1');
     });
 
+    it('machinesRoute_MetricsReviewOfAChat_ReadsTheChatDrafts', async () => {
+      const { http } = setup(true);
+      await openList(http);
+
+      const navigation = reviewMetricDrafts(TestBed.inject(Router), 'm1', { chatId: 'c1' });
+      await flushWhenRequested(http, MACHINE_URL, MACHINE);
+      await navigation;
+      TestBed.tick();
+      await flushWhenRequested(http, DEFINITIONS_URL, DEFINITIONS);
+      await flushWhenRequested(http, UNITS_URL, { kinds: [] });
+      await flushWhenRequested(http, CHAT_DRAFTS_URL, { groups: [] });
+
+      expect(TestBed.inject(Router).url).toBe('/machines/m1/metrics?draftChatId=c1');
+    });
+
     it('machinesRoute_DraftsListToMetricsReview_BackReopensTheList', async () => {
       const { http } = setup(true);
       await openList(http);
@@ -611,7 +627,7 @@ describe('machines routes', { tags: ['Machines', 'SignalModel', 'Drafts', 'Files
       await actions.dispatch(DRAFTS);
       await vi.waitFor(() => expect(actions.active()).toEqual(DRAFTS));
 
-      const navigation = reviewMetricDrafts(TestBed.inject(Router), 'm1', 'a1');
+      const navigation = reviewMetricDrafts(TestBed.inject(Router), 'm1', { attemptId: 'a1' });
       await flushWhenRequested(http, MACHINE_URL, MACHINE);
       await navigation;
       TestBed.tick();

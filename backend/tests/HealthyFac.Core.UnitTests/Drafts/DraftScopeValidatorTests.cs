@@ -12,10 +12,11 @@ public sealed class DraftScopeValidatorTests
 
     [Theory]
     [MemberData(nameof(DraftScopeTestData.Scopes), MemberType = typeof(DraftScopeTestData))]
-    public void Search_WithScope_NeedsExactlyOneOfMachineAndAttempt(
+    public void Search_WithScope_NeedsExactlyOneOfMachineAttemptAndChat(
         string caseName,
         Guid? machineId,
         Guid? attemptId,
+        Guid? chatId,
         bool isValid
     )
     {
@@ -24,6 +25,7 @@ public sealed class DraftScopeValidatorTests
             CompanyId = CompanyId,
             MachineId = machineId,
             AttemptId = attemptId,
+            ChatId = chatId,
             Limit = 25,
             Filter = new MachineDraftGridFilter(),
         };
@@ -35,10 +37,11 @@ public sealed class DraftScopeValidatorTests
 
     [Theory]
     [MemberData(nameof(DraftScopeTestData.Scopes), MemberType = typeof(DraftScopeTestData))]
-    public void Dismiss_WithScope_NeedsExactlyOneOfMachineAndAttempt(
+    public void Dismiss_WithScope_NeedsExactlyOneOfMachineAttemptAndChat(
         string caseName,
         Guid? machineId,
         Guid? attemptId,
+        Guid? chatId,
         bool isValid
     )
     {
@@ -47,9 +50,26 @@ public sealed class DraftScopeValidatorTests
             CompanyId = CompanyId,
             MachineId = machineId,
             AttemptId = attemptId,
+            ChatId = chatId,
         };
 
         var result = new DismissMachineDraftsRequestValidator().Validate(request);
+
+        result.IsValid.Should().Be(isValid, caseName);
+    }
+
+    [Theory]
+    [MemberData(nameof(DraftScopeTestData.GetScopes), MemberType = typeof(DraftScopeTestData))]
+    public void GetGroups_WithScope_NeedsExactlyOneOfAttemptAndChat(
+        string caseName,
+        Guid? attemptId,
+        Guid? chatId,
+        bool isValid
+    )
+    {
+        var request = new GetAttemptDraftsRequest { CompanyId = CompanyId, AttemptId = attemptId, ChatId = chatId };
+
+        var result = new GetAttemptDraftsRequestValidator().Validate(request);
 
         result.IsValid.Should().Be(isValid, caseName);
     }

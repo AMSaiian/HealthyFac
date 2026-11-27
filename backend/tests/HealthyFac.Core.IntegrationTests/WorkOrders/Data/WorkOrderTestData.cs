@@ -36,13 +36,14 @@ public static class WorkOrderTestData
         Guid? machineId = null,
         Guid? assigneeId = null,
         DateTime? plannedStartLocal = null,
-        int estimateMinutes = OneHour
+        int estimateMinutes = OneHour,
+        string title = Title
     ) =>
         new()
         {
             CompanyId = companyId,
             Scope = scope,
-            Title = Title,
+            Title = title,
             Priority = WorkOrderPriority.High,
             Category = WorkOrderCategory.Repair,
             MachineId = machineId,

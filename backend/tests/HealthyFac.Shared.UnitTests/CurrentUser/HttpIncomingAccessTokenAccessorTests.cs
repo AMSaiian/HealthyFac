@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using HealthyFac.Shared.UnitTests.CurrentUser.Data;
 using HealthyFac.Shared.Web.CurrentUser;
 using HealthyFac.Testing.Features;
@@ -61,6 +62,46 @@ public sealed class HttpIncomingAccessTokenAccessorTests
 
         token.Should().BeNull();
     }
+
+    [Theory]
+    [MemberData(nameof(NameClaimsTestData.NameClaims), MemberType = typeof(NameClaimsTestData))]
+    public void TryGetUserName_WithSeveralNameClaims_ReadsNameThenPreferredUsernameThenEmail(
+        string caseName,
+        string firstType,
+        string firstValue,
+        string secondType,
+        string secondValue,
+        string expected
+    )
+    {
+        var accessor = CreateAccessor(
+            IncomingTokenTestData.CreateContext(
+                PrincipalWith(new Claim(secondType, secondValue), new Claim(firstType, firstValue)),
+                IncomingTokenTestData.UserAccessToken));
+
+        var name = accessor.TryGetUserName();
+
+        name.Should().Be(expected, caseName);
+    }
+
+    [Fact]
+    public void TryGetUserName_WithServiceToken_ReturnsNull()
+    {
+        var accessor = CreateAccessor(
+            IncomingTokenTestData.CreateContext(
+                IncomingTokenTestData.ServicePrincipal,
+                IncomingTokenTestData.ServiceAccessToken));
+
+        var name = accessor.TryGetUserName();
+
+        name.Should().BeNull();
+    }
+
+    private static ClaimsPrincipal PrincipalWith(params Claim[] extra) =>
+        new(
+            new ClaimsIdentity(
+                ActorClaimsTestData.ValidPrincipal.Claims.Concat(extra),
+                authenticationType: "test"));
 
     private static HttpIncomingAccessTokenAccessor CreateAccessor(HttpContext? context) =>
         new(new HttpContextAccessor { HttpContext = context });

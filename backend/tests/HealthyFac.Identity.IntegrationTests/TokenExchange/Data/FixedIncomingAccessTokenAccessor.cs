@@ -15,4 +15,6 @@ public sealed class FixedIncomingAccessTokenAccessor(string accessToken, Guid us
     public string? TryGetUserAccessToken() => _accessToken;
 
     public Guid? TryGetUserId() => _userId;
+
+    public string? TryGetUserName() => null;
 }

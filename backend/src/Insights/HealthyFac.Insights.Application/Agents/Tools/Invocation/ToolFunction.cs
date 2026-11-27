@@ -2,7 +2,9 @@ using System.Diagnostics;
 using System.Runtime.ExceptionServices;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using HealthyFac.Insights.Application.Chats.Tools;
 using HealthyFac.Insights.Application.Ingest.Processing.Failures;
+using HealthyFac.Insights.Domain.Agents.Runs;
 using HealthyFac.Insights.Domain.Agents.ToolCalls;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.UseCases;
@@ -18,7 +20,9 @@ namespace HealthyFac.Insights.Application.Agents.Tools.Invocation;
 /// handler inside the advisor scope of the company, so validation, the pre-handler check, and the downstream scopes
 /// apply. A rejection goes back to the model as the result with the outcome <c>rejected</c>. Any other failure goes
 /// back as a fixed text with the outcome <c>failed</c>, and never carries the exception text. After a downstream outage
-/// the function loop ends at once, so the model gets no further turn. The application log
+/// of a tool of another role than <c>chat</c> the function loop ends at once, so the model gets no further turn. A
+/// <c>chat</c> tool returns <see cref="Chats.Tools.ChatToolErrors.ServiceUnavailable"/> and the loop goes on. The
+/// application log
 /// holds the exception at <c>Warning</c>, so a failure of a downstream service is visible. The log column holds
 /// JSON, so the log keeps the text of a rejection or a failure as a JSON string.
 /// </summary>
@@ -36,14 +40,14 @@ internal sealed class ToolFunction<TRequest, TArguments, TResponse> : AIFunction
 
     private readonly JsonSerializerOptions _json;
     private readonly AgentToolAttribute _tool;
-    private readonly IAdvisorScopes _scopes;
+    private readonly IToolScopes _scopes;
     private readonly ToolContext _context;
     private readonly ILogger _logger;
     private readonly JsonElement _schema;
 
     public ToolFunction(
         AgentToolAttribute tool,
-        IAdvisorScopes scopes,
+        IToolScopes scopes,
         ToolContext context,
         ILogger logger,
         IAgentJson json
@@ -55,11 +59,16 @@ internal sealed class ToolFunction<TRequest, TArguments, TResponse> : AIFunction
         _context = context;
         _logger = logger;
 
+        AdditionalProperties = new Dictionary<string, object?>
+        {
+            [AgentToolAttribute.ActivityProperty] = tool.Activity,
+        };
+
         _schema = AIJsonUtilities.CreateJsonSchema(
             typeof(TArguments),
             _tool.Description,
             serializerOptions: _json,
-            inferenceOptions: new AIJsonSchemaCreateOptions { TransformSchemaNode = HideGuidFormat });
+            inferenceOptions: new AIJsonSchemaCreateOptions { TransformSchemaNode = SetConverterValueSchemas });
     }
 
     public override string Name => _tool.Name;
@@ -69,6 +78,8 @@ internal sealed class ToolFunction<TRequest, TArguments, TResponse> : AIFunction
     public override JsonElement JsonSchema => _schema;
 
     public override JsonSerializerOptions JsonSerializerOptions => _json;
+
+    public override IReadOnlyDictionary<string, object?> AdditionalProperties { get; }
 
     protected override async ValueTask<object?> InvokeCoreAsync(
         AIFunctionArguments arguments,
@@ -98,9 +109,17 @@ internal sealed class ToolFunction<TRequest, TArguments, TResponse> : AIFunction
         catch (ProviderUnavailableException exception) when (!cancellationToken.IsCancellationRequested)
         {
             LogFailure(exception);
-            _context.ReadFailures.RecordOutage(exception);
-            outage = exception;
-            (outcome, result) = (ToolCallOutcome.Failed, FailedText);
+
+            if (_tool.Role == AgentRole.Chat.Value)
+            {
+                (outcome, result) = (ToolCallOutcome.Failed, ChatToolErrors.ServiceUnavailable);
+            }
+            else
+            {
+                _context.ReadFailures.RecordOutage(exception);
+                outage = exception;
+                (outcome, result) = (ToolCallOutcome.Failed, FailedText);
+            }
         }
         catch (Exception exception) when (exception is IRejection)
         {
@@ -144,14 +163,44 @@ internal sealed class ToolFunction<TRequest, TArguments, TResponse> : AIFunction
         return ToolDataBlocks.Wrap(result);
     }
 
-    private static JsonNode HideGuidFormat(AIJsonSchemaCreateContext context, JsonNode node)
+    /// <summary>
+    /// Gives the arguments of the types that a custom converter writes (<see cref="DateTime"/> and
+    /// <see cref="Guid"/>, also nullable) their own schema: a <c>string</c>, with the <c>date-time</c> format for a
+    /// time. The schema exporter returns a <c>true</c> schema (no type) for a type with a custom converter, and the
+    /// model needs the type. An ID needs no <c>uuid</c> format, because the ID is encrypted text.
+    /// </summary>
+    /// <param name="context">The context of the schema node.</param>
+    /// <param name="node">The schema that the exporter built.</param>
+    /// <returns>The schema of the value, or <paramref name="node"/> for any other type.</returns>
+    private static JsonNode SetConverterValueSchemas(AIJsonSchemaCreateContext context, JsonNode node)
     {
-        if (node is JsonObject schema && schema["format"]?.GetValue<string>() == "uuid")
+        var type = context.TypeInfo.Type;
+        var isTime = type == typeof(DateTime) || type == typeof(DateTime?);
+        var isId = type == typeof(Guid) || type == typeof(Guid?);
+
+        if (!isTime && !isId)
         {
-            schema.Remove(propertyName: "format");
+            return node;
         }
 
-        return node;
+        var valueSchema = new JsonObject
+        {
+            ["type"] = Nullable.GetUnderlyingType(type) is not null
+                ? new JsonArray("string", "null")
+                : JsonValue.Create(value: "string"),
+        };
+
+        if (isTime)
+        {
+            valueSchema["format"] = "date-time";
+        }
+
+        if (node is JsonObject { } original && original["description"] is { } description)
+        {
+            valueSchema["description"] = description.DeepClone();
+        }
+
+        return valueSchema;
     }
 
     private void LogFailure(Exception exception) =>

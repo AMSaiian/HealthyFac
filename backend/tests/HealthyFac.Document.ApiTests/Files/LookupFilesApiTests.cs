@@ -36,6 +36,37 @@ public sealed class LookupFilesApiTests(DocumentApiFixture fixture)
     }
 
     [Fact]
+    public async Task LookupFiles_WithASearch_Returns200WithTheMatchingFile()
+    {
+        var file = await _fixture.ArrangeFileAsync();
+        var claims = _fixture.CreateClaims(ReadPermission);
+        var body = new JsonObject { ["search"] = "MAN" }.ToJsonString();
+
+        var response = await _fixture.SendAsync(HttpMethod.Post, LookupPath, claims, body);
+        var text = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+        var parsed = JsonNode.Parse(text)!;
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        parsed["files"]![0]!["id"]!.GetValue<string>().Should().Be(file.EncryptedId);
+    }
+
+    [Fact]
+    public async Task LookupFiles_WithIdsAndASearch_Returns400()
+    {
+        var claims = _fixture.CreateClaims(ReadPermission);
+
+        var body = new JsonObject
+        {
+            ["ids"] = new JsonArray(),
+            ["search"] = "man",
+        }.ToJsonString();
+
+        var response = await _fixture.SendAsync(HttpMethod.Post, LookupPath, claims, body);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
     public async Task LookupFiles_WithoutReadPermission_Returns403()
     {
         var claims = _fixture.CreateClaims(UploadFileApiTestData.FilesWritePermission);

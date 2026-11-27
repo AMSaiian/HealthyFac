@@ -29,6 +29,24 @@ public sealed class FakeRealtimeClient : IRealtimeClient
 
     public Task Hint(RealtimeHint hint) => Send(nameof(Hint));
 
+    public List<ChatTurnUpdate> Updates { get; } = [];
+
+    public List<ChatTurnEnd> Ends { get; } = [];
+
+    public Task ChatTurnUpdated(ChatTurnUpdate update)
+    {
+        Updates.Add(update);
+
+        return Send(nameof(ChatTurnUpdated));
+    }
+
+    public Task ChatTurnEnded(ChatTurnEnd end)
+    {
+        Ends.Add(end);
+
+        return Send(nameof(ChatTurnEnded));
+    }
+
     public Task SessionEnded() => Send(nameof(SessionEnded));
 
     private Task Send(string method)

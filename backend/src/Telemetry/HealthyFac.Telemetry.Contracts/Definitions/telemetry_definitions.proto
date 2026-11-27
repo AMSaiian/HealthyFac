@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+package healthyfac.telemetry.v1;
+
+option csharp_namespace = "HealthyFac.Telemetry.Contracts.Definitions";
+
+// Serves the active metric definitions and the status definitions of a machine to the services that read them
+// (Insights). The caller sends the machine ID as a plain GUID in text, never the encrypted ID of the public API.
+service TelemetryDefinitions {
+  rpc ListDefinitions(ListDefinitionsRequest) returns (ListDefinitionsReply);
+
+  // Lists the global catalog of the quantity kinds and their units. It is the same data as `GET /v1/metric-units`.
+  rpc ListMetricUnits(ListMetricUnitsRequest) returns (ListMetricUnitsReply);
+}
+
+message ListMetricUnitsRequest {}
+
+message ListMetricUnitsReply {
+  repeated QuantityKind kinds = 1;
+}
+
+message QuantityKind {
+  string name = 1;
+  repeated MeasurementUnit units = 2;
+}
+
+message MeasurementUnit {
+  string name = 1;
+  string abbreviation = 2;
+}
+
+message ListDefinitionsRequest {
+  string machine_id = 1;
+}
+
+message ListDefinitionsReply {
+  repeated MetricDefinition metrics = 1;
+  repeated StatusDefinition statuses = 2;
+}
+
+// The value kind is one of "numeric", "boolean", and "stateSet". The unit is its abbreviation (for example "°C").
+message MetricDefinition {
+  string key = 1;
+  string name = 2;
+  string value_kind = 3;
+  string unit = 4;
+  optional double min = 5;
+  optional double max = 6;
+  repeated string states = 7;
+  // The ID of the definition as a plain GUID in text. The history read of a metric needs it.
+  string id = 8;
+}
+
+// The severity is one of "info", "warning", and "error".
+message StatusDefinition {
+  string code = 1;
+  string severity = 2;
+  // The ID of the definition as a plain GUID in text. A phase condition on an existing status needs it.
+  string id = 3;
+}

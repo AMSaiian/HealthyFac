@@ -223,6 +223,18 @@ foreach ($name in 'core', 'telemetry', 'document', 'insights', 'auth') {
 }
 Assert-That ($dotnetServices -contains 'seeder') 'docker-compose.yml has the seeder service'
 
+Write-Host 'gRPC ports'
+$grpcSettings = @(Get-ChildItem (Join-Path $repo 'backend\src') -Recurse -Filter appsettings.json |
+    Where-Object { $_.FullName -match '\\HealthyFac\.\w+\.Web\\appsettings\.json$' })
+foreach ($settingsFile in $grpcSettings) {
+  $grpcPort = (Get-Content $settingsFile.FullName -Raw | ConvertFrom-Json).Grpc.Port
+  if (-not $grpcPort) { continue }
+  $serviceName = Split-Path $settingsFile.DirectoryName -Leaf
+  $dockerfileText = Get-Content (Join-Path $settingsFile.DirectoryName 'Dockerfile') -Raw
+  Assert-That ([bool]($dockerfileText -match "ASPNETCORE_HTTP_PORTS=[\d;]*\b$grpcPort\b")) "$serviceName lists the gRPC port $grpcPort in ASPNETCORE_HTTP_PORTS"
+  Assert-That ([bool]($dockerfileText -match "(?m)^EXPOSE[\d ]*\b$grpcPort\b")) "$serviceName exposes the gRPC port $grpcPort"
+}
+
 Write-Host 'Compose'
 $composeArgs = @(
   'compose', '-p', 'healthyfac-verify-2', '--profile', 'simulator', '--project-directory', $repo,

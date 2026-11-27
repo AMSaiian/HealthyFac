@@ -13,9 +13,7 @@ public record MachineDraftDetail
 
     public required bool IsCreate { get; init; }
 
-    public required Guid AttemptId { get; init; }
-
-    public required Guid FileId { get; init; }
+    public required DraftProposalSummary Proposal { get; init; }
 
     public string? Name { get; init; }
 
@@ -32,8 +30,14 @@ public record MachineDraftDetail
             Id = draft.Id,
             State = draft.State.Value,
             IsCreate = draft.IsCreate,
-            AttemptId = draft.AttemptId,
-            FileId = draft.FileId,
+            Proposal = new DraftProposalSummary
+            {
+                Source = draft.Proposal.Source,
+                AttemptId = draft.Proposal.AttemptId,
+                CaseId = draft.Proposal.CaseId,
+                ChatId = draft.Proposal.ChatId,
+                RequestedByName = draft.Proposal.RequestedByName,
+            },
             Name = draft.Name,
             SerialNumber = draft.SerialNumber,
             Description = draft.Description,

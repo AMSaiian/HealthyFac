@@ -83,6 +83,7 @@ public sealed class GetMachineDraftRequestHandler(ICoreDbContext dbContext)
     {
         var draft = await _dbContext.MachineDrafts
                 .AsNoTracking()
+                .Include(candidate => candidate.Proposal)
                 .SingleOrDefaultAsync(
                     candidate => candidate.Id == request.Id && candidate.CompanyId == request.CompanyId,
                     cancellationToken)

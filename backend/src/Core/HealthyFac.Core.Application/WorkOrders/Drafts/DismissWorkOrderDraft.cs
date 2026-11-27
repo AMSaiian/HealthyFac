@@ -1,5 +1,6 @@
 using FluentValidation;
 using HealthyFac.Core.Domain.Drafts;
+using HealthyFac.Core.Domain.Drafts.Proposals;
 using HealthyFac.Core.Messaging.WorkOrders;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.CurrentUser.Actors;
@@ -66,9 +67,10 @@ public sealed class DismissWorkOrderDraftRequestHandler(
         CancellationToken cancellationToken
     )
     {
-        var draft = await _dbContext.WorkOrderDrafts.SingleOrDefaultAsync(
-                candidate => candidate.Id == request.Id && candidate.CompanyId == request.CompanyId,
-                cancellationToken)
+        var draft = await _dbContext.WorkOrderDrafts.Include(candidate => candidate.Proposal)
+                .SingleOrDefaultAsync(
+                    candidate => candidate.Id == request.Id && candidate.CompanyId == request.CompanyId,
+                    cancellationToken)
             ?? throw new NotFoundException(WorkOrderDraftErrors.DraftNotFound);
 
         if (request.RowVersion is { } rowVersion)
@@ -83,14 +85,17 @@ public sealed class DismissWorkOrderDraftRequestHandler(
 
         draft.Dismiss();
 
-        _outbox.Add(
-            new WorkOrderDraftDismissed
-            {
-                DraftId = draft.Id,
-                CaseId = draft.CaseId,
-                CompanyId = draft.CompanyId,
-                DismissedAt = _timeProvider.GetUtcNow().UtcDateTime,
-            });
+        if (draft.Proposal.Source == DraftSource.Case)
+        {
+            _outbox.Add(
+                new WorkOrderDraftDismissed
+                {
+                    DraftId = draft.Id,
+                    CaseId = draft.Proposal.CaseId!.Value,
+                    CompanyId = draft.CompanyId,
+                    DismissedAt = _timeProvider.GetUtcNow().UtcDateTime,
+                });
+        }
 
         try
         {

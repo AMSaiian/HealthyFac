@@ -8,13 +8,25 @@ public static class DraftMessageErrors
     public static class Validation
     {
         public const string IdRequired = "Every ID is required.";
+        public const string SourceRequired = "The source is required.";
         public const string QueuedAtRequired = "QueuedAt is required.";
+        public const string IsMachineFileRequired = "IsMachineFile is required for an ingest.";
+        public const string FieldsOfAnotherSource = "A field of the other source must be empty.";
+        public const string RequestedByNameRequired = "RequestedByName is required for a chat.";
+
+        public static readonly string RequestedByNameTooLong =
+            $"RequestedByName must have at most {DraftMessageLimits.RequestedByNameMaxLength} characters.";
+
+        public const string MessageWithoutContent = "A message needs a machine, a metric, a status, or a phase.";
+        public const string MachineDraftUnknown = "A MachineDraftId must name a create draft of the same message.";
+        public const string UpdateWithoutContent = "An update draft needs a name, a serial number, or a description.";
+        public const string DefinitionMachineInvalid = "A definition names exactly 1 machine.";
         public const string TargetMachineIdInvalid = "TargetMachineId must not be empty when it is set.";
 
         public const string MachineFileNeedsOneTarget =
-            "A machine file needs exactly 1 machine, and the machine needs a target.";
+            "A machine file holds at most 1 machine, and the machine needs a target.";
 
-        public const string MachineWithoutContent = "A machine needs a value, a metric, or a status.";
+        public const string MachineWithoutContent = "A create draft needs a value or a definition that names it.";
         public const string MetricWithoutContent = "A metric needs at least one value.";
         public const string StatusWithoutContent = "A status needs at least one value.";
         public const string KeyInvalid = "The key does not match the key format.";
@@ -34,13 +46,13 @@ public static class DraftMessageErrors
         public const string DescriptionTooMuchFormatting = "The description has too much formatting.";
 
         public static readonly string MachinesCount =
-            $"A message holds {DraftMessageLimits.MinMachines} to {DraftMessageLimits.MaxMachines} machines.";
+            $"A message holds at most {DraftMessageLimits.MaxMachines} machines.";
 
         public static readonly string MetricsCount =
-            $"A machine holds at most {DraftMessageLimits.MaxMetrics} metrics.";
+            $"A machine holds at most {DraftMessageLimits.MaxMetrics} metrics in a message.";
 
         public static readonly string StatusesCount =
-            $"A machine holds at most {DraftMessageLimits.MaxStatuses} statuses.";
+            $"A machine holds at most {DraftMessageLimits.MaxStatuses} statuses in a message.";
 
         public static readonly string DescriptionTooLong =
             $"The description has at most {DraftMessageLimits.DescriptionMaxLength} characters.";

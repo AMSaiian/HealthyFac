@@ -9,6 +9,8 @@ using HealthyFac.Insights.Application.Agents.Runs;
 using HealthyFac.Insights.Application.Agents.Tools;
 using HealthyFac.Insights.Application.Agents.Tools.Invocation;
 using HealthyFac.Insights.Application.Agents.Triage;
+using HealthyFac.Insights.Application.Chats.Tools;
+using HealthyFac.Insights.Application.Chats.Turns;
 using HealthyFac.Insights.Application.Documents;
 using HealthyFac.Insights.Application.Extraction;
 using HealthyFac.Insights.Application.Extraction.Signals;
@@ -20,6 +22,9 @@ using HealthyFac.Insights.Infrastructure.Agents.Prompts;
 using HealthyFac.Insights.Infrastructure.Agents.Runs;
 using HealthyFac.Insights.Infrastructure.Agents.Tools;
 using HealthyFac.Insights.Infrastructure.Ai;
+using HealthyFac.Insights.Infrastructure.Caching;
+using HealthyFac.Insights.Infrastructure.Chats.Models;
+using HealthyFac.Insights.Infrastructure.Chats.Reads;
 using HealthyFac.Insights.Infrastructure.Conversion;
 using HealthyFac.Insights.Infrastructure.Database;
 using HealthyFac.Insights.Infrastructure.Database.Initialization;
@@ -50,6 +55,7 @@ using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace HealthyFac.Insights.Infrastructure;
@@ -134,6 +140,9 @@ public static class ConfigureServices
             services.AddValidatedOptions<AgentOptions, AgentOptionsValidator>(
                 AgentOptions.SectionName, configuration);
 
+            services.AddValidatedOptions<ChatTurnOptions, ChatTurnOptionsValidator>(
+                ChatTurnOptions.SectionName, configuration);
+
             services.AddValidatedOptions<ScreeningOptions, ScreeningOptionsValidator>(
                 ScreeningOptions.SectionName, configuration);
 
@@ -150,6 +159,10 @@ public static class ConfigureServices
             services.AddScoped<AgentRunClaims>();
             services.AddScoped<IAgentRunLease, AgentRunLease>();
             services.AddSingleton<IAdvisorScopes, AdvisorScopes>();
+            services.AddScoped<IChatReads, GrpcChatReads>();
+            services.AddInsightsCaches(configuration);
+            services.AddScoped<GrpcCompanyTimeZoneReader>();
+            services.AddScoped<ICompanyTimeZoneReader, RedisCompanyTimeZoneReader>();
             services.AddSingleton<IAgentPrompts, EmbeddedAgentPrompts>();
 
             services.AddSingleton<ITriageModel>(provider => new GeminiTriageModel(
@@ -157,6 +170,24 @@ public static class ConfigureServices
                 provider.GetRequiredService<IOptions<GeminiOptions>>()));
 
             services.AddScoped<IAgentRunner, TriageRunner>();
+
+            services.AddSingleton<IChatModel>(provider => new GeminiChatModel(
+                provider.GetRequiredKeyedService<IChatClient>(AiClientKeys.Assistant),
+                provider.GetRequiredService<IOptions<GeminiOptions>>(),
+                provider.GetRequiredService<ILogger<GeminiChatModel>>()));
+
+            services.AddSingleton<IChatTriageModel>(provider => new GeminiChatTriageModel(
+                provider.GetRequiredKeyedService<IChatClient>(AiClientKeys.Triage),
+                provider.GetRequiredService<IOptions<GeminiOptions>>(),
+                provider.GetRequiredService<IAgentPrompts>(),
+                provider.GetRequiredService<IAgentProviderCalls>()));
+
+            services.AddSingleton<IChatSummaryModel>(provider => new GeminiChatSummaryModel(
+                provider.GetRequiredKeyedService<IChatClient>(AiClientKeys.Triage),
+                provider.GetRequiredService<IOptions<GeminiOptions>>(),
+                provider.GetRequiredService<IAgentPrompts>(),
+                provider.GetRequiredService<IAgentProviderCalls>()));
+
             services.AddSingleton<IAgentJson, AgentJson>();
             services.AddSingleton<IToolCallIds, FunctionToolCallIds>();
             services.AddSingleton<IPlannerModel, AgentPlannerModel>();

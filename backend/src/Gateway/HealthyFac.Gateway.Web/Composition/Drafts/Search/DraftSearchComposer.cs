@@ -3,7 +3,7 @@ using System.Text.Json.Nodes;
 
 namespace HealthyFac.Gateway.Web.Composition.Drafts.Search;
 
-/// <summary>The scope of a composed draft search: one machine, or one ingest attempt.</summary>
+/// <summary>The scope of a composed draft search: one machine, one ingest attempt, or one chat.</summary>
 public sealed record DraftSearchScope
 {
     /// <summary>The API version segment of the request (for example <c>v1</c>).</summary>
@@ -15,13 +15,22 @@ public sealed record DraftSearchScope
     /// <summary>The encrypted ingest attempt ID of the route, or <see langword="null"/>.</summary>
     public string? AttemptId { get; init; }
 
-    public string CorePath => MachineId is not null
-        ? DraftCompositionRoutes.CoreMachineSearch(Version, MachineId)
-        : DraftCompositionRoutes.CoreAttemptSearch(Version, AttemptId!);
+    /// <summary>The encrypted chat ID of the route, or <see langword="null"/>.</summary>
+    public string? ChatId { get; init; }
 
-    public string TelemetryPath => MachineId is not null
-        ? DraftCompositionRoutes.TelemetryMachineSearch(Version, MachineId)
-        : DraftCompositionRoutes.TelemetryAttemptSearch(Version, AttemptId!);
+    public string CorePath => (MachineId, ChatId) switch
+    {
+        ({ } machineId, _) => DraftCompositionRoutes.CoreMachineSearch(Version, machineId),
+        (_, { } chatId) => DraftCompositionRoutes.CoreChatSearch(Version, chatId),
+        _ => DraftCompositionRoutes.CoreAttemptSearch(Version, AttemptId!),
+    };
+
+    public string TelemetryPath => (MachineId, ChatId) switch
+    {
+        ({ } machineId, _) => DraftCompositionRoutes.TelemetryMachineSearch(Version, machineId),
+        (_, { } chatId) => DraftCompositionRoutes.TelemetryChatSearch(Version, chatId),
+        _ => DraftCompositionRoutes.TelemetryAttemptSearch(Version, AttemptId!),
+    };
 }
 
 /// <summary>

@@ -7,6 +7,7 @@ using HealthyFac.Insights.Infrastructure.Database;
 using HealthyFac.Insights.IntegrationTests.Database.Data;
 using HealthyFac.Shared.Application.Messaging;
 using HealthyFac.Shared.Application.UseCases;
+using HealthyFac.Shared.Infrastructure.Messaging;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -82,8 +83,8 @@ public static class FileMessageFixtureExtensions
 
             return
             [
-                .. payloads.Select(payload =>
-                    JsonSerializer.Deserialize<TMessage>(payload, JsonSerializerOptions.Web)!),
+                .. payloads
+                    .Select(payload => JsonSerializer.Deserialize<TMessage>(payload, MessagingJsonOptions.Instance)!),
             ];
         }
     }

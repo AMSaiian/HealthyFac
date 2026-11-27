@@ -14,10 +14,17 @@ public record LookupFilesRequest : IRequest<LookupFilesResponse>
     public required Guid CompanyId { get; init; }
 
     /// <summary>
-    /// The encrypted file IDs. The handler decrypts them, so a bad value is left out and never fails.
+    /// The encrypted file IDs. The handler decrypts them, so a bad value is left out and never fails. A request holds
+    /// the IDs or <see cref="Search"/>, not both.
     /// </summary>
     [IgnoreIdEncryption]
-    public required IReadOnlyList<string> Ids { get; init; }
+    public IReadOnlyList<string>? Ids { get; init; }
+
+    /// <summary>
+    /// The start of the file name. With it, the lookup answers the first files by name, at most
+    /// <see cref="FileValidationConstants.LookupSearchMaxItems"/>.
+    /// </summary>
+    public string? Search { get; init; }
 }
 
 public record LookupFilesResponse
@@ -50,20 +57,26 @@ public class LookupFilesRequestValidator : AbstractValidator<LookupFilesRequest>
     {
         RuleFor(request => request.CompanyId).NotEmpty().WithMessage(FileErrors.CompanyIdRequired);
 
-        RuleFor(request => request.Ids)
-            .NotNull()
-            .WithMessage(FileErrors.LinkIdsRequired)
-            .Must(ids => ids.Count <= FileValidationConstants.LookupIdsMaxCount)
-            .WithMessage(FileErrors.LookupIdsTooMany);
+        RuleFor(request => request)
+            .Must(request => request.Ids is null != request.Search is null)
+            .WithMessage(FileErrors.LookupIdsOrSearchRequired);
+
+        RuleFor(request => request.Ids!.Count)
+            .LessThanOrEqualTo(FileValidationConstants.LookupIdsMaxCount)
+            .WithMessage(FileErrors.LookupIdsTooMany)
+            .When(request => request.Ids is not null);
 
         RuleForEach(request => request.Ids).SingleLineText();
+
+        RuleFor(request => request.Search).SingleLineText();
     }
 }
 
 public sealed class LookupFilesPreHandlerCheck : PassThroughPreHandlerCheck<LookupFilesRequest>;
 
 /// <summary>
-/// Reads the data of the attachments for the given IDs. The query holds the scope: a file of another company, a
+/// Reads the data of the attachments for the given IDs, or the first attachments whose name starts with the search
+/// text, sorted by name. The query holds the scope: a file of another company, a
 /// deleted file, an embedded image, a machine file whose machine belongs to another company, and a value that is not an
 /// encrypted ID are left out. The answer never shows why an ID is missing.
 /// </summary>
@@ -80,13 +93,14 @@ public sealed class LookupFilesRequestHandler(IDocumentDbContext dbContext, IIdE
         CancellationToken cancellationToken = default(CancellationToken)
     )
     {
-        var fileIds = request.Ids.Select(TryDecrypt).OfType<Guid>().Distinct().ToList();
+        var fileIds = (request.Ids ?? []).Select(TryDecrypt).OfType<Guid>().Distinct().ToList();
+        var search = request.Search;
 
-        var files = await (
+        var query =
             from file in _dbContext.FileRefs.AsNoTracking()
-            where fileIds.Contains(file.Id)
-                && file.CompanyId == request.CompanyId
+            where file.CompanyId == request.CompanyId
                 && file.Purpose == FilePurpose.Attachment
+                && (search != null ? file.FileName.StartsWith(search) : fileIds.Contains(file.Id))
             join registration in _dbContext.MachineRegistrations on file.MachineId equals registration.Id
                 into registrations
             from registration in registrations.DefaultIfEmpty()
@@ -99,7 +113,15 @@ public sealed class LookupFilesRequestHandler(IDocumentDbContext dbContext, IIdE
                 ContentType = file.ContentType,
                 SizeBytes = file.SizeBytes,
                 MachineId = file.MachineId,
-            }).ToListAsync(cancellationToken);
+            };
+
+        var files = search is null
+            ? await query.ToListAsync(cancellationToken)
+            : await query
+                .OrderBy(file => file.FileName)
+                .ThenBy(file => file.Id)
+                .Take(FileValidationConstants.LookupSearchMaxItems)
+                .ToListAsync(cancellationToken);
 
         return new LookupFilesResponse { Files = files };
     }

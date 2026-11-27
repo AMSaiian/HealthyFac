@@ -13,7 +13,7 @@ public static class InsightsServiceTokenTestData
     public static readonly string[] TelemetryPermissions =
         ["metric-definitions:read", "status-definitions:read", "signals:read"];
 
-    public static readonly string[] WorkOrdersPermissions = ["work-orders:read"];
+    public static readonly string[] WorkOrdersPermissions = ["work-orders:read", "work-orders:read-company"];
 
     public static TheoryData<string, string, string[], string> Scopes => new()
     {

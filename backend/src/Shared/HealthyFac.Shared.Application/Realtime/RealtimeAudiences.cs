@@ -12,7 +12,7 @@ public static class RealtimeAudiences
     public static readonly IReadOnlyDictionary<RealtimeNotificationKind, string> KindPermissions =
         new Dictionary<RealtimeNotificationKind, string>
         {
-            [RealtimeNotificationKind.WorkOrderBlocked] = "work-orders:manage",
+            [RealtimeNotificationKind.WorkOrderBlocked] = "work-orders:write-company",
             [RealtimeNotificationKind.WorkOrderDraftCreated] = "drafts:read",
             [RealtimeNotificationKind.ProvisioningFailed] = "employees:manage",
             [RealtimeNotificationKind.MaintenanceCaseOpened] = "cases:read",

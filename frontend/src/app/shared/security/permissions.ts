@@ -21,14 +21,18 @@ export const Permission = {
   EmployeesManage: 'employees:manage',
   WorkOrdersRead: 'work-orders:read',
   WorkOrdersWrite: 'work-orders:write',
-  WorkOrdersManage: 'work-orders:manage',
+  WorkOrdersReadCompany: 'work-orders:read-company',
+  WorkOrdersWriteCompany: 'work-orders:write-company',
   ShiftsRead: 'shifts:read',
-  ShiftsManage: 'shifts:manage',
+  ShiftsReadCompany: 'shifts:read-company',
+  ShiftsWriteCompany: 'shifts:write-company',
   OperatingPhasesRead: 'operating-phases:read',
   OperatingPhasesWrite: 'operating-phases:write',
   SignalsRead: 'signals:read',
   CasesRead: 'cases:read',
   CasesWrite: 'cases:write',
+  ChatsRead: 'chats:read',
+  ChatsWrite: 'chats:write',
 } as const;
 
 export type Permission = (typeof Permission)[keyof typeof Permission];

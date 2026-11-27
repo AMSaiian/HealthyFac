@@ -17,8 +17,6 @@ public static class DraftTestData
             Guid.CreateVersion7(),
             CompanyId,
             AttemptId,
-            FileId,
-            QueuedAt,
             targetMachineId,
             name: "AX-200",
             serialNumber: null,

@@ -82,7 +82,7 @@ export function toCreateBody(value: WorkOrderFormValue): CreateWorkOrderBody {
 }
 
 /**
- * Builds the update body. A user without `work-orders:manage` may not change the estimate or the slot (the backend
+ * Builds the update body. A user without `work-orders:write-company` may not change the estimate or the slot (the backend
  * answers `403`), so the body then carries the stored values and never the edited ones. The body always carries the
  * assignee and the start: both `null` unassigns the work order.
  */

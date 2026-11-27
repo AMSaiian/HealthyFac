@@ -25,6 +25,7 @@ public sealed class WorkOrderDraftApiTests(CoreApiFixture fixture)
             WorkOrderDraftApiTestData.DraftsRead,
             WorkOrderApiTestData.WritePermission,
             WorkOrderApiTestData.ManagePermission,
+            WorkOrderApiTestData.ReadCompanyPermission,
             WorkOrderApiTestData.ReadPermission);
 
         var response = await _fixture.PostDraftAsync(claims, draftId, action: "apply", _fixture.CreateApplyBody());
@@ -59,6 +60,7 @@ public sealed class WorkOrderDraftApiTests(CoreApiFixture fixture)
         var claims = _fixture.CreateDraftClaims(
             WorkOrderDraftApiTestData.DraftsWrite,
             WorkOrderDraftApiTestData.WorkOrdersWrite,
+            WorkOrderApiTestData.ReadCompanyPermission,
             WorkOrderApiTestData.ManagePermission);
 
         var response = await _fixture.PostDraftAsync(

@@ -31,6 +31,8 @@ import { MetricsPageStore } from '@machines/metrics/metrics-page-store/metrics-p
 export class MetricsPage {
   /** The query parameter `draftAttemptId` (router input binding): the attempt whose metric drafts the page stages. */
   readonly draftAttemptId = input<string>();
+  /** The query parameter `draftChatId`: the chat whose metric drafts the page stages. */
+  readonly draftChatId = input<string>();
 
   protected readonly store = inject(MetricsPageStore);
 
@@ -62,7 +64,7 @@ export class MetricsPage {
 
   constructor() {
     effect(() => {
-      this.store.loadDrafts(this.draftAttemptId() ?? null);
+      this.store.loadDrafts(this.draftAttemptId() ?? null, this.draftChatId() ?? null);
     });
   }
 }

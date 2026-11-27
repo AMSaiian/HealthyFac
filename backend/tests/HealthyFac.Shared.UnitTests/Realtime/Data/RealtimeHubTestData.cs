@@ -11,7 +11,7 @@ public static class RealtimeHubTestData
 
     public static readonly IReadOnlyList<string> SupervisorPermissions =
     [
-        "work-orders:manage",
+        "work-orders:write-company",
         "drafts:read",
         "employees:manage",
         "cases:read",

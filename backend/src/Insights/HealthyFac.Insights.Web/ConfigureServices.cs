@@ -1,7 +1,9 @@
+using HealthyFac.Insights.Application.Chats.Tools;
 using HealthyFac.Insights.Infrastructure.Conversion;
 using HealthyFac.Insights.Infrastructure.Database;
 using HealthyFac.Insights.Web.Authorization;
 using HealthyFac.Insights.Web.Cases;
+using HealthyFac.Insights.Web.Chats;
 using HealthyFac.Insights.Web.Ingest;
 using HealthyFac.Shared.Infrastructure.Messaging.Transport.Broker;
 using HealthyFac.Shared.Web.Authentication;
@@ -44,6 +46,7 @@ public static class ConfigureServices
             services.AddApiSecurity(configuration);
 
             services.AddActorContextMiddleware();
+            services.AddScoped<IChatPermissions, HttpChatPermissions>();
             services.AddSharedExceptionHandling();
             services.AddSharedRealtime(configuration);
 
@@ -142,6 +145,7 @@ public static class ConfigureServices
             var versionedGroup = app.MapVersionedGroup();
             versionedGroup.MapIngestEndpoints();
             versionedGroup.MapCaseEndpoints();
+            versionedGroup.MapChatEndpoints();
 
             return app;
         }

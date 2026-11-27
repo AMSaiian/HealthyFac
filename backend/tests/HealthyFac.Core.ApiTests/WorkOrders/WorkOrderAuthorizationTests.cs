@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text.Json.Nodes;
 using HealthyFac.Core.ApiTests.Hosting;
 using HealthyFac.Core.ApiTests.Shifts.Data;
 using HealthyFac.Core.ApiTests.WorkOrders.Data;
@@ -12,6 +13,7 @@ namespace HealthyFac.Core.ApiTests.WorkOrders;
 public sealed class WorkOrderAuthorizationTests(CoreApiFixture fixture)
 {
     private const string StartTime = "09:00:00";
+    private const string FreeStartTime = "11:00:00";
 
     private readonly CoreApiFixture _fixture = fixture;
 
@@ -31,6 +33,75 @@ public sealed class WorkOrderAuthorizationTests(CoreApiFixture fixture)
                 arranged.AssignedToOtherId,
                 arranged.SupervisorBacklogId,
                 arranged.WorkerBacklogId);
+    }
+
+    [Fact]
+    public async Task Lookup_WithWorkerAndCompanyReadTokens_ReturnsOwnRowsAndEveryRow()
+    {
+        var arranged = await ArrangeAsync();
+
+        var readerClaims = arranged.WorkerClaims with
+        {
+            Permissions = [WorkOrderApiTestData.ReadPermission, WorkOrderApiTestData.ReadCompanyPermission],
+        };
+
+        const string body = """{"search":"replace"}""";
+
+        var worker = await _fixture.SendShiftRequestAsync(
+            HttpMethod.Post, WorkOrderApiTestData.LookupPath, arranged.WorkerClaims, body);
+
+        var reader = await _fixture.SendShiftRequestAsync(
+            HttpMethod.Post, WorkOrderApiTestData.LookupPath, readerClaims, body);
+
+        var workerText = await worker.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+        var readerText = await reader.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+        var workerCount = JsonNode.Parse(workerText)!["items"]!.AsArray().Count;
+        var readerCount = JsonNode.Parse(readerText)!["items"]!.AsArray().Count;
+        workerCount.Should().Be(expected: 2);
+        readerCount.Should().Be(expected: 4);
+    }
+
+    [Fact]
+    public async Task Search_WithCompanyReadTokenWithoutManage_ReturnsEveryRow()
+    {
+        var arranged = await ArrangeAsync();
+
+        var claims = arranged.WorkerClaims with
+        {
+            Permissions = [WorkOrderApiTestData.ReadPermission, WorkOrderApiTestData.ReadCompanyPermission],
+        };
+
+        var ids = await _fixture.SearchTitlesAsync(claims);
+
+        ids.Should()
+            .BeEquivalentTo(
+                arranged.AssignedToWorkerId,
+                arranged.AssignedToOtherId,
+                arranged.SupervisorBacklogId,
+                arranged.WorkerBacklogId);
+    }
+
+    [Theory]
+    [MemberData(nameof(WorkOrderApiTestData.WorkerWriteRoutes), MemberType = typeof(WorkOrderApiTestData))]
+    public async Task Writes_WithCompanyReadTokenWithoutManage_Return403(
+        string caseName,
+        string method,
+        string pathTemplate
+    )
+    {
+        var arranged = await ArrangeAsync();
+
+        var claims = arranged.WorkerClaims with
+        {
+            Permissions = [WorkOrderApiTestData.ReadPermission, WorkOrderApiTestData.ReadCompanyPermission],
+        };
+
+        var response = await _fixture.SendShiftRequestAsync(
+            new HttpMethod(method),
+            pathTemplate.Replace(oldValue: "{id}", arranged.AssignedToOtherId),
+            claims);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden, caseName);
     }
 
     [Fact]
@@ -67,6 +138,138 @@ public sealed class WorkOrderAuthorizationTests(CoreApiFixture fixture)
     }
 
     [Fact]
+    public async Task ChangeStatus_WithCompanyReadTokenWithoutManage_Returns404AndWithManageReturns204()
+    {
+        var arranged = await ArrangeAsync();
+
+        var readerClaims = arranged.WorkerClaims with
+        {
+            Permissions =
+            [
+                WorkOrderApiTestData.ReadPermission,
+                WorkOrderApiTestData.WritePermission,
+                WorkOrderApiTestData.ReadCompanyPermission,
+            ],
+        };
+
+        var order = await _fixture.ReadOrderAsync(arranged.SupervisorClaims, arranged.AssignedToOtherId);
+
+        var body = new JsonObject
+        {
+            ["status"] = "rejected",
+            ["rowVersion"] = order["rowVersion"]!.GetValue<uint>(),
+        }.ToJsonString();
+
+        var path = $"{WorkOrderApiTestData.BasePath}/{arranged.AssignedToOtherId}/status";
+
+        var reader = await _fixture.SendShiftRequestAsync(HttpMethod.Post, path, readerClaims, body);
+        var supervisor = await _fixture.SendShiftRequestAsync(HttpMethod.Post, path, arranged.SupervisorClaims, body);
+
+        reader.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        supervisor.StatusCode.Should().Be(HttpStatusCode.NoContent);
+    }
+
+    [Fact]
+    public async Task Update_WithCompanyReadTokenWithoutManage_Returns404AndWithManageReturns204()
+    {
+        var arranged = await ArrangeAsync();
+
+        var readerClaims = arranged.WorkerClaims with
+        {
+            Permissions =
+            [
+                WorkOrderApiTestData.ReadPermission,
+                WorkOrderApiTestData.WritePermission,
+                WorkOrderApiTestData.ReadCompanyPermission,
+            ],
+        };
+
+        var order = await _fixture.ReadOrderAsync(arranged.SupervisorClaims, arranged.SupervisorBacklogId);
+
+        var body = new JsonObject
+        {
+            ["title"] = WorkOrderApiTestData.Title,
+            ["priority"] = "low",
+            ["category"] = "repair",
+            ["estimateMinutes"] = WorkOrderApiTestData.ValidEstimate,
+            ["fileIds"] = new JsonArray(),
+            ["rowVersion"] = order["rowVersion"]!.GetValue<uint>(),
+        }.ToJsonString();
+
+        var path = $"{WorkOrderApiTestData.BasePath}/{arranged.SupervisorBacklogId}";
+
+        var reader = await _fixture.SendShiftRequestAsync(HttpMethod.Put, path, readerClaims, body);
+        var supervisor = await _fixture.SendShiftRequestAsync(HttpMethod.Put, path, arranged.SupervisorClaims, body);
+
+        reader.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        supervisor.StatusCode.Should().Be(HttpStatusCode.NoContent);
+    }
+
+    [Fact]
+    public async Task Create_WithCompanyReadTokenWithoutWriteCompany_Returns403AndWithItReturns201()
+    {
+        var arranged = await ArrangeAsync();
+
+        var readerClaims = arranged.WorkerClaims with
+        {
+            Permissions =
+            [
+                WorkOrderApiTestData.ReadPermission,
+                WorkOrderApiTestData.WritePermission,
+                WorkOrderApiTestData.ReadCompanyPermission,
+            ],
+        };
+
+        var body = _fixture.CreateOrderBody(
+            encryptedAssigneeId: arranged.WorkerEncryptedId,
+            plannedStartLocal: _fixture.FutureStart(FreeStartTime));
+
+        var reader = await _fixture.SendShiftRequestAsync(
+            HttpMethod.Post, WorkOrderApiTestData.BasePath, readerClaims, body);
+
+        var supervisor = await _fixture.SendShiftRequestAsync(
+            HttpMethod.Post, WorkOrderApiTestData.BasePath, arranged.SupervisorClaims, body);
+
+        reader.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        supervisor.StatusCode.Should().Be(HttpStatusCode.Created);
+    }
+
+    [Fact]
+    public async Task ApplyDraft_WithCompanyReadTokenWithoutWriteCompany_Returns403AndWithItReturns200()
+    {
+        var arranged = await ArrangeAsync();
+
+        var readerClaims = arranged.WorkerClaims with
+        {
+            Permissions =
+            [
+                WorkOrderDraftApiTestData.DraftsWrite,
+                WorkOrderApiTestData.ReadPermission,
+                WorkOrderApiTestData.WritePermission,
+                WorkOrderApiTestData.ReadCompanyPermission,
+            ],
+        };
+
+        var supervisorClaims = arranged.SupervisorClaims with
+        {
+            Permissions = [.. arranged.SupervisorClaims.Permissions, WorkOrderDraftApiTestData.DraftsWrite],
+        };
+
+        var body = _fixture.CreateApplyBody(
+            encryptedAssigneeId: arranged.WorkerEncryptedId,
+            plannedStartLocal: _fixture.FutureStart(FreeStartTime));
+
+        var readerDraftId = await _fixture.ArrangeWorkOrderDraftAsync();
+        var supervisorDraftId = await _fixture.ArrangeWorkOrderDraftAsync();
+
+        var reader = await _fixture.PostDraftAsync(readerClaims, readerDraftId, action: "apply", body);
+        var supervisor = await _fixture.PostDraftAsync(supervisorClaims, supervisorDraftId, action: "apply", body);
+
+        reader.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        supervisor.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
     public async Task Create_WithWorkerTokenAndAssignee_Returns403()
     {
         var arranged = await ArrangeAsync();
@@ -88,13 +291,13 @@ public sealed class WorkOrderAuthorizationTests(CoreApiFixture fixture)
         var arranged = await ArrangeAsync();
         var order = await _fixture.ReadOrderAsync(arranged.WorkerClaims, arranged.AssignedToWorkerId);
 
-        var body = new System.Text.Json.Nodes.JsonObject
+        var body = new JsonObject
         {
             ["title"] = WorkOrderApiTestData.Title,
             ["priority"] = "low",
             ["category"] = "repair",
             ["estimateMinutes"] = WorkOrderApiTestData.ValidEstimate,
-            ["fileIds"] = new System.Text.Json.Nodes.JsonArray(),
+            ["fileIds"] = new JsonArray(),
             ["assigneeId"] = arranged.WorkerEncryptedId,
             ["plannedStartLocal"] = _fixture.FutureStart(time: "10:00:00"),
             ["rowVersion"] = order["rowVersion"]!.GetValue<uint>(),

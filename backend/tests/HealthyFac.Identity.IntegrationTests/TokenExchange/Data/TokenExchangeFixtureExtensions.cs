@@ -34,6 +34,26 @@ public static class TokenExchangeFixtureExtensions
                 host);
 
         /// <summary>
+        /// Exchanges a user token as <c>healthyfac-insights</c> does for a chat turn.
+        /// </summary>
+        /// <param name="subjectToken">The access token of the user.</param>
+        /// <param name="audience">The target client.</param>
+        /// <param name="scope">The requested scopes, separated by spaces.</param>
+        /// <returns>The status code and the body of the answer.</returns>
+        public Task<TokenResponse> ExchangeAsInsightsAsync(string subjectToken, string audience, string scope) =>
+            fixture.Realm.RequestTokenAsync(
+                new Dictionary<string, string>
+                {
+                    ["grant_type"] = TokenExchangeTestData.GrantType,
+                    ["client_id"] = RealmTestData.InsightsClientId,
+                    ["client_secret"] = RealmTestData.InsightsClientSecret,
+                    ["subject_token"] = subjectToken,
+                    ["subject_token_type"] = TokenExchangeTestData.AccessTokenType,
+                    ["audience"] = audience,
+                    ["scope"] = scope,
+                });
+
+        /// <summary>
         /// Disables the user, exchanges the token, and enables the user again in a <c>finally</c> block. The
         /// collection shares one realm, so a failed exchange must never leave the user disabled for the next test.
         /// </summary>

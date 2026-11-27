@@ -1,5 +1,9 @@
 export const REALTIME_HUB_PATH = '/api/realtime/v1/hub';
 
+/** The client methods of the chat push. The hub sends them to the user who owns the chat. */
+export const CHAT_TURN_UPDATED_METHOD = 'ChatTurnUpdated';
+export const CHAT_TURN_ENDED_METHOD = 'ChatTurnEnded';
+
 export enum RealtimeNotificationKind {
   ShiftChanged = 'shiftChanged',
   WorkOrderAssigned = 'workOrderAssigned',

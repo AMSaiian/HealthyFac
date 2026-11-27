@@ -1,6 +1,7 @@
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Telemetry.Application.DefinitionDrafts;
 using HealthyFac.Telemetry.Domain.DefinitionDrafts;
+using HealthyFac.Telemetry.Domain.DefinitionDrafts.Proposals;
 using HealthyFac.Telemetry.IntegrationTests.Database.Data;
 using HealthyFac.Telemetry.IntegrationTests.DefinitionDrafts.Data;
 using HealthyFac.Telemetry.IntegrationTests.MachineRegistrations.Data;
@@ -47,6 +48,52 @@ public sealed class DismissDefinitionDraftsTests(TelemetryDatabaseFixture fixtur
             .Select(draft => draft.State)
             .Should()
             .BeEquivalentTo([DefinitionDraftState.Pending, DefinitionDraftState.Applied]);
+    }
+
+    [Fact]
+    public async Task DismissAttemptDrafts_LeavesTheChatDraftsOfTheSameMachine()
+    {
+        var companyId = DefinitionDraftTestData.CompanyId;
+        var machineId = await _fixture.RegisterTenantMachineAsync(companyId);
+        await _fixture.StoreMetricDraftOnMachineAsync(companyId, machineId, isApplied: false);
+
+        await _fixture.StoreProposedDefinitionDraftsAsync(
+            companyId, ProposalBuilder.ChatMessage(companyId, machineId));
+
+        var response = await _fixture.DismissDefinitionDraftsAsync(
+            companyId, machineId: null, DefinitionDraftTestData.AttemptId);
+
+        var metrics = await _fixture.LoadMetricDraftsAsync();
+        var chatMetric = metrics.Single(draft => draft.Proposal.Source == DraftSource.Chat);
+
+        response.DismissedCount.Should().Be(expected: 1);
+        chatMetric.State.Should().Be(DefinitionDraftState.Pending);
+    }
+
+    [Fact]
+    public async Task DismissChatDrafts_DismissesOnlyTheOpenDraftsOfTheChat()
+    {
+        var companyId = DefinitionDraftTestData.CompanyId;
+        var machineId = await _fixture.RegisterTenantMachineAsync(companyId);
+        await _fixture.StoreMetricDraftOnMachineAsync(companyId, machineId, isApplied: false);
+
+        await _fixture.StoreProposedDefinitionDraftsAsync(
+            companyId, ProposalBuilder.ChatMessage(companyId, machineId));
+
+        await _fixture.StoreProposedDefinitionDraftsAsync(
+            companyId,
+            ProposalBuilder.ChatMessage(companyId, machineId) with
+            {
+                ChatId = Guid.CreateVersion7(),
+                ChatMessageId = Guid.CreateVersion7(),
+            });
+
+        var response = await _fixture.DismissChatDefinitionDraftsAsync(companyId, DefinitionDraftTestData.ChatId);
+
+        var metrics = await _fixture.LoadMetricDraftsAsync();
+        response.DismissedCount.Should().Be(expected: 2);
+        metrics.Count(draft => draft.State == DefinitionDraftState.Dismissed).Should().Be(expected: 1);
+        metrics.Count(draft => draft.State == DefinitionDraftState.Pending).Should().Be(expected: 2);
     }
 
     [Fact]

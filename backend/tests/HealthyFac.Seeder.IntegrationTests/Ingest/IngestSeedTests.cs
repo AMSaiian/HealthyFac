@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using HealthyFac.Core.Domain.Drafts.Proposals;
 using HealthyFac.Document.Domain.Files;
 using HealthyFac.Seeder.IntegrationTests.Hosting;
 using HealthyFac.Seeder.IntegrationTests.Ingest.Data;
@@ -55,5 +56,10 @@ public sealed class IngestSeedTests(SeederFixture fixture)
         telemetry.Statuses.Should().Be(IngestTestData.StatusDraftCount);
         telemetry.Phases.Should().Be(IngestTestData.PhaseDraftCount);
         telemetry.Entries.Should().Be(IngestTestData.FileCount);
+        var proposals = await _fixture.LoadCoreProposalsAsync();
+        proposals.Should().HaveCount(IngestTestData.FileCount);
+
+        proposals.Should()
+            .OnlyContain(proposal => proposal.Source == DraftSource.Ingest && proposal.AttemptId == proposal.Id);
     }
 }

@@ -53,8 +53,13 @@ public class MetricDefinitionDraftConfiguration : IEntityTypeConfiguration<Metri
 
         builder.ConfigureVersioned();
 
-        builder.HasIndex(draft => new { draft.CompanyId, draft.AttemptId })
-            .HasDatabaseName(DefinitionDraftIndexNames.MetricAttempt);
+        builder.HasOne(draft => draft.Proposal)
+            .WithMany()
+            .HasForeignKey(draft => draft.ProposalId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasIndex(draft => new { draft.CompanyId, draft.ProposalId })
+            .HasDatabaseName(DefinitionDraftIndexNames.MetricProposal);
 
         builder.HasIndex(draft => new { draft.CompanyId, draft.TargetMachineId, draft.State })
             .HasDatabaseName(DefinitionDraftIndexNames.MetricTarget)
@@ -69,6 +74,7 @@ public class MetricDefinitionDraftConfiguration : IEntityTypeConfiguration<Metri
             .HasLengthCheck(draft => draft.Name, minLength: 1, DraftMessageLimits.Metric.NameMaxLength)
             .HasLengthCheck(draft => draft.Description, minLength: 0, RichTextConstants.HtmlMaxLength)
             .HasNotEmptyGuidCheck(draft => draft.CompanyId)
+            .HasNotEmptyGuidCheck(draft => draft.ProposalId)
             .HasNotEmptyGuidCheck(draft => draft.ProposalEntryId);
 
         builder.ToTable(table =>

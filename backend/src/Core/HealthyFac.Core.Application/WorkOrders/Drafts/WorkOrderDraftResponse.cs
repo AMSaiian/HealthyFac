@@ -1,3 +1,4 @@
+using HealthyFac.Core.Application.Drafts;
 using HealthyFac.Core.Domain.Drafts;
 using HealthyFac.Core.Domain.WorkOrders;
 using HealthyFac.Core.Domain.WorkOrders.Drafts;
@@ -13,15 +14,13 @@ public record WorkOrderDraftResponse
 {
     public required Guid Id { get; init; }
 
-    public required Guid MachineId { get; init; }
+    public Guid? MachineId { get; init; }
 
     public string? MachineName { get; init; }
 
     public required bool IsMachineDeleted { get; init; }
 
-    public required Guid CaseId { get; init; }
-
-    public required Guid RunId { get; init; }
+    public required DraftProposalSummary Proposal { get; init; }
 
     public required string Title { get; init; }
 
@@ -67,8 +66,14 @@ public record WorkOrderDraftResponse
                 .Where(machine => machine.Id == draft.MachineId)
                 .Select(machine => machine.Name)
                 .FirstOrDefault(),
-            CaseId = draft.CaseId,
-            RunId = draft.RunId,
+            Proposal = new DraftProposalSummary
+            {
+                Source = draft.Proposal.Source,
+                AttemptId = draft.Proposal.AttemptId,
+                CaseId = draft.Proposal.CaseId,
+                ChatId = draft.Proposal.ChatId,
+                RequestedByName = draft.Proposal.RequestedByName,
+            },
             Title = draft.Title,
             Description = draft.Description,
             Priority = draft.Priority,

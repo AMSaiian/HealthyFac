@@ -260,7 +260,7 @@ export const MetricsPageStore = signalStore(
       let stagedDrafts: unknown = null;
       effect(() => {
         const definitions = store.definitionsValue();
-        const attemptId = store.draftAttemptId();
+        const hasScope = store.draftAttemptId() !== null || store.draftChatId() !== null;
         const machineId = store.machineId();
         const isSettled =
           store.definitions.status() === 'resolved' && store.drafts.status() === 'resolved' && store.units.hasValue();
@@ -268,7 +268,7 @@ export const MetricsPageStore = signalStore(
         if (
           definitions === undefined ||
           drafts === undefined ||
-          attemptId === null ||
+          !hasScope ||
           machineId === null ||
           (stagedDefinitions === definitions && stagedDrafts === drafts)
         ) {

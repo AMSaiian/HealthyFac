@@ -827,6 +827,52 @@
       ]
     },
     {
+      "name": "insights-chat-core",
+      "description": "Scope of a chat turn of Insights: call Core as the user. The permissions come from the healthyfac-claims mappers, limited by the role scope mapping.",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "false",
+        "display.on.consent.screen": "false"
+      },
+      "protocolMappers": [
+        {
+          "name": "healthyfac-core-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "healthyfac-core",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "name": "insights-chat-telemetry",
+      "description": "Scope of a chat turn of Insights: call Telemetry as the user. The permissions come from the healthyfac-claims mappers, limited by the role scope mapping.",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "false",
+        "display.on.consent.screen": "false"
+      },
+      "protocolMappers": [
+        {
+          "name": "healthyfac-telemetry-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "healthyfac-telemetry",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
       "name": "insights-telemetry",
       "description": "Downstream scope of Insights: read the units, metric definitions, and status definitions of Telemetry. The permissions come from the healthyfac-claims mappers, limited by the role scope mapping.",
       "protocol": "openid-connect",
@@ -892,9 +938,11 @@
               "drafts:write",
               "work-orders:read",
               "work-orders:write",
-              "work-orders:manage",
+              "work-orders:read-company",
+              "work-orders:write-company",
               "shifts:read",
-              "shifts:manage"
+              "shifts:read-company",
+              "shifts:write-company"
             ],
             "healthyfac-telemetry": [
               "operating-phases:read",
@@ -919,7 +967,9 @@
               "ingest:read",
               "ingest:write",
               "cases:read",
-              "cases:write"
+              "cases:write",
+              "chats:read",
+              "chats:write"
             ]
           }
         }
@@ -963,7 +1013,9 @@
               "ingest:read",
               "ingest:write",
               "cases:read",
-              "cases:write"
+              "cases:write",
+              "chats:read",
+              "chats:write"
             ]
           }
         }
@@ -983,7 +1035,8 @@
               "status-definitions:read"
             ],
             "healthyfac-core": [
-              "work-orders:read"
+              "work-orders:read",
+              "work-orders:read-company"
             ]
           }
         }
@@ -1025,23 +1078,31 @@
         },
         {
           "name": "work-orders:read",
-          "description": "View work orders; without work-orders:manage only the own ones"
+          "description": "View the own work orders"
+        },
+        {
+          "name": "work-orders:read-company",
+          "description": "View every work order of the company"
         },
         {
           "name": "work-orders:write",
           "description": "Create and change work orders and their status"
         },
         {
-          "name": "work-orders:manage",
-          "description": "Assign, move, unassign, and delete work orders; reach every work order of the company"
+          "name": "work-orders:write-company",
+          "description": "Create, change, assign, move, unassign, and delete every work order of the company"
         },
         {
           "name": "shifts:read",
-          "description": "View shift templates, overrides, and day schedules; without shifts:manage only the own ones"
+          "description": "View the own shift templates, overrides, and day schedules"
         },
         {
-          "name": "shifts:manage",
-          "description": "Change shift templates and overrides of every employee; view the company schedule"
+          "name": "shifts:read-company",
+          "description": "View the shifts and schedule of every employee and the company schedule"
+        },
+        {
+          "name": "shifts:write-company",
+          "description": "Change the shift templates and overrides of every employee"
         }
       ],
       "healthyfac-telemetry": [
@@ -1124,6 +1185,14 @@
         {
           "name": "cases:write",
           "description": "Confirm, dismiss, and reopen cases, and accept or dismiss work order drafts"
+        },
+        {
+          "name": "chats:read",
+          "description": "View the own chats with the assistant and their messages"
+        },
+        {
+          "name": "chats:write",
+          "description": "Start chats with the assistant, send messages, and delete the own chats and messages"
         }
       ]
     }
@@ -1215,7 +1284,9 @@
         "organization",
         "insights-files",
         "insights-telemetry",
-        "insights-work-orders"
+        "insights-work-orders",
+        "insights-chat-core",
+        "insights-chat-telemetry"
       ]
     },
     {
@@ -1312,13 +1383,33 @@
           "metric-definitions:read",
           "status-definitions:read"
         ]
+      },
+      {
+        "clientScope": "insights-chat-telemetry",
+        "roles": [
+          "signals:read",
+          "metric-definitions:read",
+          "status-definitions:read"
+        ]
       }
     ],
     "healthyfac-core": [
       {
         "clientScope": "insights-work-orders",
         "roles": [
-          "work-orders:read"
+          "work-orders:read",
+          "work-orders:read-company"
+        ]
+      },
+      {
+        "clientScope": "insights-chat-core",
+        "roles": [
+          "employees:read",
+          "machines:read",
+          "work-orders:read",
+          "work-orders:read-company",
+          "shifts:read",
+          "shifts:read-company"
         ]
       }
     ]

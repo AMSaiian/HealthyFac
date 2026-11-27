@@ -10,7 +10,7 @@ public static class RealtimeAudiencePermissionTestData
         {
             {
                 "WorkOrderBlocked", RealtimeAudiences.KindPermissions[RealtimeNotificationKind.WorkOrderBlocked],
-                CorePermissions.WorkOrders.Manage
+                CorePermissions.WorkOrders.WriteCompany
             },
             {
                 "WorkOrderDraftCreated",

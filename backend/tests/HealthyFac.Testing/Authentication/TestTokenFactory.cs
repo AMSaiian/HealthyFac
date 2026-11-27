@@ -32,9 +32,11 @@ public sealed class TestTokenFactory
         "machines:delete",
         "work-orders:read",
         "work-orders:write",
-        "work-orders:manage",
+        "work-orders:read-company",
+        "work-orders:write-company",
         "shifts:read",
-        "shifts:manage",
+        "shifts:read-company",
+        "shifts:write-company",
     ];
 
     private const string KeyId = "test-key";

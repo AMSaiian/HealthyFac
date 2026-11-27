@@ -39,17 +39,18 @@ public sealed class ExtractionToolTests(InsightsFixture fixture)
         await _fixture.RunWorkerAsync(TestContext.Current.CancellationToken);
 
         var drafts = await _fixture.ReadOutboxMessagesAsync<DraftsProposed>();
-        var machine = drafts.Should().ContainSingle().Which.Machines.Should().ContainSingle().Subject;
+        var message = drafts.Should().ContainSingle().Subject;
+        var machine = message.Machines.Should().ContainSingle().Subject;
         machine.Name.Should().Be(expected: "CNC Mill VMC-500");
-        var metric = machine.Metrics.Should().ContainSingle().Subject;
+        var metric = message.Metrics.Should().ContainSingle().Subject;
         metric.Key.Should().Be(expected: "spindle.temperature");
         metric.Unit.Should().Be(expected: "celsius");
         metric.WarningHigh.Should().Be(expected: 70);
         metric.AlarmHigh.Should().Be(expected: 80);
         metric.Behavior.Should().Be(expected: "level");
-        var status = machine.Statuses.Should().ContainSingle().Subject;
+        var status = message.Statuses.Should().ContainSingle().Subject;
         status.Code.Should().Be(expected: "E104");
-        var phase = machine.Phases.Should().ContainSingle().Subject;
+        var phase = message.Phases.Should().ContainSingle().Subject;
         phase.Code.Should().Be(expected: "cutting");
         phase.Conditions.Select(condition => condition.MetricDraftId).Should().Equal(metric.DraftId, null);
         phase.Conditions.Select(condition => condition.StatusDraftId).Should().Equal(null, status.DraftId);
@@ -74,8 +75,7 @@ public sealed class ExtractionToolTests(InsightsFixture fixture)
 
         drafts.Should()
             .ContainSingle()
-            .Which.Machines.Single()
-            .Metrics.Select(metric => metric.Key)
+            .Which.Metrics.Select(metric => metric.Key)
             .Should()
             .Equal("coolant.level");
 
@@ -145,8 +145,9 @@ public sealed class ExtractionToolTests(InsightsFixture fixture)
         await _fixture.RunWorkerAsync(TestContext.Current.CancellationToken);
 
         var drafts = await _fixture.ReadOutboxMessagesAsync<DraftsProposed>();
-        var machine = drafts.Should().ContainSingle().Which.Machines.Single();
-        var phase = machine.Phases.Should().ContainSingle().Subject;
+        var message = drafts.Should().ContainSingle().Subject;
+        var machine = message.Machines.Single();
+        var phase = message.Phases.Should().ContainSingle().Subject;
         machine.TargetMachineId.Should().Be(FileMachineId);
         phase.Conditions.Select(condition => condition.MetricId).Should().Equal(ExistingMetricId, null);
         phase.Conditions.Select(condition => condition.StatusId).Should().Equal(null, ExistingStatusId);
@@ -169,7 +170,7 @@ public sealed class ExtractionToolTests(InsightsFixture fixture)
 
         var drafts = await _fixture.ReadOutboxMessagesAsync<DraftsProposed>();
         var calls = await _fixture.LoadExtractorToolCallsAsync();
-        drafts.Should().ContainSingle().Which.Machines.Single().Phases.Should().BeEmpty();
+        drafts.Should().ContainSingle().Which.Phases.Should().BeEmpty();
         calls[^1].Outcome.Should().Be(ToolCallOutcome.Rejected);
         calls[^1].Result.Should().Contain(expected: "no.such.key");
     }

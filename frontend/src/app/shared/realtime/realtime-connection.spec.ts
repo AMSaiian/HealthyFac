@@ -3,6 +3,7 @@ import { HttpTransportType, type HubConnection, HubConnectionBuilder } from '@mi
 
 import { HUB_CONNECTION_FACTORY, RealtimeConnection, START_TIMEOUT_MILLISECONDS } from './realtime-connection';
 import { type RealtimeHint, type RealtimeNotification, RealtimeNotificationKind, RealtimeTopic } from './realtime';
+import { ChatMessageState, type ChatTurnEnd, type ChatTurnUpdate } from '@shared/chat/chat';
 import { APP_CONFIG, type AppConfig } from '@shared/config/app-config';
 import { provideFakeAuthStore } from '@shared/security/testing/fake-auth-store';
 import { CLOCK } from '@shared/time/clock';
@@ -203,6 +204,23 @@ describe('RealtimeConnection', { tags: ['Realtime'] }, () => {
     hubs[0].handlers.get('Hint')?.({ topic: RealtimeTopic.Cases, caseId: 'c-1' });
 
     expect(received).toEqual([{ topic: RealtimeTopic.Cases, caseId: 'c-1' }]);
+  });
+
+  it('onChatTurn_FromTheHub_EmitsOnChatUpdatesAndChatEnds', async () => {
+    const connection = createConnection();
+    const updates: ChatTurnUpdate[] = [];
+    const ends: ChatTurnEnd[] = [];
+    connection.chatUpdates$.subscribe((update) => updates.push(update));
+    connection.chatEnds$.subscribe((end) => ends.push(end));
+    await connection.start();
+    const update = { chatId: 'c1', messageId: 'm1', sequence: 2, text: 'Hi', activity: null };
+    const end = { chatId: 'c1', messageId: 'm1', state: ChatMessageState.Completed };
+
+    hubs[0].handlers.get('ChatTurnUpdated')?.(update);
+    hubs[0].handlers.get('ChatTurnEnded')?.(end);
+
+    expect(updates).toEqual([update]);
+    expect(ends).toEqual([end]);
   });
 
   it('renew_BeforeTheTokenExpires_StartsASecondConnectionAndStopsTheFirstAfterIt', async () => {

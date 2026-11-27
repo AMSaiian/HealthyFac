@@ -69,4 +69,14 @@ public sealed class DefinitionDraftTests
 
         draft.State.Should().Be(DefinitionDraftState.Dismissed);
     }
+
+    [Theory]
+    [MemberData(nameof(DefinitionDraftTestData.OnMachineDrafts), MemberType = typeof(DefinitionDraftTestData))]
+    public void ProposeOnMachine_ForAMachine_IsPendingOnItWithoutAnEntry(string caseName, IDefinitionDraft draft)
+    {
+        draft.State.Should().Be(DefinitionDraftState.Pending, caseName);
+        draft.TargetMachineId.Should().Be(ProposalEntryTestData.MachineId, caseName);
+        draft.TargetMachineDraftId.Should().BeNull(caseName);
+        draft.ProposalEntryId.Should().BeNull(caseName);
+    }
 }

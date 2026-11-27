@@ -80,6 +80,26 @@ internal sealed class RealtimeNotifier(
                 MetricTarget = hint.Topic.Value,
             });
 
+    public void AddChatTurnUpdate(Guid userId, ChatTurnUpdate update) =>
+        Add(
+            new RealtimePush
+            {
+                Target = RealtimePushTarget.User,
+                UserId = userId,
+                ChatTurnUpdate = update,
+                MetricTarget = RealtimePushTarget.User.Value,
+            });
+
+    public void AddChatTurnEnd(Guid userId, ChatTurnEnd end) =>
+        Add(
+            new RealtimePush
+            {
+                Target = RealtimePushTarget.User,
+                UserId = userId,
+                ChatTurnEnd = end,
+                MetricTarget = RealtimePushTarget.User.Value,
+            });
+
     public void AddSessionEnd(Guid userId) =>
         Add(
             new RealtimePush

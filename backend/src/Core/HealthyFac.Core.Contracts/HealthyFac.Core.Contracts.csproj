@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+        <PackageReference Include="Google.Protobuf" />
+        <PackageReference Include="Grpc.Core.Api" />
+        <PackageReference Include="Grpc.Tools" PrivateAssets="all" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Protobuf Include="Machines/core_machines.proto" GrpcServices="Both" />
+        <Protobuf Include="WorkOrders/core_work_orders.proto" GrpcServices="Both" />
+        <Protobuf Include="Employees/core_employees.proto" GrpcServices="Both" />
+        <Protobuf Include="Schedules/core_schedules.proto" GrpcServices="Both" />
+        <Protobuf Include="Companies/core_companies.proto" GrpcServices="Both" />
+    </ItemGroup>
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+</Project>

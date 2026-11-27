@@ -42,19 +42,34 @@ public sealed class ExtractionBuffer
         _signals = signals;
     }
 
-    /// <summary>The machines with everything that the tools proposed for them, in the order of the calls.</summary>
-    public IReadOnlyList<ProposedMachine> Machines =>
+    /// <summary>
+    /// The machine drafts in the order of the calls. A machine file sends its machine only when the model proposed a
+    /// machine value (an update draft). A company file sends every machine that has a value or a definition (a create
+    /// draft).
+    /// </summary>
+    public IReadOnlyList<ProposedMachine> Machines => DraftsProposedFlattening.Machines(Groups, _isMachineFile);
+
+    /// <summary>The metrics with the machine that each belongs to, in the order of the calls.</summary>
+    public IReadOnlyList<ProposedMetric> Metrics => DraftsProposedFlattening.Metrics(Groups, _isMachineFile);
+
+    /// <summary>The statuses with the machine that each belongs to, in the order of the calls.</summary>
+    public IReadOnlyList<ProposedStatus> Statuses => DraftsProposedFlattening.Statuses(Groups, _isMachineFile);
+
+    /// <summary>The phases with the machine that each belongs to, in the order of the calls.</summary>
+    public IReadOnlyList<ProposedPhase> Phases => DraftsProposedFlattening.Phases(Groups, _isMachineFile);
+
+    private IReadOnlyList<ProposedMachineGroup> Groups =>
     [
-        .. _machines.Select(machine => new ProposedMachine
+        .. _machines.Select(machine => new ProposedMachineGroup
         {
             DraftId = machine.DraftId,
-            TargetMachineId = _isMachineFile ? _fileMachineId : null,
+            TargetMachineId = _fileMachineId,
             Name = machine.Name,
             SerialNumber = machine.SerialNumber,
             Description = machine.Description,
-            Metrics = [.. machine.Metrics],
-            Statuses = [.. machine.Statuses],
-            Phases = [.. machine.Phases],
+            Metrics = machine.Metrics,
+            Statuses = machine.Statuses,
+            Phases = machine.Phases,
         }),
     ];
 
@@ -85,6 +100,34 @@ public sealed class ExtractionBuffer
         _machines.Add(entry);
 
         return entry.DraftId;
+    }
+
+    /// <summary>
+    /// Sets the values of a machine that <see cref="AddMachine"/> added without values (a machine that only holds
+    /// definitions so far). The values of a machine can be set once.
+    /// </summary>
+    /// <param name="machineDraftId">The draft ID that <see cref="AddMachine"/> returned.</param>
+    /// <param name="name">The name, or <see langword="null"/>.</param>
+    /// <param name="serialNumber">The serial number, or <see langword="null"/>.</param>
+    /// <param name="description">The description as HTML, or <see langword="null"/>.</param>
+    /// <returns>The draft ID of the machine.</returns>
+    /// <exception cref="HealthyFac.Shared.Application.ErrorHandling.UnprocessableException">
+    /// Thrown by <see cref="ExtractionErrors"/> for an unknown machine, or when the machine has values already.
+    /// </exception>
+    public Guid UpdateMachine(Guid machineDraftId, string? name, string? serialNumber, string? description)
+    {
+        var machine = Find(machineDraftId);
+
+        if (machine.HasValues)
+        {
+            throw ExtractionErrors.Rejected(ExtractionErrors.MachineValuesSetOnce);
+        }
+
+        machine.Name = name;
+        machine.SerialNumber = serialNumber;
+        machine.Description = description;
+
+        return machine.DraftId;
     }
 
     /// <summary>
@@ -235,11 +278,13 @@ public sealed class ExtractionBuffer
     {
         public Guid DraftId { get; } = Guid.CreateVersion7();
 
-        public string? Name { get; init; }
+        public string? Name { get; set; }
 
-        public string? SerialNumber { get; init; }
+        public string? SerialNumber { get; set; }
 
-        public string? Description { get; init; }
+        public string? Description { get; set; }
+
+        public bool HasValues => Name is not null || SerialNumber is not null || Description is not null;
 
         public List<ProposedMetric> Metrics { get; } = [];
 

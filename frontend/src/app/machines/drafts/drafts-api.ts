@@ -10,6 +10,7 @@ import {
   type AttemptDrafts,
   type DismissMachineDraftsResponse,
   DraftKind,
+  type DraftProposalScope,
   type MachineDraftResponse,
   type MachineDraftsPage,
   type SearchMachineDraftsBody,
@@ -23,6 +24,7 @@ const DRAFTS_URL = `${CORE_URL}/drafts`;
 const MACHINES_URL = `${CORE_URL}/machines`;
 const TELEMETRY_MACHINES_URL = `${TELEMETRY_URL}/machines`;
 const ATTEMPTS_URL = `${CORE_URL}/ingest-attempts`;
+const CHATS_URL = `${CORE_URL}/chats`;
 const DRAFTS_SEGMENT = 'drafts';
 const SEARCH_SEGMENT = 'search';
 const APPLY_SEGMENT = 'apply';
@@ -65,6 +67,29 @@ export class DraftsApi {
       body,
       options,
     );
+  }
+
+  searchForChat(chatId: string, body: SearchMachineDraftsBody, options?: WriteOptions): Observable<MachineDraftsPage> {
+    return this._http.post<MachineDraftsPage>(
+      `${CHATS_URL}/${encodeURIComponent(chatId)}/${DRAFTS_SEGMENT}/${SEARCH_SEGMENT}`,
+      body,
+      options,
+    );
+  }
+
+  /** Dismisses every pending draft that the chat proposed, on all pages. */
+  dismissForChat(chatId: string, options?: WriteOptions): Observable<DismissMachineDraftsResponse> {
+    return this._http.post<DismissMachineDraftsResponse>(
+      `${CHATS_URL}/${encodeURIComponent(chatId)}/${DRAFTS_SEGMENT}/${DISMISS_SEGMENT}`,
+      null,
+      options,
+    );
+  }
+
+  /** The drafts of one proposal scope, grouped by machine: an ingest attempt or a chat. */
+  listForScope(scope: DraftProposalScope, options?: WriteOptions): Observable<AttemptDrafts> {
+    const baseUrl = scope.kind === 'attempt' ? ATTEMPTS_URL : CHATS_URL;
+    return this._http.get<AttemptDrafts>(`${baseUrl}/${encodeURIComponent(scope.id)}/${DRAFTS_SEGMENT}`, options);
   }
 
   /** Dismisses every pending draft of the ingest attempt, on all pages. */

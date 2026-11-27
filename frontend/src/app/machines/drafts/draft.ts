@@ -1,3 +1,4 @@
+import type { DraftProposalSummary } from '@shared/drafts/draft-proposal';
 import type { SetFilterBody } from '@shared/grid/requests/grid-filters';
 import type { GridQueryState, GridSort, KeysetGridRequestBody, KeysetPage } from '@shared/grid/requests/grid-request';
 
@@ -36,8 +37,7 @@ export interface MachineDraftDetail {
   readonly id: string;
   readonly state: DraftState;
   readonly isCreate: boolean;
-  readonly attemptId: string;
-  readonly fileId: string;
+  readonly proposal: DraftProposalSummary;
   readonly name: string | null;
   readonly serialNumber: string | null;
   readonly description: string | null;
@@ -163,8 +163,7 @@ export interface MachineDraftGridItem {
   readonly id: string;
   readonly kind: DraftKind;
   readonly state: DraftState;
-  readonly attemptId: string;
-  readonly fileId: string;
+  readonly proposal: DraftProposalSummary;
   readonly proposedAt: string;
   readonly sourceLocation: string | null;
   readonly label: string | null;
@@ -194,3 +193,23 @@ export interface MachineDraftFilterBody {
 }
 
 export type SearchMachineDraftsBody = KeysetGridRequestBody<MachineDraftFilterBody, DraftSortColumn>;
+
+/** The proposal scope of a review: the ingest attempt or the chat that proposed the drafts. Exactly one is set. */
+export interface DraftScopeRef {
+  readonly attemptId?: string;
+  readonly chatId?: string;
+}
+
+/** The proposal scope of a draft review: the ingest attempt or the chat, by kind and ID. */
+export interface DraftProposalScope {
+  readonly kind: 'attempt' | 'chat';
+  readonly id: string;
+}
+
+/** The scope of the first set ID, or `undefined` when none is set. */
+export function draftScopeOf(ref: DraftScopeRef | undefined): DraftProposalScope | undefined {
+  if (ref?.attemptId !== undefined) {
+    return { kind: 'attempt', id: ref.attemptId };
+  }
+  return ref?.chatId === undefined ? undefined : { kind: 'chat', id: ref.chatId };
+}

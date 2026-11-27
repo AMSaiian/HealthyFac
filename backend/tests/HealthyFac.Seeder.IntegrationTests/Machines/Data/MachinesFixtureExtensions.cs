@@ -39,7 +39,8 @@ public static class MachinesFixtureExtensions
             return await scope.ServiceProvider.GetRequiredService<CoreDbContext>()
                 .MachineDrafts
                 .AsNoTracking()
-                .OrderBy(draft => draft.QueuedAt)
+                .Include(draft => draft.Proposal)
+                .OrderBy(draft => draft.Proposal.QueuedAt)
                 .ToListAsync();
         }
 

@@ -69,6 +69,14 @@ public static class RateLimitingExtensions
                         ClientAddress));
 
                 options.AddPolicy(
+                    RateLimitPolicyNames.ChatSend,
+                    context => PartitionByClient(
+                        context,
+                        RateLimitPolicyNames.ChatSend,
+                        limits => limits.ChatSend,
+                        UserOrClientAddress));
+
+                options.AddPolicy(
                     RateLimitPolicyNames.Default,
                     context => PartitionByClient(
                         context,

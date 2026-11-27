@@ -43,6 +43,20 @@ public sealed class RealmRoleFileTests
     }
 
     [Fact]
+    public void CoreClientRoles_InRealmFile_NameTheWriteCompanyPermissionsAndNoManagePermission()
+    {
+        var realm = RealmRoleFileTestData.ReadRealm();
+
+        var roles = realm["roles"]!["client"]![RealmTestData.CoreClientId]!.AsArray()
+            .Select(role => role!["name"]!.GetValue<string>())
+            .ToList();
+
+        roles.Should().Contain(RealmTestData.WorkOrdersWriteCompanyPermission);
+        roles.Should().Contain(RealmTestData.ShiftsWriteCompanyPermission);
+        roles.Should().NotContain(role => role.EndsWith(":manage") && !role.StartsWith("employees:"));
+    }
+
+    [Fact]
     public void InsightsServiceRole_InRealmFile_ReadsSignalsAndWorkOrders()
     {
         var telemetry = RealmRoleFileTestData.ReadRolePermissions(
@@ -54,7 +68,9 @@ public sealed class RealmRoleFileTests
             RealmTestData.CoreClientId);
 
         telemetry.Should().Contain(RealmTestData.SignalsReadPermission);
-        core.Should().Equal(RealmTestData.WorkOrdersReadPermission);
+
+        core.Should()
+            .Equal(RealmTestData.WorkOrdersReadPermission, RealmTestData.WorkOrdersReadCompanyPermission);
     }
 
     [Fact]
@@ -75,7 +91,9 @@ public sealed class RealmRoleFileTests
             .Select(role => role!.GetValue<string>());
 
         audience.Should().Be(RealmTestData.CoreClientId);
-        mappedRoles.Should().Equal(RealmTestData.WorkOrdersReadPermission);
+
+        mappedRoles.Should()
+            .Equal(RealmTestData.WorkOrdersReadPermission, RealmTestData.WorkOrdersReadCompanyPermission);
     }
 
     [Fact]

@@ -43,7 +43,7 @@ export function withBoardDrop() {
     withComputed(() => {
       const auth = inject(AuthStore);
       return {
-        canManage: computed(() => auth.hasPermission(Permission.WorkOrdersManage)),
+        canManage: computed(() => auth.hasPermission(Permission.WorkOrdersWriteCompany)),
       };
     }),
     withMethods((store) => {

@@ -1,8 +1,10 @@
 using HealthyFac.Insights.Application;
 using HealthyFac.Insights.Application.Files;
 using HealthyFac.Insights.Infrastructure;
+using HealthyFac.Insights.Infrastructure.Chats.Reads;
 using HealthyFac.Insights.Infrastructure.Database;
 using HealthyFac.Insights.Infrastructure.MetricUnits;
+using HealthyFac.Insights.IntegrationTests.Chats.Data;
 using HealthyFac.Insights.IntegrationTests.Ingest.Data;
 using HealthyFac.Insights.IntegrationTests.MetricUnits.Data;
 using HealthyFac.Shared.Application.BackgroundQueues;
@@ -67,6 +69,8 @@ public sealed class InsightsFixture : IAsyncLifetime, IResetBeforeEachTest
 
     public FakeMetricUnitSource Units { get; } = new();
 
+    public FakeCoreCompanies CoreCompanies { get; } = new();
+
     public LogCapture Logs { get; } = new();
 
     public IngestFakes Ingest { get; } = new();
@@ -119,6 +123,7 @@ public sealed class InsightsFixture : IAsyncLifetime, IResetBeforeEachTest
         services.AddSingleton(Files);
         services.AddSingleton<IFileCatalog>(Files);
         services.AddSingleton<IMetricUnitSource>(Units);
+        services.AddScoped(_ => new GrpcCompanyTimeZoneReader(CoreCompanies.Factory));
         Ingest.Register(services);
         _configureServices?.Invoke(services);
 
@@ -142,6 +147,7 @@ public sealed class InsightsFixture : IAsyncLifetime, IResetBeforeEachTest
     {
         Files.Clear();
         Units.Reset();
+        CoreCompanies.Reset();
         Logs.Clear();
         Ingest.Reset();
         SaveHook.Clear();

@@ -1,5 +1,6 @@
 using HealthyFac.Telemetry.Domain.DefinitionDrafts;
 using HealthyFac.Telemetry.Domain.DefinitionDrafts.MetricDrafts;
+using HealthyFac.Telemetry.Domain.DefinitionDrafts.PhaseDrafts;
 using HealthyFac.Telemetry.Domain.DefinitionDrafts.ProposalEntries;
 using HealthyFac.Telemetry.Domain.DefinitionDrafts.StatusDrafts;
 
@@ -180,7 +181,6 @@ public static class DefinitionDraftTestData
             ProposalEntryTestData.DraftId,
             ProposalEntryTestData.CompanyId,
             ProposalEntryTestData.AttemptId,
-            ProposalEntryTestData.FileId,
             EntryId,
             tentativeMachineId,
             new MetricDraftValues { Key = "temperature" });
@@ -196,7 +196,6 @@ public static class DefinitionDraftTestData
             ProposalEntryTestData.DraftId,
             ProposalEntryTestData.CompanyId,
             ProposalEntryTestData.AttemptId,
-            ProposalEntryTestData.FileId,
             EntryId,
             tentativeMachineId,
             new StatusDraftValues { Code = "E1" });
@@ -258,4 +257,37 @@ public static class DefinitionDraftTestData
             status.Dismiss();
         }
     }
+
+    public static TheoryData<string, IDefinitionDraft> OnMachineDrafts => new()
+    {
+        {
+            "metric",
+            MetricDefinitionDraft.ProposeOnMachine(
+                ProposalEntryTestData.DraftId,
+                ProposalEntryTestData.CompanyId,
+                ProposalEntryTestData.AttemptId,
+                ProposalEntryTestData.MachineId,
+                new MetricDraftValues { Key = "temperature" })
+        },
+        {
+            "status",
+            StatusDefinitionDraft.ProposeOnMachine(
+                ProposalEntryTestData.DraftId,
+                ProposalEntryTestData.CompanyId,
+                ProposalEntryTestData.AttemptId,
+                ProposalEntryTestData.MachineId,
+                new StatusDraftValues { Code = "E1" })
+        },
+        {
+            "phase",
+            OperatingPhaseDraft.ProposeOnMachine(
+                ProposalEntryTestData.DraftId,
+                ProposalEntryTestData.CompanyId,
+                ProposalEntryTestData.AttemptId,
+                ProposalEntryTestData.MachineId,
+                new PhaseDraftValues { Code = "idle" },
+                [],
+                [])
+        },
+    };
 }

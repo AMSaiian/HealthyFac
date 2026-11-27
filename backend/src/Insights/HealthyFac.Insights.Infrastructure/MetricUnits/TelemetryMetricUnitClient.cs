@@ -1,65 +1,59 @@
-using System.Net.Http.Json;
+using Grpc.Core;
+using HealthyFac.Insights.Application.Ingest.Processing.Failures;
 using HealthyFac.Insights.Application.MetricUnits;
 using HealthyFac.Insights.Infrastructure.Telemetry;
 using HealthyFac.Shared.Application.DownstreamScopes;
-using HealthyFac.Shared.Infrastructure.HttpFailures;
+using HealthyFac.Shared.Infrastructure.Rpc;
+using HealthyFac.Telemetry.Contracts.Definitions;
 
 namespace HealthyFac.Insights.Infrastructure.MetricUnits;
 
 /// <summary>
-/// Fetches the unit catalog from Telemetry (<c>GET /v1/metric-units</c>) with the service token. The call enters the
-/// downstream scope <c>telemetry</c> for the call only.
+/// Fetches the unit catalog from Telemetry through the gRPC call <c>ListMetricUnits</c>. The client comes from
+/// <see cref="TelemetryDefinitionsClients"/>, so a request with a user token and a background flow both work. The call
+/// enters the downstream scope <c>telemetry</c> for the call only.
 /// </summary>
-/// <param name="httpClientFactory">Creates the Telemetry client.</param>
+/// <param name="clients">Picks the Telemetry definitions client.</param>
 /// <param name="downstreamScopes">Holds the downstream scope of the call.</param>
 public sealed class TelemetryMetricUnitClient(
-    IHttpClientFactory httpClientFactory,
+    ITelemetryDefinitionsClients clients,
     IDownstreamScopeHolder downstreamScopes
 ) : IMetricUnitSource
 {
-    private const string UnitsPath = "v1/metric-units";
+    private const string UnavailableMessage = "Telemetry did not answer the unit catalog request.";
 
-    private readonly IHttpClientFactory _httpClientFactory = httpClientFactory;
+    private readonly ITelemetryDefinitionsClients _clients = clients;
     private readonly IDownstreamScopeHolder _downstreamScopes = downstreamScopes;
 
     public async Task<IReadOnlyList<MetricUnit>> FetchAsync(CancellationToken cancellationToken)
     {
-        using var client = _httpClientFactory.CreateClient(TelemetryClientNames.Client);
+        var client = _clients.Create();
         using var lease = _downstreamScopes.Enter(TelemetryClientNames.DownstreamScope);
 
-        using var response = await client.GetAsync(UnitsPath, cancellationToken);
-        await response.EnsureSuccessAsync(cancellationToken);
+        try
+        {
+            var reply = await client.ListMetricUnitsAsync(
+                new ListMetricUnitsRequest(),
+                cancellationToken: cancellationToken);
 
-        var catalog = await response.Content.ReadFromJsonAsync<CatalogPayload>(cancellationToken);
-
-        return catalog is null
-            ? []
-            : catalog.Kinds
-                .SelectMany(kind => kind.Units.Select(unit => new MetricUnit
-                {
-                    QuantityKind = kind.Name,
-                    Name = unit.Name,
-                    Abbreviation = unit.Abbreviation,
-                }))
-                .ToList();
-    }
-
-    private sealed record CatalogPayload
-    {
-        public required IReadOnlyList<KindPayload> Kinds { get; init; }
-    }
-
-    private sealed record KindPayload
-    {
-        public required string Name { get; init; }
-
-        public required IReadOnlyList<UnitPayload> Units { get; init; }
-    }
-
-    private sealed record UnitPayload
-    {
-        public required string Name { get; init; }
-
-        public required string Abbreviation { get; init; }
+            return
+            [
+                .. reply.Kinds
+                    .SelectMany(kind => kind.Units.Select(unit => new MetricUnit
+                    {
+                        QuantityKind = kind.Name,
+                        Name = unit.Name,
+                        Abbreviation = unit.Abbreviation,
+                    })),
+            ];
+        }
+        catch (RpcException exception) when (RpcFailures.IsCancelledByCaller(exception, cancellationToken))
+        {
+            throw new OperationCanceledException(exception.Message, exception, cancellationToken);
+        }
+        catch (RpcException exception) when (RpcFailures.IsOutage(exception))
+        {
+            throw new ProviderUnavailableException(UnavailableMessage, exception);
+        }
     }
 }

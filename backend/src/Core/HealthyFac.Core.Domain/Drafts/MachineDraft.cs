@@ -1,12 +1,13 @@
+using HealthyFac.Core.Domain.Drafts.Proposals;
 using HealthyFac.Shared.Domain.Entities;
 
 namespace HealthyFac.Core.Domain.Drafts;
 
 /// <summary>
-/// A machine that the ingest of a file proposed. A draft without a target machine proposes a new machine (the create
-/// path). A draft with a target machine proposes new values for that machine (the update path). The draft keeps the
-/// ID that the proposal message gave it, so a repeat delivery finds the same row. A removal keeps the row (soft
-/// delete).
+/// A machine that a proposal proposed (the ingest of a file, or a chat). The proposal holds the origin of the draft.
+/// A draft without a target machine proposes a new machine (the create path). A draft with a target machine proposes
+/// new values for that machine (the update path). The draft keeps the ID that the proposal message gave it, so a
+/// repeat delivery finds the same row. A removal keeps the row (soft delete).
 /// </summary>
 public class MachineDraft : IEntity, IAuditable, ISoftDeletable, IVersioned
 {
@@ -15,9 +16,7 @@ public class MachineDraft : IEntity, IAuditable, ISoftDeletable, IVersioned
     /// </summary>
     /// <param name="id">The ID from the proposal message.</param>
     /// <param name="companyId">The company of the file.</param>
-    /// <param name="attemptId">The ingest attempt that proposed the draft.</param>
-    /// <param name="fileId">The file that the draft came from.</param>
-    /// <param name="queuedAt">The time when the user queued the ingest (UTC).</param>
+    /// <param name="proposalId">The proposal that holds the origin of the draft.</param>
     /// <param name="targetMachineId">The machine to update, or <see langword="null"/> for a new machine.</param>
     /// <param name="name">The proposed name, or <see langword="null"/> for no proposal.</param>
     /// <param name="serialNumber">The proposed serial number, or <see langword="null"/> for no proposal.</param>
@@ -25,9 +24,7 @@ public class MachineDraft : IEntity, IAuditable, ISoftDeletable, IVersioned
     public MachineDraft(
         Guid id,
         Guid companyId,
-        Guid attemptId,
-        Guid fileId,
-        DateTime queuedAt,
+        Guid proposalId,
         Guid? targetMachineId,
         string? name,
         string? serialNumber,
@@ -36,9 +33,7 @@ public class MachineDraft : IEntity, IAuditable, ISoftDeletable, IVersioned
     {
         Id = id;
         CompanyId = companyId;
-        AttemptId = attemptId;
-        FileId = fileId;
-        QueuedAt = queuedAt;
+        ProposalId = proposalId;
         TargetMachineId = targetMachineId;
         State = DraftState.Pending;
         Name = name;
@@ -49,9 +44,8 @@ public class MachineDraft : IEntity, IAuditable, ISoftDeletable, IVersioned
     public Guid Id { get; private set; }
     public uint RowVersion { get; private set; }
     public Guid CompanyId { get; private set; }
-    public Guid AttemptId { get; private set; }
-    public Guid FileId { get; private set; }
-    public DateTime QueuedAt { get; private set; }
+    public Guid ProposalId { get; private set; }
+    public DraftProposal Proposal { get; private set; } = null!;
     public Guid? TargetMachineId { get; private set; }
 
     /// <summary>The machine that a user created from the draft, or <see langword="null"/> before the apply.</summary>

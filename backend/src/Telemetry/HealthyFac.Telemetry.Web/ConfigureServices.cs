@@ -170,6 +170,7 @@ public static class ConfigureServices
             versionedGroup.MapDefinitionDraftEndpoints();
             versionedGroup.MapSignalEndpoints();
             app.MapGrpcService<TelemetrySignalsService>();
+            app.MapGrpcService<TelemetryDefinitionsService>();
             app.MapSharedGrpcReflection();
 
             return app;

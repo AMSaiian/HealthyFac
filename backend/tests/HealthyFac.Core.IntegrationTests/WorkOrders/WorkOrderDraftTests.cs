@@ -1,6 +1,7 @@
 using FluentValidation;
 using HealthyFac.Core.Application.WorkOrders.Drafts;
 using HealthyFac.Core.Domain.Drafts;
+using HealthyFac.Core.Domain.Drafts.Proposals;
 using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Drafts.Data;
 using HealthyFac.Core.IntegrationTests.Machines;
@@ -34,6 +35,83 @@ public sealed class WorkOrderDraftTests(CoreDatabaseFixture fixture)
         draft.Id.Should().Be(message.DraftId);
         draft.State.Should().Be(DraftState.Pending);
         draft.MachineId.Should().Be(machineId);
+    }
+
+    [Fact]
+    public async Task Propose_TwoDraftsOfTheSameRun_ShareOneCaseProposal()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        var machineId = await _fixture.ArrangeMachineAsync(tenant.CompanyId);
+        var runId = Guid.CreateVersion7();
+        var first = WorkOrderDraftTestData.Proposal(tenant.CompanyId, machineId, Guid.CreateVersion7(), runId);
+        var second = WorkOrderDraftTestData.Proposal(tenant.CompanyId, machineId, Guid.CreateVersion7(), runId);
+
+        await _fixture.ProposeWorkOrderDraftAsync(tenant.CompanyId, first);
+        await _fixture.ProposeWorkOrderDraftAsync(tenant.CompanyId, second);
+
+        var proposals = await _fixture.LoadDraftProposalsAsync();
+        var drafts = await _fixture.LoadWorkOrderDraftsAsync();
+
+        var proposal = proposals.Should().ContainSingle().Subject;
+        proposal.Id.Should().Be(runId);
+        proposal.RunId.Should().Be(runId);
+        proposal.CaseId.Should().Be(first.CaseId);
+        drafts.Should().HaveCount(expected: 2).And.OnlyContain(draft => draft.ProposalId == runId);
+    }
+
+    [Fact]
+    public async Task Propose_AChatDraftWithoutAMachine_StoresItWithTheChatProposal()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        var message = WorkOrderDraftTestData.ChatProposal(tenant.CompanyId, machineId: null, Guid.CreateVersion7());
+
+        await _fixture.ProposeWorkOrderDraftAsync(tenant.CompanyId, message);
+
+        var drafts = await _fixture.LoadWorkOrderDraftsAsync();
+        var proposals = await _fixture.LoadDraftProposalsAsync();
+
+        var draft = drafts.Should().ContainSingle().Subject;
+        draft.MachineId.Should().BeNull();
+        draft.ProposalId.Should().Be(message.ChatMessageId!.Value);
+        proposals.Should().ContainSingle().Which.Source.Should().Be(DraftSource.Chat);
+    }
+
+    [Fact]
+    public async Task Propose_AChatDraftWithAMachineOfAnotherCompany_StoresNothing()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        var otherTenant = await _fixture.ArrangeMachineTenantAsync();
+        var machineId = await _fixture.ArrangeMachineAsync(otherTenant.CompanyId);
+        var message = WorkOrderDraftTestData.ChatProposal(tenant.CompanyId, machineId, Guid.CreateVersion7());
+
+        var act = () => _fixture.ProposeWorkOrderDraftAsync(tenant.CompanyId, message);
+
+        await act.Should().ThrowAsync<NotFoundException>();
+        var drafts = await _fixture.LoadWorkOrderDraftsAsync();
+        drafts.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ApplyAndDismiss_OfChatDrafts_AddNoCaseMessage()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        var machineId = await _fixture.ArrangeMachineAsync(tenant.CompanyId);
+        var applied = WorkOrderDraftTestData.ChatProposal(tenant.CompanyId, machineId, Guid.CreateVersion7());
+        var dismissed = WorkOrderDraftTestData.ChatProposal(tenant.CompanyId, machineId, Guid.CreateVersion7());
+        await _fixture.ProposeWorkOrderDraftAsync(tenant.CompanyId, applied);
+        await _fixture.ProposeWorkOrderDraftAsync(tenant.CompanyId, dismissed);
+
+        await _fixture.ApplyWorkOrderDraftAsync(WorkOrderDraftTestData.Apply(tenant.CompanyId, applied.DraftId));
+
+        await _fixture.DismissWorkOrderDraftAsync(
+            new DismissWorkOrderDraftRequest { CompanyId = tenant.CompanyId, Id = dismissed.DraftId });
+
+        var appliedMessages = await _fixture.ReadDraftOutboxAsync<WorkOrderDraftApplied>();
+        var dismissedMessages = await _fixture.ReadDraftOutboxAsync<WorkOrderDraftDismissed>();
+        var drafts = await _fixture.LoadWorkOrderDraftsAsync();
+        drafts.Select(draft => draft.State).Should().BeEquivalentTo([DraftState.Applied, DraftState.Dismissed]);
+        appliedMessages.Should().BeEmpty();
+        dismissedMessages.Should().BeEmpty();
     }
 
     [Fact]
@@ -101,7 +179,7 @@ public sealed class WorkOrderDraftTests(CoreDatabaseFixture fixture)
         var applied = messages.Should().ContainSingle().Subject;
         applied.DraftId.Should().Be(message.DraftId);
         applied.WorkOrderId.Should().Be(response.WorkOrderId);
-        applied.CaseId.Should().Be(message.CaseId);
+        applied.CaseId.Should().Be(message.CaseId!.Value);
     }
 
     [Fact]
@@ -171,7 +249,7 @@ public sealed class WorkOrderDraftTests(CoreDatabaseFixture fixture)
         var draft = (await _fixture.LoadWorkOrderDraftsAsync()).Single();
         var messages = await _fixture.ReadDraftOutboxAsync<WorkOrderDraftDismissed>();
         draft.State.Should().Be(DraftState.Dismissed);
-        messages.Should().ContainSingle().Which.CaseId.Should().Be(message.CaseId);
+        messages.Should().ContainSingle().Which.CaseId.Should().Be(message.CaseId!.Value);
     }
 
     [Fact]

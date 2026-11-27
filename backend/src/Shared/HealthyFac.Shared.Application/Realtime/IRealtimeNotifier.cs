@@ -47,6 +47,21 @@ public interface IRealtimeNotifier
     void AddHint(Guid companyId, RealtimeHint hint);
 
     /// <summary>
+    /// Adds a snapshot of a running chat turn for the user. The push goes to the user whatever the actor is: the
+    /// snapshot is no commit result, so the caller may add it during the turn and call <see cref="Push"/> at once.
+    /// </summary>
+    /// <param name="userId">The <c>sub</c> of the chat owner.</param>
+    /// <param name="update">The snapshot.</param>
+    void AddChatTurnUpdate(Guid userId, ChatTurnUpdate update);
+
+    /// <summary>
+    /// Adds the end of a chat turn for the user. Add it only after the final save returned.
+    /// </summary>
+    /// <param name="userId">The <c>sub</c> of the chat owner.</param>
+    /// <param name="end">The end with the final state.</param>
+    void AddChatTurnEnd(Guid userId, ChatTurnEnd end);
+
+    /// <summary>
     /// Adds the end of the web sessions of a user.
     /// </summary>
     /// <param name="userId">The <c>sub</c> of the user.</param>

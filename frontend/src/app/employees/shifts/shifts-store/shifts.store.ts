@@ -29,7 +29,7 @@ export const ShiftsStore = signalStore(
   withComputed(() => {
     const auth = inject(AuthStore);
     return {
-      canManage: computed(() => auth.hasPermission(Permission.ShiftsManage)),
+      canManage: computed(() => auth.hasPermission(Permission.ShiftsWriteCompany)),
     };
   }),
   withMethods((store) => {

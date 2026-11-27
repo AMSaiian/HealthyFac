@@ -227,6 +227,25 @@ describe('AuthStore', { tags: ['Identity'] }, () => {
     expect(tokens).toEqual(['token-1', 'token-1', 'token-1']);
   });
 
+  it('ensureValidFor_WithATokenThatEndsSoonerThanTheSeconds_RefreshesAndAsksWithThoseSeconds', async () => {
+    keycloak.isTokenExpired.mockReturnValue(true);
+    keycloak.updateToken.mockResolvedValue(true);
+    const store = createStore();
+
+    await store.ensureValidFor(90);
+
+    expect(keycloak.isTokenExpired).toHaveBeenCalledWith(90);
+    expect(keycloak.updateToken).toHaveBeenCalledTimes(1);
+  });
+
+  it('ensureValidFor_WithAValidToken_DoesNotRefresh', async () => {
+    const store = createStore();
+
+    await store.ensureValidFor(90);
+
+    expect(keycloak.updateToken).not.toHaveBeenCalled();
+  });
+
   it('accessToken_WithoutSession_ThrowsSessionEndedErrorWithoutRefresh', async () => {
     keycloak.tokenParsed = undefined;
     const store = createStore();

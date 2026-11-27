@@ -12,7 +12,10 @@ public sealed record DraftsResolved : IIntegrationMessage, IRequest
 {
     public static string MessageType => "core.v1:DraftsResolved";
 
-    public required Guid AttemptId { get; init; }
+    public required ResolutionSource Source { get; init; }
+
+    /// <summary>The ingest attempt of an <c>ingest</c> proposal. A <c>chat</c> proposal has none.</summary>
+    public Guid? AttemptId { get; init; }
 
     public required Guid CompanyId { get; init; }
 
@@ -38,9 +41,19 @@ public class DraftsResolvedValidator : AbstractValidator<DraftsResolved>
 {
     public DraftsResolvedValidator()
     {
+        RuleFor(message => message.Source)
+            .NotNull()
+            .WithMessage(DraftMessageErrors.Validation.SourceRequired);
+
         RuleFor(message => message.AttemptId)
-            .NotEmpty()
+            .MustBeSetId()
+            .When(message => message.Source == ResolutionSource.Ingest)
             .WithMessage(DraftMessageErrors.Validation.AttemptIdRequired);
+
+        RuleFor(message => message.AttemptId)
+            .Null()
+            .When(message => message.Source == ResolutionSource.Chat)
+            .WithMessage(DraftMessageErrors.Validation.AttemptIdOnlyForIngest);
 
         RuleFor(message => message.CompanyId)
             .NotEmpty()

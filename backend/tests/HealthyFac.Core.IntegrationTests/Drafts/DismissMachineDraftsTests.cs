@@ -54,6 +54,35 @@ public sealed class DismissMachineDraftsTests(CoreDatabaseFixture fixture)
     }
 
     [Fact]
+    public async Task DismissMachineDrafts_ForAChat_DismissesOnlyThePendingDraftsOfThatChat()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        var otherChatId = Guid.CreateVersion7();
+        var machineId = await _fixture.ArrangeMachineAsync(tenant.CompanyId);
+        var pendingId = await _fixture.AddChatMachineDraftAsync(tenant.CompanyId);
+
+        var alreadyDismissedId = await _fixture.AddChatMachineDraftAsync(
+            tenant.CompanyId,
+            chatMessageId: Guid.CreateVersion7());
+
+        await _fixture.DismissDraftAsync(tenant.CompanyId, alreadyDismissedId);
+
+        await _fixture.AddChatMachineDraftAsync(
+            tenant.CompanyId,
+            chatId: otherChatId,
+            chatMessageId: Guid.CreateVersion7());
+
+        await _fixture.AddDraftsForMachineAsync(tenant.CompanyId, machineId);
+
+        var response = await _fixture.DismissChatDraftsAsync(tenant.CompanyId, DraftTestData.ChatId);
+
+        var machineDrafts = await _fixture.LoadMachineDraftsAsync();
+        response.DismissedCount.Should().Be(expected: 1);
+        machineDrafts.Single(draft => draft.Id == pendingId).State.Should().Be(DraftState.Dismissed);
+        machineDrafts.Count(draft => draft.State == DraftState.Pending).Should().Be(expected: 2);
+    }
+
+    [Fact]
     public async Task DismissMachineDrafts_ForAnAttempt_LeavesAnotherAttemptAndAnotherCompanyPending()
     {
         var tenant = await _fixture.ArrangeMachineTenantAsync();
@@ -70,7 +99,7 @@ public sealed class DismissMachineDraftsTests(CoreDatabaseFixture fixture)
         var machineDrafts = await _fixture.LoadMachineDraftsAsync();
 
         var pendingCompanies = machineDrafts.Where(draft => draft.State == DraftState.Pending)
-            .Select(draft => (draft.CompanyId, draft.AttemptId))
+            .Select(draft => (draft.CompanyId, draft.Proposal.AttemptId))
             .ToList();
 
         response.DismissedCount.Should().Be(expected: 1);

@@ -7,6 +7,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 
 import { ActionStore } from '@shared/actions/action.store';
 import { EmployeeStore } from '@shared/employee/employee.store';
+import { Permission } from '@shared/security/permissions';
 import { provideFakeAuthStore } from '@shared/security/testing/fake-auth-store';
 import type { ActionResult } from '@shared/actions/app-action';
 import { CLOCK } from '@shared/time/clock';
@@ -76,6 +77,7 @@ describe('ScheduleStore', { tags: ['WorkOrders'] }, () => {
   const confirm = vi.fn();
   const add = vi.fn();
   const canManage = signal(true);
+  const canReadCompany = signal(true);
   const employeeResource = {
     hasValue: () => true,
     value: () => ({ id: 'e1', firstName: 'Ann', lastName: 'Lee', roleCode: 'worker' }),
@@ -96,7 +98,10 @@ describe('ScheduleStore', { tags: ['WorkOrders'] }, () => {
         { provide: ScheduleApi, useValue: { companyDay, employeeDay } },
         { provide: WorkOrdersApi, useValue: { search, applySchedule } },
         { provide: WorkOrdersGridStore, useValue: { filter: signal(EMPTY_FILTER) } },
-        provideFakeAuthStore({ hasPermission: () => canManage() }),
+        provideFakeAuthStore({
+          hasPermission: (permission: string) =>
+            permission === Permission.WorkOrdersReadCompany ? canReadCompany() : canManage(),
+        }),
         { provide: EmployeeStore, useValue: { employee: employeeResource } },
         { provide: MessageService, useValue: { add } },
         { provide: ConfirmationService, useValue: { confirm } },
@@ -164,6 +169,7 @@ describe('ScheduleStore', { tags: ['WorkOrders'] }, () => {
     confirm.mockReset();
     add.mockReset();
     canManage.set(true);
+    canReadCompany.set(true);
   });
 
   it('hint_OfTheScheduleTopic_ReloadsTheDayOnceAfterOneSecond', async () => {
@@ -279,6 +285,7 @@ describe('ScheduleStore', { tags: ['WorkOrders'] }, () => {
 
   it('rows_AsAWorker_ComeFromTheOwnDayAndSendNoCompanyRequestAndNoBacklogSearch', async () => {
     canManage.set(false);
+    canReadCompany.set(false);
 
     const store = await setup();
 
@@ -286,6 +293,17 @@ describe('ScheduleStore', { tags: ['WorkOrders'] }, () => {
     expect(companyDay).not.toHaveBeenCalled();
     expect(search).not.toHaveBeenCalled();
     expect(store.rows().map((item) => item.label)).toEqual(['Ann Lee']);
+  });
+
+  it('rows_WithTheCompanyReadPermissionAndNoManage_ComeFromTheCompanyDay', async () => {
+    canManage.set(false);
+
+    const store = await setup();
+
+    expect(companyDay).toHaveBeenCalledWith('2027-06-01');
+    expect(employeeDay).not.toHaveBeenCalled();
+    expect(search).toHaveBeenCalledTimes(1);
+    expect(store.rows().length).toBe(COMPANY_DAY.employees.length);
   });
 
   it('staging_AsASupervisor_SearchesTheBacklogOnce', async () => {

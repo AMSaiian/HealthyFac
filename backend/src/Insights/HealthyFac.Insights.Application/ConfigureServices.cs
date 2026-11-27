@@ -2,6 +2,10 @@ using HealthyFac.Insights.Application.Agents;
 using HealthyFac.Insights.Application.Agents.Runs;
 using HealthyFac.Insights.Application.Agents.Tools;
 using HealthyFac.Insights.Application.Agents.Tools.Invocation;
+using HealthyFac.Insights.Application.Chats.Drafts;
+using HealthyFac.Insights.Application.Chats.Links;
+using HealthyFac.Insights.Application.Chats.Tools;
+using HealthyFac.Insights.Application.Chats.Turns;
 using HealthyFac.Insights.Application.Extraction.Mapping;
 using HealthyFac.Insights.Application.Ingest.Processing.Monitoring;
 using HealthyFac.Insights.Application.Ingest.Processing.Pipeline;
@@ -29,6 +33,15 @@ public static class ConfigureServices
             services.AddSingleton<IngestMetrics>();
             services.AddSingleton<DraftProposalMapper>();
             services.AddScoped<RunCommit>();
+            services.AddScoped<IChatTurnSaves, ChatTurnSaves>();
+            services.AddScoped<ChatToolScopes>();
+            services.AddScoped<ChatLinkResolver>();
+            services.AddScoped<ChatHistoryBuilder>();
+            services.AddScoped<ChatDraftBuffer>();
+            services.AddScoped<ChatDraftTargets>();
+            services.AddScoped<ChatDraftCommit>();
+            services.AddScoped<ChatTurnState>();
+            services.AddScoped<ChatTurnRunner>();
             services.AddSingleton<AgentMetrics>();
 
             services.AddSingleton(provider => new ToolRegistry(

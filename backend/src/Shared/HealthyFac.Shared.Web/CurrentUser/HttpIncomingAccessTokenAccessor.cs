@@ -14,6 +14,8 @@ namespace HealthyFac.Shared.Web.CurrentUser;
 internal sealed class HttpIncomingAccessTokenAccessor(IHttpContextAccessor httpContextAccessor)
     : IIncomingAccessTokenAccessor
 {
+    private static readonly string[] NameClaims = ["name", "preferred_username", "email"];
+
     private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
 
     public string? TryGetUserAccessToken()
@@ -29,6 +31,20 @@ internal sealed class HttpIncomingAccessTokenAccessor(IHttpContextAccessor httpC
             && header.Scheme.Equals(JwtBearerDefaults.AuthenticationScheme, StringComparison.OrdinalIgnoreCase);
 
         return isBearer ? header!.Parameter : null;
+    }
+
+    public string? TryGetUserName()
+    {
+        var user = _httpContextAccessor.HttpContext?.User;
+
+        if (user is null || TryGetUserAccessToken() is null)
+        {
+            return null;
+        }
+
+        return NameClaims
+            .Select(claim => user.FindFirst(claim)?.Value)
+            .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
     }
 
     public Guid? TryGetUserId()

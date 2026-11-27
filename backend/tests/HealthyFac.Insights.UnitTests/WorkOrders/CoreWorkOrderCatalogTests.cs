@@ -1,8 +1,10 @@
-using System.Net;
+using Grpc.Core;
+using HealthyFac.Core.Contracts.WorkOrders;
 using HealthyFac.Insights.Application.Ingest.Processing.Failures;
 using HealthyFac.Insights.Infrastructure.WorkOrders;
+using HealthyFac.Insights.UnitTests.Files.Data;
 using HealthyFac.Insights.UnitTests.WorkOrders.Data;
-using HealthyFac.Shared.Application.IdEncryption;
+using HealthyFac.Shared.Application.DownstreamScopes;
 using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Insights.UnitTests.WorkOrders;
@@ -11,84 +13,142 @@ namespace HealthyFac.Insights.UnitTests.WorkOrders;
 [Feature(TestFeatures.WorkOrders)]
 public sealed class CoreWorkOrderCatalogTests
 {
-    private static readonly Guid MachineId = Guid.Parse(input: "33333333-3333-3333-3333-333333333333");
+    private readonly DownstreamScopeHolder _holder = new();
+    private readonly FakeDocumentCallInvoker _invoker;
+    private readonly CoreWorkOrderCatalog _catalog;
 
-    private Func<HttpRequestMessage, HttpResponseMessage> _respond = _ => new HttpResponseMessage(HttpStatusCode.OK)
+    public CoreWorkOrderCatalogTests()
     {
-        Content = new StringContent(content: "[]"),
-    };
+        _invoker = new FakeDocumentCallInvoker(_holder);
+        _catalog = new CoreWorkOrderCatalog(new FakeCoreClientFactory(_invoker), _holder);
+    }
 
-    [Theory]
-    [MemberData(nameof(CoreWorkOrderCatalogTestData.ServerErrors), MemberType = typeof(CoreWorkOrderCatalogTestData))]
-    public async Task ListOpen_WhenCoreAnswersAServerError_ThrowsProviderUnavailable(HttpStatusCode status)
+    [Fact]
+    public async Task ListOpen_SendsTheOpenStatusesTheMachineTheLimitAndTheNewestFirstSortInTheWorkOrdersScope()
     {
-        _respond = _ => new HttpResponseMessage(status);
+        SearchWorkOrdersRequest? sent = null;
 
-        var act = () => ListAsync(TestContext.Current.CancellationToken);
+        _invoker.Respond = request =>
+        {
+            sent = (SearchWorkOrdersRequest)request;
 
-        await act.Should().ThrowAsync<ProviderUnavailableException>();
+            return CoreWorkOrderCatalogTestData.CreateReply(hasPlannedTimes: true);
+        };
+
+        await _catalog.ListOpenAsync(
+            CoreWorkOrderCatalogTestData.MachineId,
+            CoreWorkOrderCatalogTestData.Limit,
+            TestContext.Current.CancellationToken);
+
+        sent!.Statuses.Should().Equal(CoreWorkOrderCatalogTestData.OpenStatuses);
+        sent.MachineId.Should().Be(CoreWorkOrderCatalogTestData.MachineId.ToString());
+        sent.Limit.Should().Be(CoreWorkOrderCatalogTestData.Limit);
+        sent.SortColumn.Should().Be(CoreWorkOrderCatalogTestData.CreatedAtColumn);
+        sent.SortDirection.Should().Be(CoreWorkOrderCatalogTestData.DescendingDirection);
+
+        _invoker.ScopesAtCall.Should()
+            .ContainSingle()
+            .Which.Should()
+            .Equal(CoreWorkOrderCatalogTestData.DownstreamScope);
+    }
+
+    [Fact]
+    public async Task ListOpen_WithAPlannedWorkOrder_MapsTheFieldsWithoutTheAssignee()
+    {
+        _invoker.Respond = _ => CoreWorkOrderCatalogTestData.CreateReply(hasPlannedTimes: true);
+
+        var orders = await _catalog.ListOpenAsync(
+            CoreWorkOrderCatalogTestData.MachineId,
+            CoreWorkOrderCatalogTestData.Limit,
+            TestContext.Current.CancellationToken);
+
+        var order = orders.Should().ContainSingle().Subject;
+        order.Id.Should().Be(CoreWorkOrderCatalogTestData.WorkOrderId);
+        order.Title.Should().Be(expected: "Replace the filter");
+        order.Status.Should().Be(expected: "staged");
+        order.PlannedStartUtc.Should().Be(CoreWorkOrderCatalogTestData.PlannedStart);
+        order.PlannedEndUtc.Should().Be(CoreWorkOrderCatalogTestData.PlannedStart.AddHours(value: 1));
+    }
+
+    [Fact]
+    public async Task ListOpen_WithAnUnplannedWorkOrder_LeavesTheTimesEmpty()
+    {
+        _invoker.Respond = _ => CoreWorkOrderCatalogTestData.CreateReply(hasPlannedTimes: false);
+
+        var orders = await _catalog.ListOpenAsync(
+            CoreWorkOrderCatalogTestData.MachineId,
+            CoreWorkOrderCatalogTestData.Limit,
+            TestContext.Current.CancellationToken);
+
+        var order = orders.Should().ContainSingle().Subject;
+        order.PlannedStartUtc.Should().BeNull();
+        order.PlannedEndUtc.Should().BeNull();
     }
 
     [Theory]
-    [MemberData(nameof(CoreWorkOrderCatalogTestData.NetworkFaults), MemberType = typeof(CoreWorkOrderCatalogTestData))]
-    public async Task ListOpen_WhenTheCallFails_ThrowsProviderUnavailable(string caseName, Func<Exception> createFault)
+    [MemberData(
+        nameof(CoreWorkOrderCatalogTestData.OutageStatuses),
+        MemberType = typeof(CoreWorkOrderCatalogTestData))]
+    public async Task ListOpen_WhenCoreIsDown_ThrowsProviderUnavailableAndLeavesTheDownstreamScope(
+        string caseName,
+        StatusCode status
+    )
     {
-        _respond = _ => throw createFault();
+        _invoker.Respond = _ => throw new RpcException(new Status(status, detail: "down"));
 
-        var act = () => ListAsync(TestContext.Current.CancellationToken);
+        var act = () => _catalog.ListOpenAsync(
+            CoreWorkOrderCatalogTestData.MachineId,
+            CoreWorkOrderCatalogTestData.Limit,
+            TestContext.Current.CancellationToken);
 
         await act.Should().ThrowAsync<ProviderUnavailableException>(caseName);
+        _holder.Current.Should().BeEmpty();
     }
 
     [Fact]
-    public async Task ListOpen_WhenCoreAnswersAClientError_KeepsTheHttpFailure()
-    {
-        _respond = _ => new HttpResponseMessage(HttpStatusCode.NotFound);
-
-        var act = () => ListAsync(TestContext.Current.CancellationToken);
-
-        await act.Should().ThrowAsync<HttpRequestException>();
-    }
-
-    [Fact]
-    public async Task ListOpen_WhenTheCallerCancels_KeepsTheCancellation()
+    public async Task ListOpen_WhenTheCallerCancels_ThrowsOperationCanceledAndLeavesTheDownstreamScope()
     {
         using var source = new CancellationTokenSource();
-        await source.CancelAsync();
-        _respond = _ => throw new TaskCanceledException(message: "cancelled");
 
-        var act = () => ListAsync(source.Token);
+        _invoker.Respond = _ =>
+        {
+            source.Cancel();
 
-        await act.Should().ThrowAsync<TaskCanceledException>();
+            throw new RpcException(new Status(StatusCode.Cancelled, detail: "cancelled"));
+        };
+
+        var act = () => _catalog.ListOpenAsync(
+            CoreWorkOrderCatalogTestData.MachineId,
+            CoreWorkOrderCatalogTestData.Limit,
+            source.Token);
+
+        await act.Should().ThrowAsync<OperationCanceledException>();
+        _holder.Current.Should().BeEmpty();
     }
 
-    private Task<IReadOnlyList<HealthyFac.Insights.Application.WorkOrders.OpenWorkOrderInfo>> ListAsync(
-        CancellationToken cancellationToken
-    ) =>
-        new CoreWorkOrderCatalog(new FakeFactory(this), new FakeEncryptor())
-            .ListOpenAsync(MachineId, limit: 10, cancellationToken);
-
-    private sealed class FakeFactory(CoreWorkOrderCatalogTests owner) : IHttpClientFactory
+    [Fact]
+    public async Task ListOpen_WhenCoreCancelsWithoutTheCaller_ThrowsTheRpcException()
     {
-        public HttpClient CreateClient(string name) =>
-            new(new FakeHandler(owner)) { BaseAddress = new Uri(uriString: "http://core.test/") };
+        _invoker.Respond = _ => throw new RpcException(new Status(StatusCode.Cancelled, detail: "cancelled"));
+
+        var act = () => _catalog.ListOpenAsync(
+            CoreWorkOrderCatalogTestData.MachineId,
+            CoreWorkOrderCatalogTestData.Limit,
+            TestContext.Current.CancellationToken);
+
+        await act.Should().ThrowAsync<RpcException>();
     }
 
-    private sealed class FakeHandler(CoreWorkOrderCatalogTests owner) : HttpMessageHandler
+    [Fact]
+    public async Task ListOpen_WhenCoreAnswersNotFound_ThrowsTheRpcException()
     {
-        protected override Task<HttpResponseMessage> SendAsync(
-            HttpRequestMessage request,
-            CancellationToken cancellationToken
-        ) =>
-            Task.FromResult(owner._respond(request));
-    }
+        _invoker.Respond = _ => throw new RpcException(new Status(StatusCode.NotFound, detail: "missing"));
 
-    private sealed class FakeEncryptor : IIdEncryptor
-    {
-        public string Encrypt(Guid id) => id.ToString();
+        var act = () => _catalog.ListOpenAsync(
+            CoreWorkOrderCatalogTestData.MachineId,
+            CoreWorkOrderCatalogTestData.Limit,
+            TestContext.Current.CancellationToken);
 
-        public Guid Decrypt(string encryptedId) => Guid.Parse(encryptedId);
-
-        public string Migrate(string encryptedId) => encryptedId;
+        await act.Should().ThrowAsync<RpcException>();
     }
 }

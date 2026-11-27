@@ -15,4 +15,6 @@ public sealed class FakeIncomingAccessTokenAccessor : IIncomingAccessTokenAccess
     public string? TryGetUserAccessToken() => AccessToken;
 
     public Guid? TryGetUserId() => UserId;
+
+    public string? TryGetUserName() => null;
 }

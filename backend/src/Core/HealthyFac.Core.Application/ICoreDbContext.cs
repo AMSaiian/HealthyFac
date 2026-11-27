@@ -1,5 +1,6 @@
 using HealthyFac.Core.Domain.Companies;
 using HealthyFac.Core.Domain.Drafts;
+using HealthyFac.Core.Domain.Drafts.Proposals;
 using HealthyFac.Core.Domain.Employees;
 using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Core.Domain.Roles;
@@ -30,6 +31,8 @@ public interface ICoreDbContext : ITransactionalDbContext
     DbSet<Machine> Machines { get; }
 
     DbSet<MachineStateHistory> MachineStateHistories { get; }
+
+    DbSet<DraftProposal> DraftProposals { get; }
 
     DbSet<MachineDraft> MachineDrafts { get; }
 

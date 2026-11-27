@@ -36,8 +36,9 @@ interface DayParams {
 }
 
 /**
- * One day of the schedule tab. A supervisor (`work-orders:manage`) sees every active employee and edits the schedule
- * through pending changes; a worker sees the own day as one row. The route provides it, so it resets per visit.
+ * One day of the schedule tab. A token with `work-orders:read-company` sees every active employee, and
+ * `work-orders:write-company` enables the edits through pending changes; a worker sees the own day as one row. The
+ * route provides it, so it resets per visit.
  */
 export function withScheduleDay() {
   return signalStoreFeature(
@@ -50,7 +51,8 @@ export function withScheduleDay() {
       _employee: inject(EmployeeStore),
     })),
     withComputed((store) => ({
-      canManage: computed(() => store._auth.hasPermission(Permission.WorkOrdersManage)),
+      canManage: computed(() => store._auth.hasPermission(Permission.WorkOrdersWriteCompany)),
+      canReadCompany: computed(() => store._auth.hasPermission(Permission.WorkOrdersReadCompany)),
     })),
     withProps((store) => ({
       now: minuteTicker(store._clock),
@@ -60,7 +62,7 @@ export function withScheduleDay() {
           if (date === null) {
             return undefined;
           }
-          if (store.canManage()) {
+          if (store.canReadCompany()) {
             return { date: date.toString(), employeeId: null, firstName: '', lastName: '' };
           }
           const own = store._employee.employee.hasValue() ? store._employee.employee.value() : null;

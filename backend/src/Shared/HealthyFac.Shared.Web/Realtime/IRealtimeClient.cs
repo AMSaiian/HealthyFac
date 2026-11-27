@@ -11,5 +11,9 @@ public interface IRealtimeClient
 
     Task Hint(RealtimeHint hint);
 
+    Task ChatTurnUpdated(ChatTurnUpdate update);
+
+    Task ChatTurnEnded(ChatTurnEnd end);
+
     Task SessionEnded();
 }

@@ -1,5 +1,5 @@
-using HealthyFac.Insights.Messaging.Drafts;
 using HealthyFac.MachineSimulator.Scenarios;
+using HealthyFac.Seeder.Ingest;
 
 namespace HealthyFac.Seeder.TelemetryHistory;
 
@@ -11,7 +11,7 @@ internal sealed class HistoryMachine
     /// <summary>The index of the machine in <c>machines.json</c>. It adds to the random seed.</summary>
     public required int Index { get; init; }
 
-    public required ProposedMachine Draft { get; init; }
+    public required IngestMachineSeed Draft { get; init; }
 
     public required IMachineScenario Scenario { get; init; }
 }

@@ -15,6 +15,18 @@ public sealed class EmbeddedAgentPrompts : IAgentPrompts
 {
     public const string TriageVersion = "triage-v1";
     public const string TriageResourceName = "HealthyFac.Insights.Infrastructure.Agents.Prompts.TriageSystemPrompt.md";
+    public const string ChatTriageVersion = "chat-triage-v2";
+
+    public const string ChatTriageResourceName =
+        "HealthyFac.Insights.Infrastructure.Agents.Prompts.ChatTriageSystemPrompt.md";
+
+    public const string ChatSummaryVersion = "chat-summary-v1";
+
+    public const string ChatSummaryResourceName =
+        "HealthyFac.Insights.Infrastructure.Agents.Prompts.ChatSummarySystemPrompt.md";
+
+    public const string ChatVersion = "chat-v7";
+    public const string ChatResourceName = "HealthyFac.Insights.Infrastructure.Agents.Prompts.ChatSystemPrompt.md";
     public const string PlannerVersion = "planner-v4";
     public const string ScreenerVersion = "screener-v1";
 
@@ -28,6 +40,9 @@ public sealed class EmbeddedAgentPrompts : IAgentPrompts
     private const string UnknownRoleMessage = "The role {0} has no prompt.";
 
     private readonly Lazy<AgentPrompt> _triage = new(() => Read(TriageVersion, TriageResourceName));
+    private readonly Lazy<AgentPrompt> _chatSummary = new(() => Read(ChatSummaryVersion, ChatSummaryResourceName));
+    private readonly Lazy<AgentPrompt> _chat = new(() => Read(ChatVersion, ChatResourceName));
+    private readonly Lazy<AgentPrompt> _chatTriage = new(() => Read(ChatTriageVersion, ChatTriageResourceName));
     private readonly Lazy<AgentPrompt> _planner = new(() => Read(PlannerVersion, PlannerResourceName));
     private readonly Lazy<AgentPrompt> _screener = new(() => Read(ScreenerVersion, ScreenerResourceName));
 
@@ -36,6 +51,11 @@ public sealed class EmbeddedAgentPrompts : IAgentPrompts
         if (role == AgentRole.Triage)
         {
             return _triage.Value;
+        }
+
+        if (role == AgentRole.Chat)
+        {
+            return _chat.Value;
         }
 
         if (role == AgentRole.Planner)
@@ -47,6 +67,10 @@ public sealed class EmbeddedAgentPrompts : IAgentPrompts
             ? _screener.Value
             : throw new InvalidOperationException(string.Format(UnknownRoleMessage, role.Value));
     }
+
+    public AgentPrompt ForChatTriage() => _chatTriage.Value;
+
+    public AgentPrompt ForChatSummary() => _chatSummary.Value;
 
     private static AgentPrompt Read(string version, string resourceName)
     {

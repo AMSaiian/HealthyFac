@@ -70,7 +70,7 @@ export function withWorkOrderDrawerAction() {
       return {
         isUpdate: computed(() => payloadOf(store.action()).workOrderId !== undefined),
         workOrderId: computed(() => payloadOf(store.action()).workOrderId),
-        canManage: computed(() => auth.hasPermission(Permission.WorkOrdersManage)),
+        canManage: computed(() => auth.hasPermission(Permission.WorkOrdersWriteCompany)),
         canWrite: computed(() => auth.hasPermission(Permission.WorkOrdersWrite)),
         historyPageIndex: computed(() => store.historyAfters().length),
         historyAfter: computed(() => store.historyAfters().at(-1)),

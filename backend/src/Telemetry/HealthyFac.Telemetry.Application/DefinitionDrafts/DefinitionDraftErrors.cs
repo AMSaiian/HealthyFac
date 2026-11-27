@@ -6,17 +6,23 @@ namespace HealthyFac.Telemetry.Application.DefinitionDrafts;
 public static class DefinitionDraftErrors
 {
     public const string DraftNotFound = "The definition draft does not exist.";
+    public const string MachineNotRegistered = "The machine of the definition draft has no registration yet.";
     public const string DraftChanged = "The draft changed since you read it. Reload it and try again.";
     public const string CompanyIdRequired = "CompanyId is required.";
     public const string MachineIdRequired = "MachineId is required.";
     public const string AttemptIdRequired = "The ingest attempt is required.";
+    public const string ChatIdRequired = "The chat is required.";
     public const string DraftIdRequired = "The draft is required.";
 
     public const string DraftNotUsable =
         "The draft does not exist, belongs to another machine or kind, or is named more than once.";
 
     public const string KindUnknown = "The kind filter holds a kind that does not exist.";
-    public const string SearchScopeRequired = "Give exactly one of the machine and the ingest attempt.";
+
+    public const string GetScopeRequired = "Give exactly one of the ingest attempt and the chat.";
+
+    public const string SearchScopeRequired =
+        "Give exactly one of the machine, the ingest attempt, and the chat.";
 
     /// <summary>
     /// The stable key that the web app maps to a translated text. The dismiss and the definition writes return it

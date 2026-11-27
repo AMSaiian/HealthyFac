@@ -1,5 +1,5 @@
 import type { GridPage, GridQueryState, GridRequestBody, GridSort } from '@shared/grid/requests/grid-request';
-import type { SetFilterBody } from '@shared/grid/requests/grid-filters';
+import type { IdSetBody, SetFilterBody } from '@shared/grid/requests/grid-filters';
 
 export enum CaseState {
   Open = 'open',
@@ -212,7 +212,7 @@ export interface CaseFilter {
 export type CaseGridState = GridQueryState<CaseFilter, CaseSortColumn>;
 
 export interface CaseFilterBody {
-  readonly machineIds?: SetFilterBody<string>;
+  readonly machineIds?: IdSetBody;
   readonly states?: SetFilterBody<CaseState>;
   readonly severities?: SetFilterBody<SignalSeverity>;
   readonly lastRunStates?: SetFilterBody<AgentRunState>;

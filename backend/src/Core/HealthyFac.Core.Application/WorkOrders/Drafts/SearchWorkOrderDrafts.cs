@@ -32,11 +32,11 @@ public sealed record WorkOrderDraftGridFilter : IFilter<WorkOrderDraft>
 {
     public SetFilter<DraftState>? States { get; init; }
 
-    public SetFilter<Guid>? MachineIds { get; init; }
+    public IdSetFilter? MachineIds { get; init; }
 
     public Expression<Func<WorkOrderDraft, bool>>? ToPredicate() =>
         Predicates.From(States?.ToPredicate<WorkOrderDraft>(draft => draft.State))
-            .And(MachineIds?.ToPredicate<WorkOrderDraft>(draft => draft.MachineId));
+            .And(MachineIds?.ToPredicate<WorkOrderDraft>(draft => draft.MachineId!.Value));
 }
 
 public sealed class WorkOrderDraftGridFilterValidator : AbstractValidator<WorkOrderDraftGridFilter>
@@ -45,7 +45,9 @@ public sealed class WorkOrderDraftGridFilterValidator : AbstractValidator<WorkOr
     {
         When(filter => filter.States is not null, () => RuleFor(filter => filter.States!).IsSetFilter());
 
-        When(filter => filter.MachineIds is not null, () => RuleFor(filter => filter.MachineIds!).IsSetFilter());
+        When(
+            filter => filter.MachineIds is not null,
+            () => RuleFor(filter => filter.MachineIds!).SetValidator(new IdSetFilterValidator()));
     }
 }
 

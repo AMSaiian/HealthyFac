@@ -5,6 +5,7 @@ using HealthyFac.Telemetry.ApiTests.StatusDefinitions.Data;
 using HealthyFac.Telemetry.Application;
 using HealthyFac.Telemetry.Domain.DefinitionDrafts.MetricDrafts;
 using HealthyFac.Telemetry.Domain.DefinitionDrafts.ProposalEntries;
+using HealthyFac.Telemetry.Domain.DefinitionDrafts.Proposals;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Telemetry.ApiTests.DefinitionDrafts.Data;
@@ -18,12 +19,12 @@ public static class DefinitionDraftInputFixtureExtensions
             var encryptedMachineId = await fixture.ArrangeMachineAsync();
             var machineId = fixture.IdEncryptor.Decrypt(encryptedMachineId);
             var entry = new ProposalEntry(Guid.CreateVersion7(), fixture.CompanyId);
+            var proposal = DraftProposal.ForIngest(Guid.CreateVersion7(), fixture.CompanyId, Guid.CreateVersion7());
 
             var draft = MetricDefinitionDraft.Propose(
                 Guid.CreateVersion7(),
                 fixture.CompanyId,
-                Guid.CreateVersion7(),
-                Guid.CreateVersion7(),
+                proposal.Id,
                 entry.Id,
                 machineId,
                 new MetricDraftValues { Key = "spindle.temperature", Name = "Spindle temperature" });
@@ -34,6 +35,7 @@ public static class DefinitionDraftInputFixtureExtensions
 
             using var scope = fixture.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ITelemetryDbContext>();
+            dbContext.DraftProposals.Add(proposal);
             dbContext.ProposalEntries.Add(entry);
             dbContext.MetricDefinitionDrafts.Add(draft);
             await dbContext.SaveChangesAsync();

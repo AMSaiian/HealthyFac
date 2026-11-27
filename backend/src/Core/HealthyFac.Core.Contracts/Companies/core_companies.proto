@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package healthyfac.core.v1;
+
+option csharp_namespace = "HealthyFac.Core.Contracts.Companies";
+
+// Serves the company of the actor to the services that read it (Insights).
+service CoreCompanies {
+  rpc GetCurrentCompany(GetCurrentCompanyRequest) returns (CompanyReply);
+}
+
+message GetCurrentCompanyRequest {}
+
+message CompanyReply {
+  string name = 1;
+  // The IANA ID of the time zone of the company, for example "Europe/Kyiv".
+  string time_zone_id = 2;
+}

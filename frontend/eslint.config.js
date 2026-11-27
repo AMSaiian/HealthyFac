@@ -27,6 +27,7 @@ const RESTRICTED_IMPORT_PATTERNS = [
       '@app/schedule/*',
       '@app/invite/*',
       '@app/maintenance/*',
+      '@app/assistant/*',
     ],
     message: FEATURE_ALIAS_MESSAGE,
   },

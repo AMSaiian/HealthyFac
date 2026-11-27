@@ -17,6 +17,8 @@ public static class GatewaySettingKeys
     public const string DocumentAddress = "ReverseProxy:Clusters:document:Destinations:main:Address";
     public const string DocumentHealthAddress = "ReverseProxy:Clusters:document:Destinations:main:Health";
     public const string InsightsAddress = "ReverseProxy:Clusters:insights:Destinations:main:Address";
+    public const string InsightsChatAddress = "ReverseProxy:Clusters:insights-chat:Destinations:main:Address";
+    public const string InsightsChatHealthAddress = "ReverseProxy:Clusters:insights-chat:Destinations:main:Health";
     public const string InsightsHealthAddress = "ReverseProxy:Clusters:insights:Destinations:main:Health";
     public const string TelemetryHealthAddress = "ReverseProxy:Clusters:telemetry:Destinations:main:Health";
 }

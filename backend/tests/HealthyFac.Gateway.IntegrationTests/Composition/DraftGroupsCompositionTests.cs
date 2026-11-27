@@ -69,6 +69,37 @@ public sealed class DraftGroupsCompositionTests(GatewayEnvironment environment) 
         Ids(groups[3], list: "statuses").Should().Equal("t4");
     }
 
+    [Fact]
+    public async Task GetChatDrafts_WithDraftsOfEveryKind_CallsTheChatPathsAndGroupsLikeTheAttemptRoute()
+    {
+        _stubs.Core.Respond(HttpMethod.Get, CompositionStubs.CoreChatDrafts, status: 200, CoreGroupsJson);
+        _stubs.Telemetry.Respond(HttpMethod.Get, CompositionStubs.TelemetryChatDrafts, status: 200, TelemetryJson);
+        _stubs.Core.Respond(HttpMethod.Post, DraftSearchCompositionTestData.NamesPath, status: 200, NamesJson);
+        await using var gateway = _stubs.CreateGateway(_environment);
+        using var client = gateway.CreateAuthenticatedClient();
+
+        var response = await client.GetAsync(
+            CompositionStubs.PublicChatDrafts,
+            TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = JsonNode.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken))!;
+        var groups = body["groups"]!.AsArray();
+
+        groups.Should().HaveCount(expected: 4);
+        Ids(groups[0], list: "metrics").Should().Equal("t1");
+
+        _stubs.Core.Requests.Select(request => request.Path)
+            .Should()
+            .Contain(CompositionStubs.CoreChatDrafts)
+            .And.NotContain(CompositionStubs.CoreAttemptDrafts);
+
+        _stubs.Telemetry.Requests.Select(request => request.Path)
+            .Should()
+            .Contain(CompositionStubs.TelemetryChatDrafts)
+            .And.NotContain(CompositionStubs.TelemetryAttemptDrafts);
+    }
+
     private static string[] Ids(JsonNode? group, string list) =>
         [.. group![list]!.AsArray().Select(item => item!["id"]!.GetValue<string>())];
 }

@@ -1,6 +1,7 @@
 using HealthyFac.Shared.Domain.Entities;
 using HealthyFac.Telemetry.Domain.DefinitionDrafts.MetricDrafts;
 using HealthyFac.Telemetry.Domain.DefinitionDrafts.ProposalEntries;
+using HealthyFac.Telemetry.Domain.DefinitionDrafts.Proposals;
 
 namespace HealthyFac.Telemetry.Domain.DefinitionDrafts.PhaseDrafts;
 
@@ -24,9 +25,9 @@ public class OperatingPhaseDraft : IDefinitionDraft, IAuditable, ISoftDeletable,
     public Guid Id { get; private set; }
     public uint RowVersion { get; private set; }
     public Guid CompanyId { get; private set; }
-    public Guid AttemptId { get; private set; }
-    public Guid FileId { get; private set; }
-    public Guid ProposalEntryId { get; private set; }
+    public Guid ProposalId { get; private set; }
+    public DraftProposal Proposal { get; private set; } = null!;
+    public Guid? ProposalEntryId { get; private set; }
     public Guid? TargetMachineDraftId { get; private set; }
     public Guid? TargetMachineId { get; private set; }
     public DefinitionDraftState State { get; private set; }
@@ -59,9 +60,8 @@ public class OperatingPhaseDraft : IDefinitionDraft, IAuditable, ISoftDeletable,
     /// </summary>
     /// <param name="id">The ID from the proposal message.</param>
     /// <param name="companyId">The company of the file.</param>
-    /// <param name="attemptId">The ingest attempt that proposed the draft.</param>
-    /// <param name="fileId">The file that the draft came from.</param>
-    /// <param name="proposalEntryId">The proposed machine that the draft belongs to.</param>
+    /// <param name="proposalId">The proposal that holds the origin of the draft.</param>
+    /// <param name="proposalEntryId">The proposed machine that the draft belongs to, or <see langword="null"/>.</param>
     /// <param name="tentativeMachineId">
     /// The machine that the proposal named, or <see langword="null"/>. The machine check can still reject it.
     /// </param>
@@ -72,9 +72,8 @@ public class OperatingPhaseDraft : IDefinitionDraft, IAuditable, ISoftDeletable,
     public static OperatingPhaseDraft Propose(
         Guid id,
         Guid companyId,
-        Guid attemptId,
-        Guid fileId,
-        Guid proposalEntryId,
+        Guid proposalId,
+        Guid? proposalEntryId,
         Guid? tentativeMachineId,
         PhaseDraftValues values,
         IReadOnlyList<PhaseDraftConditionValues> conditions,
@@ -85,8 +84,7 @@ public class OperatingPhaseDraft : IDefinitionDraft, IAuditable, ISoftDeletable,
         {
             Id = id,
             CompanyId = companyId,
-            AttemptId = attemptId,
-            FileId = fileId,
+            ProposalId = proposalId,
             ProposalEntryId = proposalEntryId,
             TargetMachineId = tentativeMachineId,
             SourceLocation = values.SourceLocation,
@@ -99,6 +97,33 @@ public class OperatingPhaseDraft : IDefinitionDraft, IAuditable, ISoftDeletable,
 
         draft._conditions.AddRange(conditions.Select(OperatingPhaseDraftCondition.Create));
         draft._limits.AddRange(limits.Select(OperatingPhaseDraftLimit.Create));
+
+        return draft;
+    }
+
+    /// <summary>
+    /// Creates a draft for a machine that exists. The draft has no proposal entry and waits for a user at once.
+    /// </summary>
+    /// <param name="id">The ID from the proposal message.</param>
+    /// <param name="companyId">The company of the proposal.</param>
+    /// <param name="proposalId">The proposal that holds the origin of the draft.</param>
+    /// <param name="machineId">The machine of the draft.</param>
+    /// <param name="values">The proposed values.</param>
+    /// <param name="conditions">The proposed conditions.</param>
+    /// <param name="limits">The proposed limit rows.</param>
+    /// <returns>The new draft in the state <c>pending</c>.</returns>
+    public static OperatingPhaseDraft ProposeOnMachine(
+        Guid id,
+        Guid companyId,
+        Guid proposalId,
+        Guid machineId,
+        PhaseDraftValues values,
+        IReadOnlyList<PhaseDraftConditionValues> conditions,
+        IReadOnlyList<PhaseDraftLimitValues> limits
+    )
+    {
+        var draft = Propose(id, companyId, proposalId, proposalEntryId: null, machineId, values, conditions, limits);
+        draft.State = DefinitionDraftState.Pending;
 
         return draft;
     }

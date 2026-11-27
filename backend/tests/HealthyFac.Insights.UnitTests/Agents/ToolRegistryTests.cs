@@ -1,13 +1,20 @@
+using System.Reflection;
 using System.Text.Json;
+using HealthyFac.Insights.Application;
+using HealthyFac.Insights.Application.Agents;
 using HealthyFac.Insights.Application.Agents.Tools;
 using HealthyFac.Insights.Application.Agents.Tools.Invocation;
+using HealthyFac.Insights.Application.Chats.Tools;
+using HealthyFac.Insights.Application.Ingest.Processing.Failures;
 using HealthyFac.Insights.Domain.Agents.Runs;
 using HealthyFac.Insights.Domain.Agents.ToolCalls;
 using HealthyFac.Insights.Infrastructure.Agents.Tools;
 using HealthyFac.Insights.UnitTests.Agents.Data;
 using HealthyFac.Insights.UnitTests.Extraction.Data;
+using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Testing.Features;
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
 
@@ -34,6 +41,105 @@ public sealed class ToolRegistryTests
         var functions = CreateRegistry().For(role, CreateContext());
 
         functions.Select(function => function.Name).Should().BeEquivalentTo(expectedNames, caseName);
+    }
+
+    [Fact]
+    public void For_WithTheRoleChatAndATokenWithoutEmployeesRead_LeavesOutTheEmployeeTool()
+    {
+        var functions = CreateRegistry()
+            .For(AgentRole.Chat, CreateContext(), ["machines:read", "metric-definitions:read"], new TestUserScopes());
+
+        functions.Select(function => function.Name)
+            .Should()
+            .BeEquivalentTo(ToolTestData.ChatMachinesToolName, ToolTestData.ChatNoAnswerToolName);
+    }
+
+    [Fact]
+    public void For_WithTheRoleChatAndATokenWithOnePermissionOfAToolOnly_LeavesOutThatTool()
+    {
+        var functions = CreateRegistry()
+            .For(AgentRole.Chat, CreateContext(), ["machines:read"], new TestUserScopes());
+
+        functions.Select(function => function.Name).Should().BeEquivalentTo(ToolTestData.ChatNoAnswerToolName);
+    }
+
+    [Fact]
+    public void For_WithTheRoleChatAndATokenWithAllPermissions_ReturnsEveryChatTool()
+    {
+        var functions = CreateRegistry()
+            .For(
+                AgentRole.Chat,
+                CreateContext(),
+                ["employees:read", "machines:read", "metric-definitions:read"],
+                new TestUserScopes());
+
+        functions.Select(function => function.Name).Should().BeEquivalentTo(ToolTestData.AllChatToolNames);
+    }
+
+    [Fact]
+    public void For_WithTheRoleChatAndNoScopes_Throws()
+    {
+        var act = () => CreateRegistry().For(AgentRole.Chat, CreateContext(), ["employees:read"]);
+
+        act.Should().Throw<InvalidOperationException>().WithMessage(AgentMessages.ChatToolsNeedUserScopes);
+    }
+
+    [Fact]
+    public void For_WithTheRoleChatAndTheAdvisorScopes_Throws()
+    {
+        var act = () => CreateRegistry().For(AgentRole.Chat, CreateContext(), ["employees:read"], _scopes);
+
+        act.Should().Throw<InvalidOperationException>().WithMessage(AgentMessages.ChatToolsNeedUserScopes);
+    }
+
+    [Fact]
+    public async Task Invoke_OfAnOtherRoleWhenTheServiceIsDown_EndsTheLoopAndThrowsTheOutage()
+    {
+        var function = CreateRegistry()
+            .For(AgentRole.Screener, CreateContext())
+            .Single(candidate => candidate.Name == ToolTestData.OutageToolName);
+
+        var act = async () => await function.InvokeAsync(
+            new AIFunctionArguments { ["text"] = "x" },
+            TestContext.Current.CancellationToken);
+
+        await act.Should().ThrowAsync<ProviderUnavailableException>();
+        _rows.Single().Outcome.Should().Be(ToolCallOutcome.Failed);
+    }
+
+    [Fact]
+    public async Task Invoke_OfAChatTool_RunsInTheRequestScopeOfTheUser()
+    {
+        var handler = new ChatEmployeesHandler();
+
+        var provider = new ServiceCollection()
+            .AddSingleton<IRequestHandler<ChatEmployeesRequest, EchoResponse>>(handler)
+            .BuildServiceProvider();
+
+        var function = CreateRegistry()
+            .For(AgentRole.Chat, CreateContext(), ["employees:read"], new ChatToolScopes(provider))
+            .Single(candidate => candidate.Name == ToolTestData.ChatEmployeesToolName);
+
+        await function.InvokeAsync(
+            new AIFunctionArguments { ["text"] = "x" },
+            TestContext.Current.CancellationToken);
+
+        handler.Calls.Should().Be(expected: 1);
+        _scopes.LastCompanyId.Should().BeEmpty();
+        _rows.Single().Outcome.Should().Be(ToolCallOutcome.Succeeded);
+        provider.GetService<IRequestHandler<ChatEmployeesRequest, EchoResponse>>().Should().NotBeNull();
+    }
+
+    [Fact]
+    public void ChatToolScopes_Create_ReturnsTheRequestProviderAndLeavesItOpenOnDispose()
+    {
+        var provider = new ServiceCollection().AddSingleton(new object()).BuildServiceProvider();
+
+        var scope = new ChatToolScopes(provider).Create(CompanyId);
+        scope.Dispose();
+
+        scope.ServiceProvider.Should().BeSameAs(provider);
+        provider.GetService<object>().Should().NotBeNull();
     }
 
     [Fact]
@@ -89,6 +195,43 @@ public sealed class ToolRegistryTests
         var row = _rows.Single();
         row.Result.Should().NotContain(first.ToString()).And.Contain(encryptor.Encrypt(first));
         row.Arguments.Should().NotContain(first.ToString());
+    }
+
+    [Fact]
+    public void JsonSchema_OfAToolWithTimeArguments_HasTheDateTimeFormat()
+    {
+        var function = FindFunction(ToolTestData.TimeToolName);
+
+        var properties = function.JsonSchema.GetProperty(propertyName: "properties");
+        var from = properties.GetProperty(propertyName: "from").GetRawText();
+        var to = properties.GetProperty(propertyName: "to").GetRawText();
+
+        from.Should().Be(expected: """{"type":"string","format":"date-time"}""");
+        to.Should().Be(expected: """{"type":["string","null"],"format":"date-time"}""");
+    }
+
+    [Fact]
+    public void JsonSchema_OfEveryToolOfTheApp_GivesEachArgumentPropertyAType()
+    {
+        var types = ToolRegistry.FindToolTypes(InsightsApplicationAssembly.Instance);
+
+        var permissions = types
+            .SelectMany(type => type.GetCustomAttribute<AgentToolAttribute>()!.Permissions)
+            .ToHashSet();
+
+        var registry = new ToolRegistry(_scopes, types, _logger, new AgentJson(new PrefixIdEncryptor()));
+        var chatScopes = new ChatToolScopes(new ServiceCollection().BuildServiceProvider());
+
+        var functions = registry.For(AgentRole.Planner, CreateContext())
+            .Concat(registry.For(AgentRole.Chat, CreateContext(), permissions, chatScopes))
+            .ToList();
+
+        var untyped = functions
+            .SelectMany(function => FindUntypedProperties(function.Name, function.JsonSchema))
+            .ToList();
+
+        functions.Should().NotBeEmpty();
+        untyped.Should().BeEmpty();
     }
 
     [Fact]
@@ -157,6 +300,41 @@ public sealed class ToolRegistryTests
             TestContext.Current.CancellationToken);
 
         _logger.Collector.GetSnapshot().Should().BeEmpty();
+    }
+
+    private static IEnumerable<string> FindUntypedProperties(string path, JsonElement schema)
+    {
+        if (schema.ValueKind != JsonValueKind.Object)
+        {
+            yield break;
+        }
+
+        if (schema.TryGetProperty(propertyName: "properties", out var properties))
+        {
+            foreach (var property in properties.EnumerateObject())
+            {
+                var propertyPath = $"{path}.{property.Name}";
+
+                if (property.Value.ValueKind != JsonValueKind.Object
+                    || !property.Value.TryGetProperty(propertyName: "type", out _))
+                {
+                    yield return propertyPath;
+                }
+
+                foreach (var nested in FindUntypedProperties(propertyPath, property.Value))
+                {
+                    yield return nested;
+                }
+            }
+        }
+
+        if (schema.TryGetProperty(propertyName: "items", out var items))
+        {
+            foreach (var nested in FindUntypedProperties($"{path}[]", items))
+            {
+                yield return nested;
+            }
+        }
     }
 
     private ToolRegistry CreateRegistry() => new(

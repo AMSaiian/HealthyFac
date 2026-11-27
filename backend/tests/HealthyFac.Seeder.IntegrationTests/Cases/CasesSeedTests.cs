@@ -1,4 +1,5 @@
 using HealthyFac.Core.Domain.Drafts;
+using HealthyFac.Core.Domain.Drafts.Proposals;
 using HealthyFac.Insights.Domain.Cases;
 using HealthyFac.Insights.Domain.Cases.Signals;
 using HealthyFac.Seeder.IntegrationTests.Cases.Data;
@@ -42,6 +43,7 @@ public sealed class CasesSeedTests(SeederFixture fixture)
         draft.Title.Should().Be(CasesTestData.DraftTitle);
         draft.State.Should().Be(DraftState.Pending);
         draft.MachineId.Should().Be(lathe.Id);
-        draft.CaseId.Should().Be(CasesTestData.CaseId);
+        draft.Proposal.CaseId.Should().Be(CasesTestData.CaseId);
+        draft.Proposal.Source.Should().Be(DraftSource.Case);
     }
 }

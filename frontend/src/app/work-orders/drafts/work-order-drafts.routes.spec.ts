@@ -1,3 +1,4 @@
+import { DraftSource } from '@shared/drafts/draft-proposal';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { PlatformNavigation } from '@angular/common';
@@ -33,8 +34,7 @@ const DRAFT = {
   machineId: 'm1',
   machineName: 'Lathe',
   isMachineDeleted: false,
-  caseId: 'c1',
-  runId: 'r1',
+  proposal: { source: DraftSource.Case, attemptId: null, caseId: 'c1', chatId: null },
   title: 'Replace the bearing',
   description: null,
   priority: WorkOrderPriority.High,

@@ -1,0 +1,71 @@
+@if (showEmpty() && running() === null) {
+  <hf-empty-state
+    icon="pi pi-comments"
+    messageKey="CHAT.EMPTY"
+  />
+} @else {
+  <div
+    #scroller
+    class="flex min-h-0 min-w-0 flex-1 flex-col gap-4 overflow-y-auto p-2"
+    tabindex="0"
+    (scroll)="onScroll(scroller)"
+    (wheel)="onUserInput(scroller)"
+    (touchmove)="onUserInput(scroller)"
+    (pointerdown)="onPointerDown(scroller)"
+    (keydown)="onUserInput(scroller, $event.key)"
+  >
+    @if (isLoading() && showSkeleton()) {
+      @for (index of skeletonItems(); track index) {
+        <div
+          class="flex flex-none items-start gap-3"
+          [class.flex-row-reverse]="index % 2 === 1"
+        >
+          <p-skeleton
+            shape="circle"
+            size="2rem"
+          />
+          <div class="flex flex-col gap-2">
+            <p-skeleton
+              width="16rem"
+              height="1rem"
+            />
+            <p-skeleton
+              width="10rem"
+              height="1rem"
+            />
+          </div>
+        </div>
+      }
+    } @else {
+      @if (isLoadingOlder() && showOlderSkeleton()) {
+        <div class="flex flex-none items-start gap-3">
+          <p-skeleton
+            shape="circle"
+            size="2rem"
+          />
+          <div class="flex flex-col gap-2">
+            <p-skeleton
+              width="16rem"
+              height="1rem"
+            />
+            <p-skeleton
+              width="10rem"
+              height="1rem"
+            />
+          </div>
+        </div>
+      }
+      @for (message of ordered(); track message.id) {
+        <hf-chat-message
+          [message]="message"
+          [canDelete]="canDelete() && deletableIds().has(message.id)"
+          [streamingText]="running()?.messageId === message.id ? running()!.text : null"
+          [activity]="running()?.messageId === message.id ? running()!.activity : null"
+          [chatId]="chatId()"
+          (deleteRequested)="deleteRequested.emit($event)"
+          (draftJumpRequested)="draftJumpRequested.emit($event)"
+        />
+      }
+    }
+  </div>
+}

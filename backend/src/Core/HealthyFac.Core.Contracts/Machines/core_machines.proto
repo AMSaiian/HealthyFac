@@ -1,0 +1,64 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+package healthyfac.core.v1;
+
+option csharp_namespace = "HealthyFac.Core.Contracts.Machines";
+
+// Serves the machines of the company of the actor to the services that read them (Insights). The caller sends plain
+// GUIDs as text, never the encrypted IDs of the public API. A machine of another company is "not found".
+service CoreMachines {
+  rpc SearchMachines(SearchMachinesRequest) returns (SearchMachinesReply);
+  rpc GetMachine(GetMachineRequest) returns (MachineReply);
+  rpc GetMachineStateTimes(GetMachineStateTimesRequest) returns (MachineStateTimesReply);
+}
+
+message SearchMachinesRequest {
+  // A name prefix. An empty text adds no condition.
+  string name = 1;
+  // A serial number prefix. An empty text adds no condition.
+  string serial_number = 2;
+  // The states to keep, for example "operational". No value keeps every state.
+  repeated string states = 3;
+  int32 limit = 4;
+  int32 offset = 5;
+}
+
+message SearchMachinesReply {
+  repeated MachineReply machines = 1;
+  // The number of machines that match the filter, before the page is cut.
+  int32 total_count = 2;
+}
+
+message GetMachineRequest {
+  string machine_id = 1;
+}
+
+message MachineReply {
+  string id = 1;
+  string name = 2;
+  string serial_number = 3;
+  string gateway_id = 4;
+  string state = 5;
+  // The expected go-live date as text in the form yyyy-MM-dd.
+  string expected_go_live_on = 6;
+  optional string description = 7;
+}
+
+message GetMachineStateTimesRequest {
+  string machine_id = 1;
+  google.protobuf.Timestamp from = 2;
+  google.protobuf.Timestamp to = 3;
+}
+
+message MachineStateTimesReply {
+  repeated MachineStateTime states = 1;
+  // The seconds of the range before the machine existed.
+  double before_creation_seconds = 2;
+}
+
+message MachineStateTime {
+  string state = 1;
+  double seconds = 2;
+}

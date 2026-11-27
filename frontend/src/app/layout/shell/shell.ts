@@ -12,6 +12,7 @@ import { Toolbar } from 'primeng/toolbar';
 import { Tooltip } from 'primeng/tooltip';
 
 import { ActionHost } from '@shared/actions/action-host/action-host';
+import { ChatStore } from '@shared/chat/chat.store';
 import { Language } from '@shared/i18n/i18n.constants';
 import { languageFlagUrl } from '@shared/i18n/language-flags';
 import { LanguageStore } from '@shared/i18n/language.store';
@@ -23,6 +24,7 @@ import { AuthStore } from '@shared/security/auth-store/auth.store';
 import { HIDDEN_CLOSE_BUTTON_PT } from '@shared/theme/square-button-props';
 import { ThemeStore } from '@shared/theme/theme.store';
 
+import { ChatDrawer } from './chat-drawer/chat-drawer';
 import { NotificationBell } from './notification-bell/notification-bell';
 import { ShellStore } from './shell.store';
 import { languageMenuItems } from './shell.store.utils';
@@ -40,6 +42,7 @@ import { languageMenuItems } from './shell.store.utils';
     TranslatePipe,
     UpperCasePipe,
     ButtonDirective,
+    ChatDrawer,
     ConfirmDialog,
     Drawer,
     Menu,
@@ -58,6 +61,7 @@ export class Shell {
   protected readonly themeStore = inject(ThemeStore);
   protected readonly hiddenClosePt = HIDDEN_CLOSE_BUTTON_PT;
   protected readonly authStore = inject(AuthStore);
+  protected readonly chatStore = inject(ChatStore);
   protected readonly navigationStore = inject(NavigationStore);
   protected readonly notificationStore = inject(NotificationStore);
   protected readonly toastIconOf = toastIconOf;

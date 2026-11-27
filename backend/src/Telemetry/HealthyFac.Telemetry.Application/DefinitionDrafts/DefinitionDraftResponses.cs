@@ -14,7 +14,9 @@ public record MetricDraftDetail
 
     public required DefinitionDraftState State { get; init; }
 
-    public required Guid ProposalEntryId { get; init; }
+    public required Guid? ProposalEntryId { get; init; }
+
+    public required DraftProposalSummary Proposal { get; init; }
 
     public Guid? TargetMachineId { get; init; }
 
@@ -56,6 +58,13 @@ public record MetricDraftDetail
             Id = draft.Id,
             State = draft.State,
             ProposalEntryId = draft.ProposalEntryId,
+            Proposal = new DraftProposalSummary
+            {
+                Source = draft.Proposal.Source,
+                AttemptId = draft.Proposal.AttemptId,
+                ChatId = draft.Proposal.ChatId,
+                RequestedByName = draft.Proposal.RequestedByName,
+            },
             TargetMachineId = draft.TargetMachineId,
             TargetMachineDraftId = draft.TargetMachineDraftId,
             SourceLocation = draft.SourceLocation,
@@ -85,7 +94,9 @@ public record StatusDraftDetail
 
     public required DefinitionDraftState State { get; init; }
 
-    public required Guid ProposalEntryId { get; init; }
+    public required Guid? ProposalEntryId { get; init; }
+
+    public required DraftProposalSummary Proposal { get; init; }
 
     public Guid? TargetMachineId { get; init; }
 
@@ -105,6 +116,13 @@ public record StatusDraftDetail
             Id = draft.Id,
             State = draft.State,
             ProposalEntryId = draft.ProposalEntryId,
+            Proposal = new DraftProposalSummary
+            {
+                Source = draft.Proposal.Source,
+                AttemptId = draft.Proposal.AttemptId,
+                ChatId = draft.Proposal.ChatId,
+                RequestedByName = draft.Proposal.RequestedByName,
+            },
             TargetMachineId = draft.TargetMachineId,
             TargetMachineDraftId = draft.TargetMachineDraftId,
             SourceLocation = draft.SourceLocation,
@@ -124,7 +142,9 @@ public record PhaseDraftDetail
 
     public required DefinitionDraftState State { get; init; }
 
-    public required Guid ProposalEntryId { get; init; }
+    public required Guid? ProposalEntryId { get; init; }
+
+    public required DraftProposalSummary Proposal { get; init; }
 
     public Guid? TargetMachineId { get; init; }
 
@@ -152,6 +172,13 @@ public record PhaseDraftDetail
             Id = draft.Id,
             State = draft.State,
             ProposalEntryId = draft.ProposalEntryId,
+            Proposal = new DraftProposalSummary
+            {
+                Source = draft.Proposal.Source,
+                AttemptId = draft.Proposal.AttemptId,
+                ChatId = draft.Proposal.ChatId,
+                RequestedByName = draft.Proposal.RequestedByName,
+            },
             TargetMachineId = draft.TargetMachineId,
             TargetMachineDraftId = draft.TargetMachineDraftId,
             SourceLocation = draft.SourceLocation,

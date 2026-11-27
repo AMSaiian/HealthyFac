@@ -1,0 +1,83 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+package healthyfac.core.v1;
+
+option csharp_namespace = "HealthyFac.Core.Contracts.Schedules";
+
+// Serves the shift schedules to the services that read them (Insights). The caller sends plain GUIDs as text and the
+// dates as text in the form yyyy-MM-dd. Local times are text in the form HH:mm or yyyy-MM-ddTHH:mm in the zone of the
+// company. The access scope of the token applies: a token without `shifts:read-company` reaches only its own employee.
+service CoreSchedules {
+  rpc GetEmployeeSchedule(GetEmployeeScheduleRequest) returns (EmployeeScheduleReply);
+  rpc GetCompanySchedule(GetCompanyScheduleRequest) returns (CompanyScheduleReply);
+  rpc GetFreeSpans(GetFreeSpansRequest) returns (FreeSpansReply);
+}
+
+message GetEmployeeScheduleRequest {
+  string employee_id = 1;
+  string date = 2;
+}
+
+message GetCompanyScheduleRequest {
+  string date = 1;
+}
+
+message GetFreeSpansRequest {
+  string employee_id = 1;
+  string date = 2;
+}
+
+message EmployeeScheduleReply {
+  string date = 1;
+  string time_zone_id = 2;
+  string source = 3;
+  repeated ScheduleBlock blocks = 4;
+  repeated ScheduledWorkOrder work_orders = 5;
+}
+
+message CompanyScheduleReply {
+  string date = 1;
+  string time_zone_id = 2;
+  repeated CompanyScheduleEmployee employees = 3;
+}
+
+message CompanyScheduleEmployee {
+  string employee_id = 1;
+  string first_name = 2;
+  string last_name = 3;
+  EmployeeScheduleReply day = 4;
+}
+
+message ScheduleBlock {
+  string start_local = 1;
+  string end_local = 2;
+  google.protobuf.Timestamp start = 3;
+  google.protobuf.Timestamp end = 4;
+}
+
+message ScheduledWorkOrder {
+  string id = 1;
+  string title = 2;
+  string status = 3;
+  string priority = 4;
+  string planned_start_local = 5;
+  google.protobuf.Timestamp planned_start = 6;
+  int32 estimate_minutes = 7;
+  google.protobuf.Timestamp occupancy_end = 8;
+  bool is_delayed = 9;
+}
+
+message FreeSpansReply {
+  string date = 1;
+  string time_zone_id = 2;
+  repeated FreeSpan spans = 3;
+}
+
+message FreeSpan {
+  string start_local = 1;
+  string end_local = 2;
+  google.protobuf.Timestamp start = 3;
+  google.protobuf.Timestamp end = 4;
+}

@@ -1,3 +1,5 @@
+using HealthyFac.Identity.IntegrationTests.Realm.Data;
+
 namespace HealthyFac.Identity.IntegrationTests.TokenExchange.Data;
 
 public static class TokenExchangeTestData
@@ -8,6 +10,8 @@ public static class TokenExchangeTestData
     public const string TargetRoleName = "test-target:read";
     public const string TargetScopeName = "test-target";
     public const string ExchangeScopes = "test-target organization healthyfac-claims";
+    public const string ChatCoreScope = "insights-chat-core organization healthyfac-claims";
+    public const string ChatTelemetryScope = "insights-chat-telemetry organization healthyfac-claims";
     public const string NotAllowedAudience = "healthyfac-spa";
     public const string OrganizationClaim = "organization";
     public const string IssuerClaim = "iss";
@@ -17,4 +21,22 @@ public static class TokenExchangeTestData
     public const string EchoUrl = "https://target.example.test/echo";
     public const string ErrorField = "error";
     public const string InvalidTokenError = "invalid_request";
+
+    /// <summary>
+    /// The exchanged token holds the read permissions of the worker for the chat tools and the permissions of the
+    /// calling API.
+    /// </summary>
+    public static TheoryData<string, string, IReadOnlyList<string>> ChatExchanges => new()
+    {
+        {
+            RealmTestData.CoreClientId,
+            ChatCoreScope,
+            [.. RealmTestData.WorkerChatCorePermissions, .. RealmTestData.InsightsPermissions]
+        },
+        {
+            RealmTestData.TelemetryClientId,
+            ChatTelemetryScope,
+            [.. RealmTestData.WorkerChatTelemetryPermissions, .. RealmTestData.InsightsPermissions]
+        },
+    };
 }

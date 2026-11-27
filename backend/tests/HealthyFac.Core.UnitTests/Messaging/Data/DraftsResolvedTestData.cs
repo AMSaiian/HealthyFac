@@ -32,4 +32,14 @@ public static class DraftsResolvedTestData
             false
         },
     };
+
+    /// <summary>The case name, the source, the attempt, and whether the message is valid.</summary>
+    public static TheoryData<string, ResolutionSource, Guid?, bool> Sources => new()
+    {
+        { "IngestWithAttempt", ResolutionSource.Ingest, Id, true },
+        { "IngestWithoutAttempt", ResolutionSource.Ingest, null, false },
+        { "IngestWithEmptyAttempt", ResolutionSource.Ingest, Guid.Empty, false },
+        { "ChatWithoutAttempt", ResolutionSource.Chat, null, true },
+        { "ChatWithAttempt", ResolutionSource.Chat, Id, false },
+    };
 }

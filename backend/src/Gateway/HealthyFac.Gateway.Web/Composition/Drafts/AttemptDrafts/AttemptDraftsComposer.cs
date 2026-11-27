@@ -3,9 +3,8 @@ using System.Text.Json.Nodes;
 namespace HealthyFac.Gateway.Web.Composition.Drafts.AttemptDrafts;
 
 /// <summary>
-/// Composes the view of one ingest attempt: the machine drafts of Core and the metric, status, and phase drafts of
-/// Telemetry,
-/// in one group for each machine.
+/// Composes the view of one ingest attempt or one chat: the machine drafts of Core and the metric, status, and phase
+/// drafts of Telemetry, in one group for each machine.
 /// </summary>
 /// <param name="downstreamClient">Calls Core and Telemetry.</param>
 /// <param name="machineNameFiller">Reads the names of the groups that Core did not build.</param>
@@ -21,16 +20,18 @@ public sealed class AttemptDraftsComposer(DownstreamClient downstreamClient, Mac
     private readonly MachineNameFiller _machineNameFiller = machineNameFiller;
 
     /// <summary>
-    /// Reads and groups the drafts of an attempt.
+    /// Reads and groups the drafts of an attempt or a chat.
     /// </summary>
     /// <param name="version">The API version of the request.</param>
-    /// <param name="attemptId">The encrypted attempt ID of the route.</param>
+    /// <param name="corePath">The Core path of the grouped machine drafts of the scope.</param>
+    /// <param name="telemetryPath">The Telemetry path of the definition drafts of the scope.</param>
     /// <param name="incoming">The request of the person.</param>
     /// <param name="cancellationToken">Cancels the calls.</param>
     /// <returns>The groups, or the one error that the combined calls give.</returns>
     public async Task<IResult> GetAsync(
         string version,
-        string attemptId,
+        string corePath,
+        string telemetryPath,
         HttpContext incoming,
         CancellationToken cancellationToken
     )
@@ -39,14 +40,14 @@ public sealed class AttemptDraftsComposer(DownstreamClient downstreamClient, Mac
             _downstreamClient.SendAsync(
                 ComposedClusters.Core,
                 HttpMethod.Get,
-                DraftCompositionRoutes.CoreAttemptDrafts(version, attemptId),
+                corePath,
                 body: null,
                 incoming,
                 cancellationToken),
             _downstreamClient.SendAsync(
                 ComposedClusters.Telemetry,
                 HttpMethod.Get,
-                DraftCompositionRoutes.TelemetryAttemptDrafts(version, attemptId),
+                telemetryPath,
                 body: null,
                 incoming,
                 cancellationToken));

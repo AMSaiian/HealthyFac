@@ -347,6 +347,7 @@ services:
       Services__Insights__Gemini__ProjectId: ${GEMINI_PROJECT_ID:?set GEMINI_PROJECT_ID in .env}
       Services__Insights__Gemini__Location: ${GEMINI_LOCATION:?set GEMINI_LOCATION in .env}
       Services__Insights__Gemini__ChatModel: ${GEMINI_CHAT_MODEL:?set GEMINI_CHAT_MODEL in .env}
+      Services__Insights__Gemini__AssistantModel: ${GEMINI_ASSISTANT_MODEL:?set GEMINI_ASSISTANT_MODEL in .env}
       Services__Insights__Gemini__TriageModel: ${GEMINI_TRIAGE_MODEL:?set GEMINI_TRIAGE_MODEL in .env}
       Services__Insights__Gemini__EmbeddingModel: ${GEMINI_EMBEDDING_MODEL:-gemini-embedding-001}
       Services__Auth__ConnectionStrings__Database: >-
@@ -647,6 +648,7 @@ services:
       Gemini__ProjectId: ${GEMINI_PROJECT_ID:?set GEMINI_PROJECT_ID in .env}
       Gemini__Location: ${GEMINI_LOCATION:?set GEMINI_LOCATION in .env}
       Gemini__ChatModel: ${GEMINI_CHAT_MODEL:?set GEMINI_CHAT_MODEL in .env}
+      Gemini__AssistantModel: ${GEMINI_ASSISTANT_MODEL:?set GEMINI_ASSISTANT_MODEL in .env}
       Gemini__TriageModel: ${GEMINI_TRIAGE_MODEL:?set GEMINI_TRIAGE_MODEL in .env}
       Gemini__EmbeddingModel: ${GEMINI_EMBEDDING_MODEL:-gemini-embedding-001}
       Docling__ApiKey: ${DOCLING_API_KEY:?set DOCLING_API_KEY in .env}
@@ -843,6 +845,8 @@ services:
       ReverseProxy__Routes__core-invite-accept__Match__Hosts__0: api.${HEALTHYFAC_DOMAIN:-healthyfac.test}
       ReverseProxy__Routes__telemetry__Match__Hosts__0: api.${HEALTHYFAC_DOMAIN:-healthyfac.test}
       ReverseProxy__Routes__document__Match__Hosts__0: api.${HEALTHYFAC_DOMAIN:-healthyfac.test}
+      ReverseProxy__Routes__insights-chat-create__Match__Hosts__0: api.${HEALTHYFAC_DOMAIN:-healthyfac.test}
+      ReverseProxy__Routes__insights-chat-send__Match__Hosts__0: api.${HEALTHYFAC_DOMAIN:-healthyfac.test}
       ReverseProxy__Routes__insights__Match__Hosts__0: api.${HEALTHYFAC_DOMAIN:-healthyfac.test}
       ReverseProxy__Routes__document-blobs__Match__Hosts__0: api.${HEALTHYFAC_DOMAIN:-healthyfac.test}
       ReverseProxy__Routes__keycloak-token__Match__Hosts__0: auth.${HEALTHYFAC_DOMAIN:-healthyfac.test}

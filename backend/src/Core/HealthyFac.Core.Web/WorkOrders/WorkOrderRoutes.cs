@@ -12,6 +12,7 @@ public static class WorkOrderRoutes
     public const string ById = "/{" + IdParameter + "}";
     public const string Search = "/search";
     public const string SearchBatch = Search + "/batch";
+    public const string Lookup = "/lookup";
     public const string Status = ById + "/status";
     public const string History = ById + "/history";
     public const string LimitParameter = "limit";
@@ -19,7 +20,5 @@ public static class WorkOrderRoutes
     public const string Assignee = ById + "/assignee";
     public const string Move = ById + "/move";
     public const string ApplySchedule = "/schedule/apply";
-    public const string MachineParameter = "machineId";
-    public const string OpenForMachine = "/machines/{" + MachineParameter + "}/open-work-orders";
     public const string ResourceLocationFormat = "{0}/{1}";
 }

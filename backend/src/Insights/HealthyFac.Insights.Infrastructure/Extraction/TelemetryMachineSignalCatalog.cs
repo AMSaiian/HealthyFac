@@ -1,151 +1,61 @@
-using System.Net;
-using System.Net.Http.Json;
+using Grpc.Core;
 using HealthyFac.Insights.Application.Extraction.Signals;
+using HealthyFac.Insights.Application.Ingest.Processing.Failures;
 using HealthyFac.Insights.Infrastructure.Telemetry;
 using HealthyFac.Shared.Application.DownstreamScopes;
-using HealthyFac.Shared.Application.Grids;
-using HealthyFac.Shared.Application.IdEncryption;
-using HealthyFac.Shared.Infrastructure.HttpFailures;
+using HealthyFac.Shared.Infrastructure.Rpc;
+using HealthyFac.Telemetry.Contracts.Definitions;
 
 namespace HealthyFac.Insights.Infrastructure.Extraction;
 
 /// <summary>
-/// Reads the active metric keys (<c>GET /v1/machines/{machineId}/metric-definitions</c>) and the status codes
-/// (<c>POST /v1/machines/{machineId}/status-definitions/search</c>, every page) of a machine from Telemetry with the
-/// service token. The calls run in the downstream scope <c>telemetry</c>. A <c>404</c> gives empty lists, because the
-/// registration of the machine in Telemetry can still be missing.
+/// Reads the active metric keys and the status codes of a machine from Telemetry through the gRPC call
+/// <c>ListDefinitions</c>. The client comes from <see cref="TelemetryDefinitionsClients"/>, so a request with a user
+/// token and a background flow both work. The call runs in the downstream scope <c>telemetry</c>. A <c>NotFound</c>
+/// reply gives empty lists, because the registration of the machine in Telemetry can still be missing.
 /// </summary>
-/// <param name="httpClientFactory">Creates the Telemetry client.</param>
-/// <param name="downstreamScopes">Holds the downstream scope of the calls.</param>
-/// <param name="idEncryptor">Encrypts the machine ID of the route.</param>
+/// <param name="clients">Picks the Telemetry definitions client.</param>
+/// <param name="downstreamScopes">Holds the downstream scope of the call.</param>
 public sealed class TelemetryMachineSignalCatalog(
-    IHttpClientFactory httpClientFactory,
-    IDownstreamScopeHolder downstreamScopes,
-    IIdEncryptor idEncryptor
+    ITelemetryDefinitionsClients clients,
+    IDownstreamScopeHolder downstreamScopes
 ) : IMachineSignalCatalog
 {
-    private const string MetricDefinitionsFormat = "v1/machines/{0}/metric-definitions";
-    private const string StatusSearchFormat = "v1/machines/{0}/status-definitions/search";
+    private const string UnavailableMessage = "Telemetry did not answer the definitions request.";
 
-    private readonly IHttpClientFactory _httpClientFactory = httpClientFactory;
+    private readonly ITelemetryDefinitionsClients _clients = clients;
     private readonly IDownstreamScopeHolder _downstreamScopes = downstreamScopes;
-    private readonly IIdEncryptor _idEncryptor = idEncryptor;
 
     public async Task<MachineSignals> GetAsync(Guid machineId, CancellationToken cancellationToken)
     {
-        using var client = _httpClientFactory.CreateClient(TelemetryClientNames.Client);
+        var client = _clients.Create();
         using var lease = _downstreamScopes.Enter(TelemetryClientNames.DownstreamScope);
-        var encryptedId = _idEncryptor.Encrypt(machineId);
 
-        var metrics = await ReadMetricsAsync(client, encryptedId, cancellationToken);
-
-        if (metrics is null)
+        try
         {
-            return Empty();
+            var reply = await client.ListDefinitionsAsync(
+                new ListDefinitionsRequest { MachineId = machineId.ToString() },
+                cancellationToken: cancellationToken);
+
+            return new MachineSignals
+            {
+                Metrics = [.. reply.Metrics.Select(metric => ToReference(metric.Id, metric.Key))],
+                Statuses = [.. reply.Statuses.Select(status => ToReference(status.Id, status.Code))],
+            };
         }
-
-        var statuses = await ReadStatusesAsync(client, encryptedId, cancellationToken);
-
-        return statuses is null ? Empty() : new MachineSignals { Metrics = metrics, Statuses = statuses };
-    }
-
-    private static MachineSignals Empty() => new() { Metrics = [], Statuses = [] };
-
-    private async Task<List<SignalReference>?> ReadMetricsAsync(
-        HttpClient client,
-        string encryptedId,
-        CancellationToken cancellationToken
-    )
-    {
-        using var response = await client.GetAsync(
-            string.Format(MetricDefinitionsFormat, encryptedId),
-            cancellationToken);
-
-        if (response.StatusCode == HttpStatusCode.NotFound)
+        catch (RpcException exception) when (exception.StatusCode == StatusCode.NotFound)
         {
-            return null;
+            return new MachineSignals { Metrics = [], Statuses = [] };
         }
-
-        await response.EnsureSuccessAsync(cancellationToken);
-        var payload = await response.Content.ReadFromJsonAsync<MetricDefinitionsPayload>(cancellationToken);
-
-        return payload?.Definitions.Select(definition => ToReference(definition.Id, definition.Key)).ToList() ?? [];
-    }
-
-    private async Task<List<SignalReference>?> ReadStatusesAsync(
-        HttpClient client,
-        string encryptedId,
-        CancellationToken cancellationToken
-    )
-    {
-        var statuses = new List<SignalReference>();
-        var offset = 0;
-
-        while (true)
+        catch (RpcException exception) when (RpcFailures.IsCancelledByCaller(exception, cancellationToken))
         {
-            using var response = await client.PostAsJsonAsync(
-                string.Format(StatusSearchFormat, encryptedId),
-                new StatusSearchPayload { Offset = offset, Limit = GridValidationConstants.MaxLimit },
-                cancellationToken);
-
-            if (response.StatusCode == HttpStatusCode.NotFound)
-            {
-                return null;
-            }
-
-            await response.EnsureSuccessAsync(cancellationToken);
-            var page = await response.Content.ReadFromJsonAsync<StatusPagePayload>(cancellationToken);
-
-            if (page is null || page.Items.Count == 0)
-            {
-                return statuses;
-            }
-
-            statuses.AddRange(page.Items.Select(item => ToReference(item.Id, item.Code)));
-            offset += page.Items.Count;
-
-            if (offset >= page.TotalCount)
-            {
-                return statuses;
-            }
+            throw new OperationCanceledException(exception.Message, exception, cancellationToken);
+        }
+        catch (RpcException exception) when (RpcFailures.IsOutage(exception))
+        {
+            throw new ProviderUnavailableException(UnavailableMessage, exception);
         }
     }
 
-    private SignalReference ToReference(string encryptedId, string key) =>
-        new() { Id = _idEncryptor.Decrypt(encryptedId), Key = key };
-
-    private sealed record MetricDefinitionsPayload
-    {
-        public required IReadOnlyList<KeyPayload> Definitions { get; init; }
-    }
-
-    private sealed record KeyPayload
-    {
-        public required string Id { get; init; }
-
-        public required string Key { get; init; }
-    }
-
-    private sealed record StatusSearchPayload
-    {
-        public required int Offset { get; init; }
-
-        public required int Limit { get; init; }
-
-        public object Filter { get; init; } = new();
-    }
-
-    private sealed record StatusPagePayload
-    {
-        public required IReadOnlyList<CodePayload> Items { get; init; }
-
-        public required int TotalCount { get; init; }
-    }
-
-    private sealed record CodePayload
-    {
-        public required string Id { get; init; }
-
-        public required string Code { get; init; }
-    }
+    private static SignalReference ToReference(string id, string key) => new() { Id = Guid.Parse(id), Key = key };
 }

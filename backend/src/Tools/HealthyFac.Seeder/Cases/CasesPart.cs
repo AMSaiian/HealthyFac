@@ -93,6 +93,7 @@ public sealed class CasesPart : ISeedPart
             .Add(
                 new WorkOrderDraftProposed
                 {
+                    Source = WorkOrderProposalSource.Case,
                     DraftId = _file.WorkOrderDraft.DraftId,
                     CompanyId = companyId,
                     MachineId = machineId,

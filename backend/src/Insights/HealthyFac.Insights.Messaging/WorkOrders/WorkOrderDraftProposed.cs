@@ -1,4 +1,5 @@
 using FluentValidation;
+using HealthyFac.Insights.Messaging.Drafts;
 using HealthyFac.Shared.Application.Messaging;
 using HealthyFac.Shared.Application.TextInput;
 using HealthyFac.Shared.Application.UseCases;
@@ -18,11 +19,20 @@ public sealed record WorkOrderDraftProposed : IIntegrationMessage, IRequest
 
     public required Guid CompanyId { get; init; }
 
-    public required Guid MachineId { get; init; }
+    public required WorkOrderProposalSource Source { get; init; }
 
-    public required Guid CaseId { get; init; }
+    public Guid? MachineId { get; init; }
 
-    public required Guid RunId { get; init; }
+    public Guid? CaseId { get; init; }
+
+    public Guid? RunId { get; init; }
+
+    public Guid? ChatId { get; init; }
+
+    public Guid? ChatMessageId { get; init; }
+
+    /// <summary>The display name of the chat owner. Required for the source chat, absent for the others.</summary>
+    public string? RequestedByName { get; init; }
 
     public required string Title { get; init; }
 
@@ -43,9 +53,69 @@ public class WorkOrderDraftProposedValidator : AbstractValidator<WorkOrderDraftP
     {
         RuleFor(message => message.DraftId).NotEmpty().WithMessage(WorkOrderDraftMessageErrors.Validation.IdRequired);
         RuleFor(message => message.CompanyId).NotEmpty().WithMessage(WorkOrderDraftMessageErrors.Validation.IdRequired);
-        RuleFor(message => message.MachineId).NotEmpty().WithMessage(WorkOrderDraftMessageErrors.Validation.IdRequired);
-        RuleFor(message => message.CaseId).NotEmpty().WithMessage(WorkOrderDraftMessageErrors.Validation.IdRequired);
-        RuleFor(message => message.RunId).NotEmpty().WithMessage(WorkOrderDraftMessageErrors.Validation.IdRequired);
+        RuleFor(message => message.Source).NotNull().WithMessage(WorkOrderDraftMessageErrors.Validation.SourceRequired);
+
+        RuleFor(message => message.MachineId)
+            .NotEqual(Guid.Empty)
+            .When(message => message.MachineId is not null)
+            .WithMessage(WorkOrderDraftMessageErrors.Validation.IdRequired);
+
+        When(
+            message => message.Source == WorkOrderProposalSource.Case,
+            () =>
+            {
+                RuleFor(message => message.MachineId)
+                    .MustBeSetId()
+                    .WithMessage(WorkOrderDraftMessageErrors.Validation.IdRequired);
+
+                RuleFor(message => message.CaseId)
+                    .MustBeSetId()
+                    .WithMessage(WorkOrderDraftMessageErrors.Validation.IdRequired);
+
+                RuleFor(message => message.RunId)
+                    .MustBeSetId()
+                    .WithMessage(WorkOrderDraftMessageErrors.Validation.IdRequired);
+
+                RuleFor(message => message.ChatId)
+                    .Null()
+                    .WithMessage(WorkOrderDraftMessageErrors.Validation.FieldsOfAnotherSource);
+
+                RuleFor(message => message.ChatMessageId)
+                    .Null()
+                    .WithMessage(WorkOrderDraftMessageErrors.Validation.FieldsOfAnotherSource);
+
+                RuleFor(message => message.RequestedByName)
+                    .Null()
+                    .WithMessage(WorkOrderDraftMessageErrors.Validation.FieldsOfAnotherSource);
+            });
+
+        When(
+            message => message.Source == WorkOrderProposalSource.Chat,
+            () =>
+            {
+                RuleFor(message => message.ChatId)
+                    .MustBeSetId()
+                    .WithMessage(WorkOrderDraftMessageErrors.Validation.IdRequired);
+
+                RuleFor(message => message.ChatMessageId)
+                    .MustBeSetId()
+                    .WithMessage(WorkOrderDraftMessageErrors.Validation.IdRequired);
+
+                RuleFor(message => message.CaseId)
+                    .Null()
+                    .WithMessage(WorkOrderDraftMessageErrors.Validation.FieldsOfAnotherSource);
+
+                RuleFor(message => message.RunId)
+                    .Null()
+                    .WithMessage(WorkOrderDraftMessageErrors.Validation.FieldsOfAnotherSource);
+
+                RuleFor(message => message.RequestedByName)
+                    .NotEmpty()
+                    .WithMessage(WorkOrderDraftMessageErrors.Validation.RequestedByNameRequired)
+                    .SingleLineText()
+                    .MaximumLength(DraftMessageLimits.RequestedByNameMaxLength)
+                    .WithMessage(WorkOrderDraftMessageErrors.Validation.RequestedByNameTooLong);
+            });
 
         RuleFor(message => message.Title)
             .NotEmpty()

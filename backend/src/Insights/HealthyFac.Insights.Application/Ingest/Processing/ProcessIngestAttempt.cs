@@ -527,8 +527,8 @@ public sealed class ProcessIngestAttemptRequestHandler(
                 result.PageCount,
                 result.Chunks.Count,
                 message?.Machines.Count ?? 0,
-                message?.Machines.Sum(machine => machine.Metrics.Count) ?? 0,
-                message?.Machines.Sum(machine => machine.Statuses.Count) ?? 0);
+                message?.Metrics.Count ?? 0,
+                message?.Statuses.Count ?? 0);
         }
 
         _processSpan?.SetTag(ObservabilityConstants.Ingest.Tags.Result, resultName);

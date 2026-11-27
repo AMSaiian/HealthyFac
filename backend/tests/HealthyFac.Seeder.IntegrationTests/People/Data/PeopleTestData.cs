@@ -16,7 +16,7 @@ public static class PeopleTestData
     public static readonly TimeOnly TarasInvitedTime = new(hour: 10, minute: 0);
     public const string NadiiaUserKey = "nadiia.user";
     public const string EmployeeIdClaim = "employee_id";
-    public const string SupervisorPermission = "\"shifts:manage\"";
+    public const string SupervisorPermission = "\"shifts:write-company\"";
     public static readonly TimeSpan MomentTolerance = TimeSpan.FromSeconds(seconds: 1);
 
     public static readonly IReadOnlySet<string> SupervisorEmails = new HashSet<string>

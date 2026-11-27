@@ -29,7 +29,7 @@ public static class CompanyEndpoints
             group.MapGet(CompanyRoutes.Root, GetCurrentAsync);
 
             group.MapGet(CompanyRoutes.Schedule, GetScheduleAsync)
-                .RequireAuthorization(CorePermissions.Shifts.Manage, CorePermissions.Employees.Read);
+                .RequireAuthorization(CorePermissions.Shifts.ReadCompany, CorePermissions.Employees.Read);
 
             return app;
         }

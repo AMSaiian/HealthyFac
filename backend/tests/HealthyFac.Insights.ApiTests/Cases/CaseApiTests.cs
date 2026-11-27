@@ -36,6 +36,42 @@ public sealed class CaseApiTests(InsightsApiFixture fixture)
     }
 
     [Fact]
+    public async Task Search_WithEncryptedMachineIds_ReturnsOnlyTheCasesOfThoseMachines()
+    {
+        var firstMachine = Guid.CreateVersion7();
+        var secondMachine = Guid.CreateVersion7();
+        var first = await _fixture.ArrangeCaseAsync(machineId: firstMachine);
+        var second = await _fixture.ArrangeCaseAsync(machineId: secondMachine);
+        await _fixture.ArrangeCaseAsync();
+
+        var response = await _fixture.SendCaseRequestAsync(
+            HttpMethod.Post,
+            CaseApiTestData.SearchPath,
+            _fixture.CreateCaseClaims(CaseApiTestData.ReadPermission),
+            new
+            {
+                offset = 0,
+                limit = 20,
+                filter = new
+                {
+                    machineIds = new
+                    {
+                        ids = new[]
+                        {
+                            _fixture.IdEncryptor.Encrypt(firstMachine),
+                            _fixture.IdEncryptor.Encrypt(secondMachine),
+                        },
+                    },
+                },
+            });
+
+        var ids = await ReadIdsAsync(response);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        ids.Should().BeEquivalentTo(_fixture.IdEncryptor.Encrypt(first), _fixture.IdEncryptor.Encrypt(second));
+    }
+
+    [Fact]
     public async Task Search_WithoutFilter_ReturnsFirstPageOfAllRows()
     {
         var first = await _fixture.ArrangeCaseAsync();

@@ -35,7 +35,8 @@ public sealed record GetMetricHistoryToolRequest
     public const string ToolDescription =
         "Reads the history of one metric of the machine as buckets with the average, the minimum, the maximum, and the "
         + "sample count. Give the metric by its key (for example pump.vibration); the keys are in the signals of the "
-        + "case and in the manual. Without from and to, it reads the most recent minutes.";
+        + "case and in the manual. Without from and to, it reads the most recent minutes. "
+        + AgentToolTexts.UtcTimes;
 
     public required Guid CompanyId { get; init; }
 

@@ -1,9 +1,9 @@
-using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using Grpc.Net.ClientFactory;
 using HealthyFac.Insights.Application.Ingest.Processing.Failures;
 using HealthyFac.Insights.Application.Signals;
 using HealthyFac.Shared.Application.DownstreamScopes;
+using HealthyFac.Shared.Infrastructure.Rpc;
 using HealthyFac.Telemetry.Contracts.Signals;
 
 namespace HealthyFac.Insights.Infrastructure.Telemetry;
@@ -44,8 +44,8 @@ public sealed class GrpcTelemetrySignals(GrpcClientFactory clientFactory, IDowns
                 {
                     MachineId = machineId.ToString(),
                     MetricDefinitionId = metricId.ToString(),
-                    From = ToTimestamp(from),
-                    To = ToTimestamp(to),
+                    From = RpcTimestamps.ToTimestamp(from),
+                    To = RpcTimestamps.ToTimestamp(to),
                     BucketCount = bucketCount,
                 },
                 cancellationToken: cancellationToken);
@@ -56,7 +56,7 @@ public sealed class GrpcTelemetrySignals(GrpcClientFactory clientFactory, IDowns
         {
             return [];
         }
-        catch (RpcException exception) when (IsOutage(exception))
+        catch (RpcException exception) when (RpcFailures.IsOutage(exception))
         {
             throw new ProviderUnavailableException(UnavailableMessage, exception);
         }
@@ -79,8 +79,8 @@ public sealed class GrpcTelemetrySignals(GrpcClientFactory clientFactory, IDowns
                 new GetSignalEpisodesRequest
                 {
                     MachineId = machineId.ToString(),
-                    From = ToTimestamp(from),
-                    To = ToTimestamp(to),
+                    From = RpcTimestamps.ToTimestamp(from),
+                    To = RpcTimestamps.ToTimestamp(to),
                 },
                 cancellationToken: cancellationToken);
 
@@ -90,23 +90,11 @@ public sealed class GrpcTelemetrySignals(GrpcClientFactory clientFactory, IDowns
         {
             return [];
         }
-        catch (RpcException exception) when (IsOutage(exception))
+        catch (RpcException exception) when (RpcFailures.IsOutage(exception))
         {
             throw new ProviderUnavailableException(UnavailableMessage, exception);
         }
     }
-
-    /// <summary>
-    /// Tells whether the call failed because Telemetry did not answer (the status <c>Unavailable</c> or
-    /// <c>DeadlineExceeded</c>). The caller maps it to a <see cref="ProviderUnavailableException"/>.
-    /// </summary>
-    /// <param name="exception">The gRPC failure.</param>
-    /// <returns><see langword="true"/> for an outage.</returns>
-    internal static bool IsOutage(RpcException exception) =>
-        exception.StatusCode is StatusCode.Unavailable or StatusCode.DeadlineExceeded;
-
-    private static Timestamp ToTimestamp(DateTime value) =>
-        Timestamp.FromDateTime(DateTime.SpecifyKind(value, DateTimeKind.Utc));
 
     private static MetricHistoryBucket ToBucket(MetricBucket bucket) =>
         new()

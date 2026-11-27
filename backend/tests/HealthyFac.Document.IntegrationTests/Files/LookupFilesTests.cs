@@ -1,3 +1,4 @@
+using HealthyFac.Document.Application.Files;
 using HealthyFac.Document.Application.Files.Lookup;
 using HealthyFac.Document.Domain.Files;
 using HealthyFac.Document.IntegrationTests.Database;
@@ -50,6 +51,85 @@ public sealed class LookupFilesTests(DocumentDatabaseFixture fixture)
         machineFile.Extension.Should().Be(expected: "pdf");
         machineFile.SizeBytes.Should().Be(expected: 20);
         response.Files.Single(file => file.Id == ids[0]).MachineId.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task LookupFiles_WithASearch_ReturnsTheAttachmentsOfTheCompanyThatStartWithTheTextSortedByName()
+    {
+        var uploadedAt = GetFileLinksTestData.UploadedAt;
+        var ownMachineId = await _fixture.RegisterMachineAsync(GetFileLinksTestData.CompanyId);
+        var foreignMachineId = await _fixture.RegisterMachineAsync(GetFileLinksTestData.OtherCompanyId);
+
+        var ids = await _fixture.SeedFilesAsync(
+            GetFileLinksTestData.CompanyId,
+            [
+                new FileSeed(FileName: "Manual c", Extension: "pdf", SizeBytes: 10, uploadedAt),
+                new FileSeed(FileName: "manual a", Extension: "pdf", SizeBytes: 10, uploadedAt),
+                new FileSeed(FileName: "manual b", Extension: "pdf", SizeBytes: 10, uploadedAt),
+                new FileSeed(FileName: "a manual", Extension: "pdf", SizeBytes: 10, uploadedAt),
+                new FileSeed(
+                    FileName: "manual embedded", Extension: "png", SizeBytes: 10, uploadedAt,
+                    Purpose: FilePurpose.Embedded),
+                new FileSeed(
+                    FileName: "manual foreign", Extension: "pdf", SizeBytes: 10, uploadedAt,
+                    CompanyId: GetFileLinksTestData.OtherCompanyId),
+                new FileSeed(FileName: "manual d machine", Extension: "pdf", SizeBytes: 10, uploadedAt, ownMachineId),
+                new FileSeed(
+                    FileName: "manual e foreign machine", Extension: "pdf", SizeBytes: 10, uploadedAt,
+                    foreignMachineId),
+            ]);
+
+        var response = await LookupBySearchAsync(GetFileLinksTestData.CompanyId, search: "MANUAL");
+
+        response.Files.Select(file => file.Id)
+            .Should()
+            .Equal(ids[1], ids[2], ids[0], ids[6]);
+    }
+
+    [Fact]
+    public async Task LookupFiles_WithASearchThatMatchesMoreFilesThanTheCap_ReturnsTheCap()
+    {
+        await _fixture.SeedFilesAsync(
+            GetFileLinksTestData.CompanyId,
+            [
+                .. Enumerable.Range(start: 0, FileValidationConstants.LookupSearchMaxItems + 1)
+                    .Select(number => new FileSeed(
+                        $"cap-{number:D3}",
+                        Extension: "pdf",
+                        SizeBytes: 10,
+                        GetFileLinksTestData.UploadedAt)),
+            ]);
+
+        var response = await LookupBySearchAsync(GetFileLinksTestData.CompanyId, search: "cap-");
+
+        response.Files.Should().HaveCount(FileValidationConstants.LookupSearchMaxItems);
+        response.Files.Select(file => file.FileName).Should().BeInAscendingOrder();
+    }
+
+    [Theory]
+    [MemberData(nameof(LookupFilesTestData.IdsAndSearchCombinations), MemberType = typeof(LookupFilesTestData))]
+    public void Validate_WithIdsAndSearch_AcceptsExactlyOneOfThem(
+        string caseName,
+        IReadOnlyList<string>? ids,
+        string? search,
+        bool isValid
+    )
+    {
+        var validator = new LookupFilesRequestValidator();
+
+        var result = validator.Validate(
+            new LookupFilesRequest { CompanyId = GetFileLinksTestData.CompanyId, Ids = ids, Search = search });
+
+        result.IsValid.Should().Be(isValid, caseName);
+    }
+
+    private async Task<LookupFilesResponse> LookupBySearchAsync(Guid companyId, string search)
+    {
+        using var scope = _fixture.CreateUserScope(companyId);
+
+        return await scope.ServiceProvider
+            .GetRequiredService<IRequestHandler<LookupFilesRequest, LookupFilesResponse>>()
+            .HandleAsync(new LookupFilesRequest { CompanyId = companyId, Search = search });
     }
 
     private async Task<LookupFilesResponse> LookupAsync(Guid companyId, IEnumerable<string> ids)

@@ -14,7 +14,9 @@ public sealed class AgentJson : IAgentJson
 {
     public AgentJson(IIdEncryptor encryptor)
     {
-        Tools = Encrypting(new JsonSerializerOptions(AIJsonUtilities.DefaultOptions), encryptor);
+        var tools = new JsonSerializerOptions(AIJsonUtilities.DefaultOptions);
+        tools.Converters.Add(new UtcDateTimeJsonConverter());
+        Tools = Encrypting(tools, encryptor);
         Snapshots = Encrypting(new JsonSerializerOptions(JsonSerializerDefaults.Web), encryptor);
     }
 

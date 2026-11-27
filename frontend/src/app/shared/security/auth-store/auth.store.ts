@@ -127,6 +127,15 @@ export const AuthStore = signalStore(
         }
         return store._keycloak.token;
       },
+      /** Refreshes the token when it is valid for less than the given seconds, so a long request starts with a fresh one. */
+      async ensureValidFor(seconds: number): Promise<void> {
+        if (!hasSession()) {
+          throw new SessionEndedError(NO_SESSION_MESSAGE);
+        }
+        if (store._keycloak.isTokenExpired(seconds)) {
+          await refresh();
+        }
+      },
       subject(): string | null {
         return store._keycloak.subject ?? null;
       },

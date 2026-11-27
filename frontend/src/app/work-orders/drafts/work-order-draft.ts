@@ -1,3 +1,4 @@
+import type { DraftProposalSummary } from '@shared/drafts/draft-proposal';
 import type { SetFilterBody } from '@shared/grid/requests/grid-filters';
 import type { GridPage, GridQueryState, GridRequestBody, GridSort } from '@shared/grid/requests/grid-request';
 
@@ -32,8 +33,7 @@ export interface WorkOrderDraft {
   readonly machineName: string | null;
   /** Tells that the machine is soft deleted, so the name is the last known one. */
   readonly isMachineDeleted: boolean;
-  readonly caseId: string;
-  readonly runId: string;
+  readonly proposal: DraftProposalSummary;
   readonly title: string;
   readonly description: string | null;
   readonly priority: WorkOrderPriority;

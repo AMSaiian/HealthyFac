@@ -1,5 +1,6 @@
 import type { MenuItem } from 'primeng/api';
 
+import { ASSISTANT_PATH } from '@assistant/assistant-paths';
 import { Language } from '@shared/i18n/i18n.constants';
 import { Permission } from '@shared/security/permissions';
 
@@ -34,6 +35,7 @@ export const SHELL_NAV_ITEMS: readonly ShellNavItem[] = [
     path: '/maintenance/cases',
     permission: Permission.CasesRead,
   },
+  { labelKey: 'TITLES.ASSISTANT', icon: 'pi pi-comments', path: ASSISTANT_PATH, permission: Permission.ChatsRead },
   { labelKey: 'TITLES.EMPLOYEES', icon: 'pi pi-users', path: '/employees', permission: Permission.EmployeesRead },
   {
     labelKey: 'TITLES.MY_SCHEDULE',
@@ -81,4 +83,10 @@ export function languageMenuItems(
     state: { flagUrl: flagUrl(language), isCurrent: language === current },
     command: (): void => choose(language),
   }));
+}
+
+/** Tells whether the URL is the assistant page or one of its chats. The chat drawer hides there. */
+export function isAssistantUrl(url: string): boolean {
+  const path = url.split(/[?#]/)[0];
+  return path === ASSISTANT_PATH || path.startsWith(`${ASSISTANT_PATH}/`);
 }

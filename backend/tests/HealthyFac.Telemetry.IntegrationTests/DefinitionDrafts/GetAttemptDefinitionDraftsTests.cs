@@ -1,4 +1,5 @@
 using HealthyFac.Telemetry.Domain.DefinitionDrafts;
+using HealthyFac.Telemetry.Domain.DefinitionDrafts.Proposals;
 using HealthyFac.Telemetry.IntegrationTests.Database.Data;
 using HealthyFac.Telemetry.IntegrationTests.DefinitionDrafts.Data;
 using HealthyFac.Telemetry.IntegrationTests.MachineRegistrations.Data;
@@ -12,6 +13,25 @@ namespace HealthyFac.Telemetry.IntegrationTests.DefinitionDrafts;
 public sealed class GetAttemptDefinitionDraftsTests(TelemetryDatabaseFixture fixture)
 {
     private readonly TelemetryDatabaseFixture _fixture = fixture;
+
+    [Fact]
+    public async Task GetAttemptDrafts_WithAChatDraftOfTheSameMachine_ListsOnlyTheIngestDrafts()
+    {
+        var companyId = DefinitionDraftTestData.CompanyId;
+        var machineId = await _fixture.RegisterTenantMachineAsync(companyId);
+        var ingestId = await _fixture.StoreMetricDraftOnMachineAsync(companyId, machineId, isApplied: false);
+
+        await _fixture.StoreProposedDefinitionDraftsAsync(
+            companyId, ProposalBuilder.ChatMessage(companyId, machineId));
+
+        var response = await _fixture.GetAttemptDefinitionDraftsAsync(companyId, DefinitionDraftTestData.AttemptId);
+
+        response.Metrics.Select(draft => draft.Id).Should().Equal(ingestId);
+        response.Metrics.Single().Proposal.Source.Should().Be(DraftSource.Ingest);
+        response.Metrics.Single().Proposal.AttemptId.Should().Be(DefinitionDraftTestData.AttemptId);
+        response.Metrics.Single().Proposal.ChatId.Should().BeNull();
+        response.Statuses.Should().BeEmpty();
+    }
 
     [Fact]
     public async Task GetAttemptDrafts_WithDraftsInEveryState_ReturnsThemAllWithTheirTargets()

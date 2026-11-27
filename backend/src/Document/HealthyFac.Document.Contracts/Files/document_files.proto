@@ -11,6 +11,7 @@ option csharp_namespace = "HealthyFac.Document.Contracts.Files";
 service DocumentFiles {
   rpc GetFile(GetFileRequest) returns (FileInfo);
   rpc GetFileLink(GetFileLinkRequest) returns (FileLinkReply);
+  rpc SearchFiles(SearchFilesRequest) returns (SearchFilesReply);
 }
 
 message GetFileRequest {
@@ -37,4 +38,23 @@ message FileLinkReply {
   FileInfo file = 1;
   string url = 2;
   google.protobuf.Timestamp expires_at = 3;
+}
+
+// The start of the file name, ignoring case. The reply holds at most 50 attachments of the company that the actor may
+// read, sorted by name.
+message SearchFilesRequest {
+  string search = 1;
+}
+
+message SearchFilesReply {
+  repeated FoundFile files = 1;
+}
+
+message FoundFile {
+  string file_id = 1;
+  string file_name = 2;
+  string extension = 3;
+  string content_type = 4;
+  int64 size_bytes = 5;
+  optional string machine_id = 6;
 }

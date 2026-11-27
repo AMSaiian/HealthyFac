@@ -29,6 +29,21 @@ public sealed class DefinitionDraftConstraintTests(TelemetryDatabaseFixture fixt
             .Where(exception => exception.ToString().Contains(invalidUpdate.ConstraintName));
     }
 
+    [Theory]
+    [MemberData(nameof(DefinitionDraftTestData.NullableEntryUpdates), MemberType = typeof(DefinitionDraftTestData))]
+    public async Task Update_OfTheProposalEntryToNull_IsStored(
+        string caseName,
+        Func<StoredDraftRows, Guid> rowId,
+        string sql
+    )
+    {
+        var rows = await _fixture.StoreDraftRowsAsync();
+
+        var act = () => _fixture.ExecuteSqlAsync(sql, rowId(rows));
+
+        await act.Should().NotThrowAsync(caseName);
+    }
+
     [Fact]
     public async Task Insert_OfAwaitingDraftWithoutTarget_IsStored()
     {

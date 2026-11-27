@@ -1,16 +1,19 @@
-using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using HealthyFac.Shared.Application.CurrentUser;
-using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.UseCases;
+using HealthyFac.Shared.Infrastructure.Rpc;
+using HealthyFac.Shared.Web.Rpc;
+using HealthyFac.Telemetry.Application.OperatingPhases;
 using HealthyFac.Telemetry.Application.SignalEpisodes;
 using HealthyFac.Telemetry.Contracts.Signals;
 using HealthyFac.Telemetry.Web.Authorization;
 using Microsoft.AspNetCore.Authorization;
+using ApplicationGetPhaseTimesRequest = HealthyFac.Telemetry.Application.OperatingPhases.GetPhaseTimesRequest;
 using ApplicationGetMetricHistoryRequest =
     HealthyFac.Telemetry.Application.SignalEpisodes.GetMetricHistoryRequest;
 using ApplicationGetSignalEpisodesRequest =
     HealthyFac.Telemetry.Application.SignalEpisodes.GetSignalEpisodesRequest;
+using RpcGetPhaseTimesRequest = HealthyFac.Telemetry.Contracts.Signals.GetPhaseTimesRequest;
 using RpcGetMetricHistoryRequest = HealthyFac.Telemetry.Contracts.Signals.GetMetricHistoryRequest;
 using RpcGetSignalEpisodesRequest = HealthyFac.Telemetry.Contracts.Signals.GetSignalEpisodesRequest;
 
@@ -23,11 +26,13 @@ namespace HealthyFac.Telemetry.Web.SignalEpisodes.Rpc;
 /// </summary>
 /// <param name="historyHandler">Reads the metric history.</param>
 /// <param name="episodesHandler">Reads the signal episodes.</param>
+/// <param name="phaseTimesHandler">Reads the time in each phase.</param>
 /// <param name="currentUser">Provides the company of the actor.</param>
 [Authorize(Policy = TelemetryPermissions.Signals.Read)]
 public sealed class TelemetrySignalsService(
     IRequestHandler<ApplicationGetMetricHistoryRequest, MetricHistoryResponse> historyHandler,
     IRequestHandler<ApplicationGetSignalEpisodesRequest, SignalEpisodesResponse> episodesHandler,
+    IRequestHandler<ApplicationGetPhaseTimesRequest, PhaseTimesResponse> phaseTimesHandler,
     ICurrentUserProvider currentUser
 ) : TelemetrySignals.TelemetrySignalsBase
 {
@@ -36,6 +41,9 @@ public sealed class TelemetrySignalsService(
 
     private readonly IRequestHandler<ApplicationGetSignalEpisodesRequest, SignalEpisodesResponse> _episodesHandler =
         episodesHandler;
+
+    private readonly IRequestHandler<ApplicationGetPhaseTimesRequest, PhaseTimesResponse> _phaseTimesHandler =
+        phaseTimesHandler;
 
     private readonly ICurrentUserProvider _currentUser = currentUser;
 
@@ -48,10 +56,10 @@ public sealed class TelemetrySignalsService(
             new ApplicationGetMetricHistoryRequest
             {
                 CompanyId = _currentUser.GetCompanyId(),
-                MachineId = ParseId(request.MachineId),
-                MetricDefinitionId = ParseId(request.MetricDefinitionId),
-                From = request.From.ToDateTime(),
-                To = request.To.ToDateTime(),
+                MachineId = RpcInput.ParseId(request.MachineId),
+                MetricDefinitionId = RpcInput.ParseId(request.MetricDefinitionId),
+                From = RpcInput.ParseRequiredTimestamp(request.From, nameof(request.From)),
+                To = RpcInput.ParseRequiredTimestamp(request.To, nameof(request.To)),
                 BucketCount = request.BucketCount,
             },
             context.CancellationToken);
@@ -71,9 +79,9 @@ public sealed class TelemetrySignalsService(
             new ApplicationGetSignalEpisodesRequest
             {
                 CompanyId = _currentUser.GetCompanyId(),
-                MachineId = ParseId(request.MachineId),
-                From = request.From.ToDateTime(),
-                To = request.To.ToDateTime(),
+                MachineId = RpcInput.ParseId(request.MachineId),
+                From = RpcInput.ParseRequiredTimestamp(request.From, nameof(request.From)),
+                To = RpcInput.ParseRequiredTimestamp(request.To, nameof(request.To)),
             },
             context.CancellationToken);
 
@@ -83,13 +91,47 @@ public sealed class TelemetrySignalsService(
         return reply;
     }
 
-    private static Guid ParseId(string id) =>
-        Guid.TryParse(id, out var parsed) ? parsed : throw new NotFoundException(RpcErrors.IdInvalid);
+    public override async Task<PhaseTimesReply> GetPhaseTimes(
+        RpcGetPhaseTimesRequest request,
+        ServerCallContext context
+    )
+    {
+        var response = await _phaseTimesHandler.HandleAsync(
+            new ApplicationGetPhaseTimesRequest
+            {
+                CompanyId = _currentUser.GetCompanyId(),
+                MachineId = RpcInput.ParseId(request.MachineId),
+                From = RpcInput.ParseRequiredTimestamp(request.From, nameof(request.From)),
+                To = RpcInput.ParseRequiredTimestamp(request.To, nameof(request.To)),
+            },
+            context.CancellationToken);
+
+        var reply = new PhaseTimesReply
+        {
+            UnknownModeSeconds = response.UnknownModeSeconds,
+            NoDataSeconds = response.NoDataSeconds,
+        };
+
+        reply.Phases.AddRange(response.Phases.Select(ToPhaseTime));
+
+        return reply;
+    }
+
+    private static PhaseTime ToPhaseTime(PhaseTimeResponse phase) =>
+        new()
+        {
+            PhaseId = phase.PhaseId.ToString(),
+            Code = phase.Code,
+            Name = phase.Name,
+            IsTracked = phase.IsTracked,
+            IsDeleted = phase.IsDeleted,
+            Seconds = phase.Seconds,
+        };
 
     private static MetricBucket ToBucket(MetricBucketResponse bucket) =>
         new()
         {
-            Start = ToTimestamp(bucket.Start),
+            Start = RpcTimestamps.ToTimestamp(bucket.Start),
             Avg = bucket.Avg,
             Min = bucket.Min,
             Max = bucket.Max,
@@ -106,7 +148,7 @@ public sealed class TelemetrySignalsService(
             Rule = episode.Rule,
             Severity = episode.Severity,
             State = episode.State,
-            OpenedAt = ToTimestamp(episode.OpenedAt),
+            OpenedAt = RpcTimestamps.ToTimestamp(episode.OpenedAt),
             Sequence = episode.Sequence,
         };
 
@@ -157,12 +199,9 @@ public sealed class TelemetrySignalsService(
 
         if (episode.ResolvedAt is { } resolvedAt)
         {
-            message.ResolvedAt = ToTimestamp(resolvedAt);
+            message.ResolvedAt = RpcTimestamps.ToTimestamp(resolvedAt);
         }
 
         return message;
     }
-
-    private static Timestamp ToTimestamp(DateTime value) =>
-        Timestamp.FromDateTime(DateTime.SpecifyKind(value, DateTimeKind.Utc));
 }

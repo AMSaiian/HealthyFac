@@ -12,8 +12,9 @@ using Microsoft.EntityFrameworkCore;
 namespace HealthyFac.Core.Application.Drafts.SearchMachineDrafts;
 
 /// <summary>
-/// Searches the drafts in one scope: the drafts that target one machine, or the drafts of one ingest attempt. Set
-/// exactly one of <see cref="MachineId"/> and <see cref="AttemptId"/>.
+/// Searches the drafts in one scope: the drafts that target one machine, the drafts of one ingest attempt, or the
+/// drafts of one chat. Set exactly one of <see cref="MachineId"/>, <see cref="AttemptId"/>, and
+/// <see cref="ChatId"/>.
 /// </summary>
 public record SearchMachineDraftsRequest : KeysetGridRequest<MachineDraftGridFilter, MachineDraftSortColumn>,
     IRequest<KeysetGridResponse<MachineDraftGridItem>>
@@ -23,6 +24,8 @@ public record SearchMachineDraftsRequest : KeysetGridRequest<MachineDraftGridFil
     public Guid? MachineId { get; init; }
 
     public Guid? AttemptId { get; init; }
+
+    public Guid? ChatId { get; init; }
 }
 
 public sealed class SearchMachineDraftsRequestValidator
@@ -43,8 +46,14 @@ public sealed class SearchMachineDraftsRequestValidator
             .WithMessage(DraftErrors.AttemptIdRequired)
             .When(request => request.AttemptId is not null);
 
+        RuleFor(request => request.ChatId)
+            .NotEqual(Guid.Empty)
+            .WithMessage(DraftErrors.ChatIdRequired)
+            .When(request => request.ChatId is not null);
+
         RuleFor(request => request)
-            .Must(request => request.MachineId is null != request.AttemptId is null)
+            .Must(request => new[] { request.MachineId, request.AttemptId, request.ChatId }.Count(id => id is not null)
+                == 1)
             .WithMessage(DraftErrors.SearchScopeRequired);
 
         RuleFor(request => request.Filter!)
@@ -105,7 +114,8 @@ public sealed class SearchMachineDraftsRequestHandler(ICoreDbContext dbContext)
                 _dbContext.Machines.AsNoTracking(),
                 request.CompanyId,
                 request.MachineId,
-                request.AttemptId)
+                request.AttemptId,
+                request.ChatId)
             .ApplyFilter(request.Filter)
             .ToKeysetResponseAsync(
                 request.Sort ?? MachineDraftSortMap.Default,

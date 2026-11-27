@@ -3,6 +3,7 @@ using System.Net.Sockets;
 using Grpc.Core;
 using Grpc.Net.Client;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
+using HealthyFac.Telemetry.Contracts.Definitions;
 using HealthyFac.Telemetry.Contracts.Signals;
 using HealthyFac.Testing.Authentication;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
@@ -39,9 +40,12 @@ public sealed class TelemetryGrpcHost : IAsyncDisposable
 
         _channel = GrpcChannel.ForAddress($"http://127.0.0.1:{grpcPort}");
         Client = new TelemetrySignals.TelemetrySignalsClient(_channel);
+        Definitions = new TelemetryDefinitions.TelemetryDefinitionsClient(_channel);
     }
 
     public TelemetrySignals.TelemetrySignalsClient Client { get; }
+
+    public TelemetryDefinitions.TelemetryDefinitionsClient Definitions { get; }
 
     public async ValueTask DisposeAsync()
     {

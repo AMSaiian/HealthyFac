@@ -151,6 +151,16 @@
       ]
     },
     {
+      "name": "Chat",
+      "backend": [
+        "backend/**/Chats/**"
+      ],
+      "frontend": [
+        "frontend/src/app/assistant/**",
+        "frontend/src/app/shared/chat/**"
+      ]
+    },
+    {
       "name": "Realtime",
       "backend": [
         "backend/**/Realtime/**"

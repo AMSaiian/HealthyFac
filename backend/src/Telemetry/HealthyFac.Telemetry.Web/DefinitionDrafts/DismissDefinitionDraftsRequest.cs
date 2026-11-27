@@ -18,6 +18,12 @@ public record DismissAttemptDefinitionDraftsRequest
     public required string AttemptId { get; init; }
 }
 
+public record DismissChatDefinitionDraftsRequest
+{
+    [FromRoute(Name = DefinitionDraftRoutes.ChatIdParameter)]
+    public required string ChatId { get; init; }
+}
+
 public static class DismissDefinitionDraftsRequestExtensions
 {
     extension(DismissMachineDefinitionDraftsRequest request)
@@ -30,6 +36,19 @@ public static class DismissDefinitionDraftsRequestExtensions
             {
                 CompanyId = companyId,
                 MachineId = MachineRouteIds.Decrypt(request.MachineId, idEncryptor),
+            };
+    }
+
+    extension(DismissChatDefinitionDraftsRequest request)
+    {
+        public ApplicationDismissDefinitionDraftsRequest ToApplicationRequest(
+            Guid companyId,
+            IIdEncryptor idEncryptor
+        ) =>
+            new()
+            {
+                CompanyId = companyId,
+                ChatId = DefinitionDraftRouteIds.Decrypt(request.ChatId, idEncryptor),
             };
     }
 

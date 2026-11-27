@@ -59,6 +59,18 @@ public static class DraftEndpoints
                 .MapGet(DraftRoutes.Root, GetAttemptDraftsAsync)
                 .RequireAuthorization(CorePermissions.Drafts.Read);
 
+            app.MapGroup(DraftRoutes.ChatDraftsRoute)
+                .MapGet(DraftRoutes.Root, GetChatDraftsAsync)
+                .RequireAuthorization(CorePermissions.Drafts.Read);
+
+            app.MapGroup(DraftRoutes.ChatDraftsRoute)
+                .MapPost(DraftRoutes.Search, SearchChatDraftsAsync)
+                .RequireAuthorization(CorePermissions.Drafts.Read);
+
+            app.MapGroup(DraftRoutes.ChatDraftsRoute)
+                .MapPost(DraftRoutes.DismissAll, DismissChatDraftsAsync)
+                .RequireAuthorization(CorePermissions.Drafts.Write);
+
             var drafts = app.MapGroup(DraftRoutes.DraftBaseRoute);
 
             drafts.MapPost(DraftRoutes.Dismiss, DismissAsync)
@@ -95,6 +107,37 @@ public static class DraftEndpoints
     {
         var response = await handler.HandleAsync(
             request.ToApplicationAttemptRequest(attemptId, currentUser.GetCompanyId(), idEncryptor),
+            cancellationToken);
+
+        return TypedResults.Ok(response);
+    }
+
+    private static async Task<Ok<KeysetGridResponse<MachineDraftGridItem>>> SearchChatDraftsAsync(
+        [FromRoute(Name = DraftRoutes.ChatIdParameter)] string chatId,
+        SearchMachineDraftsRequest request,
+        ICurrentUserProvider currentUser,
+        IRequestHandler<ApplicationSearchMachineDraftsRequest, KeysetGridResponse<MachineDraftGridItem>> handler,
+        IIdEncryptor idEncryptor,
+        CancellationToken cancellationToken
+    )
+    {
+        var response = await handler.HandleAsync(
+            request.ToApplicationChatRequest(chatId, currentUser.GetCompanyId(), idEncryptor),
+            cancellationToken);
+
+        return TypedResults.Ok(response);
+    }
+
+    private static async Task<Ok<DismissMachineDraftsResponse>> DismissChatDraftsAsync(
+        [AsParameters] DismissChatDraftsRequest request,
+        ICurrentUserProvider currentUser,
+        IRequestHandler<ApplicationDismissMachineDraftsRequest, DismissMachineDraftsResponse> handler,
+        IIdEncryptor idEncryptor,
+        CancellationToken cancellationToken
+    )
+    {
+        var response = await handler.HandleAsync(
+            request.ToApplicationRequest(currentUser.GetCompanyId(), idEncryptor),
             cancellationToken);
 
         return TypedResults.Ok(response);
@@ -143,6 +186,25 @@ public static class DraftEndpoints
             {
                 CompanyId = currentUser.GetCompanyId(),
                 AttemptId = DraftRouteIds.Decrypt(attemptId, idEncryptor),
+            },
+            cancellationToken);
+
+        return TypedResults.Ok(response);
+    }
+
+    private static async Task<Ok<AttemptDraftsResponse>> GetChatDraftsAsync(
+        [FromRoute(Name = DraftRoutes.ChatIdParameter)] string chatId,
+        ICurrentUserProvider currentUser,
+        IRequestHandler<ApplicationGetAttemptDraftsRequest, AttemptDraftsResponse> handler,
+        IIdEncryptor idEncryptor,
+        CancellationToken cancellationToken
+    )
+    {
+        var response = await handler.HandleAsync(
+            new ApplicationGetAttemptDraftsRequest
+            {
+                CompanyId = currentUser.GetCompanyId(),
+                ChatId = DraftRouteIds.Decrypt(chatId, idEncryptor),
             },
             cancellationToken);
 

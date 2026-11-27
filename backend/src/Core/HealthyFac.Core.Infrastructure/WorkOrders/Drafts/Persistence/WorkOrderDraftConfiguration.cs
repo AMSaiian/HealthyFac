@@ -36,6 +36,11 @@ public class WorkOrderDraftConfiguration : IEntityTypeConfiguration<WorkOrderDra
             .HasForeignKey(draft => draft.MachineId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasOne(draft => draft.Proposal)
+            .WithMany()
+            .HasForeignKey(draft => draft.ProposalId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasIndex(draft => new { draft.CompanyId, draft.MachineId, draft.State })
             .HasDatabaseName(MachineStateIndex)
             .HasFilter(SoftDeleteConstants.NotDeletedFilter);

@@ -2,8 +2,15 @@ import { inject, Injectable, InjectionToken } from '@angular/core';
 import { HttpTransportType, type HubConnection, HubConnectionBuilder } from '@microsoft/signalr';
 import { type Observable, Subject } from 'rxjs';
 
+import type { ChatTurnEnd, ChatTurnUpdate } from '@shared/chat/chat';
 import { APP_CONFIG } from '@shared/config/app-config';
-import { REALTIME_HUB_PATH, type RealtimeHint, type RealtimeNotification } from '@shared/realtime/realtime';
+import {
+  CHAT_TURN_ENDED_METHOD,
+  CHAT_TURN_UPDATED_METHOD,
+  REALTIME_HUB_PATH,
+  type RealtimeHint,
+  type RealtimeNotification,
+} from '@shared/realtime/realtime';
 import { retryDelay } from '@shared/realtime/realtime-connection.utils';
 import { AuthStore, MIN_TOKEN_VALIDITY_SECONDS } from '@shared/security/auth-store/auth.store';
 import { CLOCK } from '@shared/time/clock';
@@ -55,6 +62,8 @@ export class RealtimeConnection {
 
   private readonly _notifications = new Subject<RealtimeNotification>();
   private readonly _hints = new Subject<RealtimeHint>();
+  private readonly _chatUpdates = new Subject<ChatTurnUpdate>();
+  private readonly _chatEnds = new Subject<ChatTurnEnd>();
   private readonly _sessionEnded = new Subject<void>();
   private readonly _reconnected = new Subject<void>();
 
@@ -67,6 +76,8 @@ export class RealtimeConnection {
 
   readonly notifications$: Observable<RealtimeNotification> = this._notifications.asObservable();
   readonly hints$: Observable<RealtimeHint> = this._hints.asObservable();
+  readonly chatUpdates$: Observable<ChatTurnUpdate> = this._chatUpdates.asObservable();
+  readonly chatEnds$: Observable<ChatTurnEnd> = this._chatEnds.asObservable();
   readonly sessionEnded$: Observable<void> = this._sessionEnded.asObservable();
   readonly reconnected$: Observable<void> = this._reconnected.asObservable();
 
@@ -180,6 +191,12 @@ export class RealtimeConnection {
     });
     connection.on(HINT_METHOD, (hint: RealtimeHint) => {
       this._hints.next(hint);
+    });
+    connection.on(CHAT_TURN_UPDATED_METHOD, (update: ChatTurnUpdate) => {
+      this._chatUpdates.next(update);
+    });
+    connection.on(CHAT_TURN_ENDED_METHOD, (end: ChatTurnEnd) => {
+      this._chatEnds.next(end);
     });
     connection.on(SESSION_ENDED_METHOD, () => {
       this._sessionEnded.next();

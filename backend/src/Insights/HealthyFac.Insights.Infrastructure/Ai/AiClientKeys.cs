@@ -7,4 +7,7 @@ public static class AiClientKeys
 {
     /// <summary>The key of the small model that the triage and the screener use.</summary>
     public const string Triage = "triage";
+
+    /// <summary>The key of the chat answer model.</summary>
+    public const string Assistant = "assistant";
 }

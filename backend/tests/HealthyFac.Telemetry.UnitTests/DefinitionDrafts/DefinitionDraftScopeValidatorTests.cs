@@ -6,16 +6,18 @@ using HealthyFac.Testing.Features;
 namespace HealthyFac.Telemetry.UnitTests.DefinitionDrafts;
 
 [Feature(TestFeatures.Drafts)]
+[Feature(TestFeatures.SignalModel)]
 public sealed class DefinitionDraftScopeValidatorTests
 {
     private static readonly Guid CompanyId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000c01");
 
     [Theory]
     [MemberData(nameof(DefinitionDraftScopeTestData.Scopes), MemberType = typeof(DefinitionDraftScopeTestData))]
-    public void Search_WithScope_NeedsExactlyOneOfMachineAndAttempt(
+    public void Search_WithScope_NeedsExactlyOneOfMachineAttemptAndChat(
         string caseName,
         Guid? machineId,
         Guid? attemptId,
+        Guid? chatId,
         bool isValid
     )
     {
@@ -24,6 +26,7 @@ public sealed class DefinitionDraftScopeValidatorTests
             CompanyId = CompanyId,
             MachineId = machineId,
             AttemptId = attemptId,
+            ChatId = chatId,
             Limit = 25,
             Filter = new DefinitionDraftGridFilter(),
         };
@@ -35,10 +38,11 @@ public sealed class DefinitionDraftScopeValidatorTests
 
     [Theory]
     [MemberData(nameof(DefinitionDraftScopeTestData.Scopes), MemberType = typeof(DefinitionDraftScopeTestData))]
-    public void Dismiss_WithScope_NeedsExactlyOneOfMachineAndAttempt(
+    public void Dismiss_WithScope_NeedsExactlyOneOfMachineAttemptAndChat(
         string caseName,
         Guid? machineId,
         Guid? attemptId,
+        Guid? chatId,
         bool isValid
     )
     {
@@ -47,9 +51,31 @@ public sealed class DefinitionDraftScopeValidatorTests
             CompanyId = CompanyId,
             MachineId = machineId,
             AttemptId = attemptId,
+            ChatId = chatId,
         };
 
         var result = new DismissDefinitionDraftsRequestValidator().Validate(request);
+
+        result.IsValid.Should().Be(isValid, caseName);
+    }
+
+    [Theory]
+    [MemberData(nameof(DefinitionDraftScopeTestData.GetScopes), MemberType = typeof(DefinitionDraftScopeTestData))]
+    public void GetGroups_WithScope_NeedsExactlyOneOfAttemptAndChat(
+        string caseName,
+        Guid? attemptId,
+        Guid? chatId,
+        bool isValid
+    )
+    {
+        var request = new GetAttemptDefinitionDraftsRequest
+        {
+            CompanyId = CompanyId,
+            AttemptId = attemptId,
+            ChatId = chatId,
+        };
+
+        var result = new GetAttemptDefinitionDraftsRequestValidator().Validate(request);
 
         result.IsValid.Should().Be(isValid, caseName);
     }

@@ -14,19 +14,26 @@ public static class AccessScopesTestData
 
     public static TheoryData<string, string[], string> Cases => new()
     {
-        { CorePermissions.WorkOrders.Manage, [CorePermissions.WorkOrders.Manage], "company" },
+        { CorePermissions.WorkOrders.WriteCompany, [CorePermissions.WorkOrders.WriteCompany], "company" },
         {
-            CorePermissions.WorkOrders.Manage,
-            [CorePermissions.WorkOrders.Read, CorePermissions.WorkOrders.Write, CorePermissions.WorkOrders.Manage],
+            CorePermissions.WorkOrders.WriteCompany,
+            [
+                CorePermissions.WorkOrders.Read, CorePermissions.WorkOrders.Write,
+                CorePermissions.WorkOrders.WriteCompany,
+            ],
             "company"
         },
         {
-            CorePermissions.WorkOrders.Manage, [CorePermissions.WorkOrders.Read, CorePermissions.WorkOrders.Write],
+            CorePermissions.WorkOrders.WriteCompany,
+            [CorePermissions.WorkOrders.Read, CorePermissions.WorkOrders.Write],
             "own"
         },
-        { CorePermissions.WorkOrders.Manage, [CorePermissions.Shifts.Manage], "own" },
-        { CorePermissions.Shifts.Manage, [CorePermissions.Shifts.Manage], "company" },
-        { CorePermissions.Shifts.Manage, [CorePermissions.Shifts.Read, CorePermissions.WorkOrders.Manage], "own" },
-        { CorePermissions.Shifts.Manage, [], "own" },
+        { CorePermissions.WorkOrders.WriteCompany, [CorePermissions.Shifts.WriteCompany], "own" },
+        { CorePermissions.Shifts.WriteCompany, [CorePermissions.Shifts.WriteCompany], "company" },
+        {
+            CorePermissions.Shifts.WriteCompany, [CorePermissions.Shifts.Read, CorePermissions.WorkOrders.WriteCompany],
+            "own"
+        },
+        { CorePermissions.Shifts.WriteCompany, [], "own" },
     };
 }

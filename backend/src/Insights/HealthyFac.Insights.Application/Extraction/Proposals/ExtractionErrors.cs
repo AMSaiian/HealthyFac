@@ -26,6 +26,9 @@ public static class ExtractionErrors
 
     public static readonly string UnitNeedsBothValues = "Send quantityKind and unit together, or send both null.";
 
+    public static readonly string MachineValuesSetOnce =
+        "The values of this machine are proposed already in this run. Propose them once.";
+
     public static readonly string RunHasNoBuffer = "The run does not collect proposals.";
 
     public static UnprocessableException UnknownMachine() =>

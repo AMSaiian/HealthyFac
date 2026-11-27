@@ -1,10 +1,12 @@
 using Google.GenAI;
 using HealthyFac.Insights.Application.Embeddings;
+using HealthyFac.Insights.Infrastructure.Chats.Models;
 using HealthyFac.Shared.Application.Observability;
 using HealthyFac.Shared.Infrastructure.Configuration;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace HealthyFac.Insights.Infrastructure.Ai;
@@ -21,9 +23,13 @@ public static class AiServiceExtensions
     {
         /// <summary>
         /// Registers the validated Gemini options, one Google.GenAI client for Vertex AI (the project, the location,
-        /// and the Application Default Credentials from <c>GOOGLE_APPLICATION_CREDENTIALS</c>), the embedding
-        /// generator with the task type <c>RETRIEVAL_DOCUMENT</c>, the chat client, the keyed triage chat client, and
-        /// the embedder. Each generator and client writes OpenTelemetry data without the prompt and answer text.
+        /// the API version <c>Gemini:ApiVersion</c>, and the Application Default Credentials from
+        /// <c>GOOGLE_APPLICATION_CREDENTIALS</c>), the embedding generator with the task type
+        /// <c>RETRIEVAL_DOCUMENT</c>, the keyed assistant chat client for the chat answer, the default chat client
+        /// for the planner and the extractor, the keyed triage chat client, and the embedder. Both the assistant
+        /// client and the default client have the stall guard (<see cref="StallGuardChatClient"/>, idle timeout
+        /// <c>Gemini:StreamIdleTimeoutSeconds</c>). Each generator and client writes OpenTelemetry data without
+        /// the prompt and answer text.
         /// </summary>
         /// <param name="configuration">The application <see cref="IConfiguration"/> instance.</param>
         /// <returns>The updated <see cref="IServiceCollection"/> instance for method chaining.</returns>
@@ -37,7 +43,11 @@ public static class AiServiceExtensions
             {
                 var options = provider.GetRequiredService<IOptions<GeminiOptions>>().Value;
 
-                return new Client(vertexAI: true, project: options.ProjectId, location: options.Location);
+                return new Client(
+                    vertexAI: true,
+                    project: options.ProjectId,
+                    location: options.Location,
+                    httpOptions: new Google.GenAI.Types.HttpOptions { ApiVersion = options.ApiVersion });
             });
 
             services.AddEmbeddingGenerator(provider =>
@@ -58,6 +68,20 @@ public static class AiServiceExtensions
 
                     return provider.GetRequiredService<Client>().AsIChatClient(options.ChatModel);
                 })
+                .Use(CreateStallGuard)
+                .UseOpenTelemetry(
+                    sourceName: SourceName,
+                    configure: telemetry => telemetry.EnableSensitiveData = false);
+
+            services.AddKeyedChatClient(
+                    AiClientKeys.Assistant,
+                    provider =>
+                    {
+                        var options = provider.GetRequiredService<IOptions<GeminiOptions>>().Value;
+
+                        return provider.GetRequiredService<Client>().AsIChatClient(options.AssistantModel);
+                    })
+                .Use(CreateStallGuard)
                 .UseOpenTelemetry(
                     sourceName: SourceName,
                     configure: telemetry => telemetry.EnableSensitiveData = false);
@@ -90,4 +114,12 @@ public static class AiServiceExtensions
             return services;
         }
     }
+
+    private static StallGuardChatClient CreateStallGuard(IChatClient inner, IServiceProvider provider) =>
+        new(
+            inner,
+            TimeSpan.FromSeconds(
+                provider.GetRequiredService<IOptions<GeminiOptions>>().Value.StreamIdleTimeoutSeconds),
+            provider.GetRequiredService<TimeProvider>(),
+            provider.GetRequiredService<ILoggerFactory>().CreateLogger<StallGuardChatClient>());
 }

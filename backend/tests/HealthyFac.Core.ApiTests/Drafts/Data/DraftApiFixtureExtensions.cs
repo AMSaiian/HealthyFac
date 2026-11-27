@@ -2,6 +2,7 @@ using System.Text.Json;
 using HealthyFac.Core.ApiTests.Hosting;
 using HealthyFac.Core.Application;
 using HealthyFac.Core.Domain.Drafts;
+using HealthyFac.Core.Domain.Drafts.Proposals;
 using HealthyFac.Core.Infrastructure.Database;
 using HealthyFac.Shared.Application.Messaging;
 using HealthyFac.Shared.Domain.Entities;
@@ -23,14 +24,37 @@ public static class DraftApiFixtureExtensions
             using var scope = fixture.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
             var owner = companyId ?? fixture.CompanyId;
+            var attempt = attemptId ?? DraftApiTestData.AttemptId;
+            await EnsureProposalAsync(dbContext, owner, attempt);
 
             var draft = new MachineDraft(
                 Guid.CreateVersion7(),
                 owner,
-                attemptId ?? DraftApiTestData.AttemptId,
-                DraftApiTestData.FileId,
-                DraftApiTestData.QueuedAt,
+                attempt,
                 targetMachineId,
+                DraftApiTestData.ProposedName,
+                DraftApiTestData.ProposedSerialNumber,
+                description: null);
+
+            dbContext.MachineDrafts.Add(draft);
+            await dbContext.SaveChangesAsync();
+
+            return new ArrangedDraft(draft.Id, fixture.IdEncryptor.Encrypt(draft.Id));
+        }
+
+        public async Task<ArrangedDraft> ArrangeChatMachineDraftAsync(Guid chatId, Guid? companyId = null)
+        {
+            using var scope = fixture.ScopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
+            var owner = companyId ?? fixture.CompanyId;
+            var proposal = DraftProposal.ForChat(Guid.CreateVersion7(), owner, chatId);
+            dbContext.DraftProposals.Add(proposal);
+
+            var draft = new MachineDraft(
+                Guid.CreateVersion7(),
+                owner,
+                proposal.Id,
+                targetMachineId: null,
                 DraftApiTestData.ProposedName,
                 DraftApiTestData.ProposedSerialNumber,
                 description: null);
@@ -60,6 +84,7 @@ public static class DraftApiFixtureExtensions
                 .MachineDrafts
                 .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
                 .AsNoTracking()
+                .Include(draft => draft.Proposal)
                 .ToListAsync();
         }
 
@@ -94,11 +119,26 @@ public static class DraftApiFixtureExtensions
             ];
         }
     }
-}
 
-/// <summary>
-/// A draft that a test stored.
-/// </summary>
-/// <param name="Id">The ID of the draft.</param>
-/// <param name="EncryptedId">The encrypted ID for the route.</param>
-public sealed record ArrangedDraft(Guid Id, string EncryptedId);
+    /// <summary>
+    /// A draft that a test stored.
+    /// </summary>
+    /// <param name="Id">The ID of the draft.</param>
+    /// <param name="EncryptedId">The encrypted ID for the route.</param>
+    public sealed record ArrangedDraft(Guid Id, string EncryptedId);
+
+    private static async Task EnsureProposalAsync(ICoreDbContext dbContext, Guid companyId, Guid attemptId)
+    {
+        var isStored = await dbContext.DraftProposals.AnyAsync(proposal => proposal.Id == attemptId);
+
+        if (!isStored)
+        {
+            dbContext.DraftProposals.Add(
+                DraftProposal.ForIngest(
+                    attemptId,
+                    companyId,
+                    DraftApiTestData.FileId,
+                    DraftApiTestData.QueuedAt));
+        }
+    }
+}

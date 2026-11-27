@@ -14,11 +14,10 @@
     "GrpcAddress": "http://document:8081"
   },
   "TelemetryClient": {
-    "BaseAddress": "http://telemetry:8080",
     "GrpcAddress": "http://telemetry:8081"
   },
   "CoreClient": {
-    "BaseAddress": "http://core:8080"
+    "GrpcAddress": "http://core:8081"
   },
   "Proxy": {
     "KnownNetworks": [

@@ -47,19 +47,44 @@ public sealed class ToolRegistry
     /// </summary>
     /// <param name="role">The role of the run.</param>
     /// <param name="context">The values of the run that the tools use.</param>
+    /// <param name="permissions">
+    /// The permissions of the token. The <c>chat</c> role gets only the tools whose permissions the token holds all
+    /// of. Another role ignores it.
+    /// </param>
+    /// <param name="scopes">
+    /// The scopes of the tool calls. The <c>chat</c> role requires it and never accepts an
+    /// <see cref="IAdvisorScopes"/>. Another role uses the advisor scopes of the registry when it is null.
+    /// </param>
     /// <returns>The functions of the role.</returns>
     /// <exception cref="InvalidOperationException">
-    /// Thrown when a type with the attribute does not implement the tool interface.
+    /// Thrown when a type with the attribute does not implement the tool interface, and when the role is <c>chat</c>
+    /// and <paramref name="scopes"/> is null or an <see cref="IAdvisorScopes"/>.
     /// </exception>
-    public IReadOnlyList<AIFunction> For(AgentRole role, ToolContext context) =>
-    [
-        .. _toolTypes
-            .Select(type => (Type: type, Attribute: type.GetCustomAttribute<AgentToolAttribute>()!))
-            .Where(tool => tool.Attribute.Role == role.Value)
-            .Select(tool => Build(tool.Type, tool.Attribute, context)),
-    ];
+    public IReadOnlyList<AIFunction> For(
+        AgentRole role,
+        ToolContext context,
+        IReadOnlyCollection<string>? permissions = null,
+        IToolScopes? scopes = null
+    )
+    {
+        if (role == AgentRole.Chat && scopes is null or IAdvisorScopes)
+        {
+            throw new InvalidOperationException(AgentMessages.ChatToolsNeedUserScopes);
+        }
 
-    private AIFunction Build(Type type, AgentToolAttribute attribute, ToolContext context)
+        return
+        [
+            .. _toolTypes
+                .Select(type => (Type: type, Attribute: type.GetCustomAttribute<AgentToolAttribute>()!))
+                .Where(tool => tool.Attribute.Role == role.Value)
+                .Where(tool =>
+                    role != AgentRole.Chat
+                    || tool.Attribute.Permissions.All(permission => permissions?.Contains(permission) == true))
+                .Select(tool => Build(tool.Type, tool.Attribute, context, scopes ?? _scopes)),
+        ];
+    }
+
+    private AIFunction Build(Type type, AgentToolAttribute attribute, ToolContext context, IToolScopes scopes)
     {
         var contract = type.GetInterfaces()
                 .SingleOrDefault(candidate => candidate.IsGenericType
@@ -69,6 +94,6 @@ public sealed class ToolRegistry
         var arguments = contract.GetGenericArguments();
         var functionType = typeof(ToolFunction<,,>).MakeGenericType(type, arguments[1], arguments[2]);
 
-        return (AIFunction)Activator.CreateInstance(functionType, attribute, _scopes, context, _logger, _json)!;
+        return (AIFunction)Activator.CreateInstance(functionType, attribute, scopes, context, _logger, _json)!;
     }
 }

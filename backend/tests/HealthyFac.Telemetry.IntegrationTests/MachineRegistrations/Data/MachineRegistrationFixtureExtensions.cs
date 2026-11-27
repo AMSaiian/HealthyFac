@@ -160,7 +160,10 @@ public static class MachineRegistrationFixtureExtensions
             using var scope = fixture.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ITelemetryDbContext>();
             var entry = new ProposalEntry(Guid.CreateVersion7(), companyId);
-            var draft = DefinitionDraftTestData.CreateMetric(Guid.CreateVersion7(), entry.Id, machineId, companyId);
+            var proposal = DefinitionDraftTestData.CreateProposal(companyId);
+
+            var draft = DefinitionDraftTestData.CreateMetric(
+                Guid.CreateVersion7(), entry.Id, proposal.Id, machineId, companyId);
 
             entry.AcceptOnMachine(machineId);
             draft.Follow(entry, isTargetRegistrationDeleted: false);
@@ -170,6 +173,7 @@ public static class MachineRegistrationFixtureExtensions
                 draft.MarkApplied();
             }
 
+            await dbContext.EnsureProposalAsync(proposal);
             dbContext.ProposalEntries.Add(entry);
             dbContext.MetricDefinitionDrafts.Add(draft);
             await dbContext.SaveChangesAsync();
@@ -182,8 +186,12 @@ public static class MachineRegistrationFixtureExtensions
             using var scope = fixture.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ITelemetryDbContext>();
             var entry = new ProposalEntry(Guid.CreateVersion7(), companyId);
-            var draft = DefinitionDraftTestData.CreateStatus(Guid.CreateVersion7(), entry.Id, machineId, companyId);
+            var proposal = DefinitionDraftTestData.CreateProposal(companyId);
 
+            var draft = DefinitionDraftTestData.CreateStatus(
+                Guid.CreateVersion7(), entry.Id, proposal.Id, machineId, companyId);
+
+            await dbContext.EnsureProposalAsync(proposal);
             dbContext.ProposalEntries.Add(entry);
             dbContext.StatusDefinitionDrafts.Add(draft);
             await dbContext.SaveChangesAsync();
@@ -196,10 +204,14 @@ public static class MachineRegistrationFixtureExtensions
             using var scope = fixture.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ITelemetryDbContext>();
             var entry = new ProposalEntry(Guid.CreateVersion7(), companyId);
-            var draft = DefinitionDraftTestData.CreateStatus(Guid.CreateVersion7(), entry.Id, machineId, companyId);
+            var proposal = DefinitionDraftTestData.CreateProposal(companyId);
+
+            var draft = DefinitionDraftTestData.CreateStatus(
+                Guid.CreateVersion7(), entry.Id, proposal.Id, machineId, companyId);
 
             entry.AcceptOnMachine(machineId);
             draft.Follow(entry, isTargetRegistrationDeleted: false);
+            await dbContext.EnsureProposalAsync(proposal);
             dbContext.ProposalEntries.Add(entry);
             dbContext.StatusDefinitionDrafts.Add(draft);
             await dbContext.SaveChangesAsync();

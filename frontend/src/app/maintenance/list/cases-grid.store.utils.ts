@@ -1,5 +1,5 @@
 import { DEFAULT_PAGE_SIZE } from '@shared/grid/requests/grid-limits';
-import { setFilter } from '@shared/grid/requests/grid-filters';
+import { idSetFilter, setFilter } from '@shared/grid/requests/grid-filters';
 import { SortDirection } from '@shared/grid/requests/grid-request';
 import type { GridStateInit } from '@shared/grid/with-grid-state';
 
@@ -41,7 +41,7 @@ export function toSearchBody(state: CaseGridState): SearchCasesBody {
     limit: state.limit,
     ...(state.sort === null ? {} : { sort: state.sort }),
     filter: {
-      machineIds: setFilter(state.filter.machineIds),
+      machineIds: idSetFilter(state.filter.machineIds),
       states: setFilter(state.filter.states),
       severities: setFilter(state.filter.severities),
       lastRunStates: setFilter(state.filter.lastRunStates),

@@ -23,7 +23,8 @@ namespace HealthyFac.Core.ApiTests.Hosting;
 /// </remarks>
 public sealed class CoreApiFactory(
     IReadOnlyDictionary<string, string?> settings,
-    TestTokenFactory tokens
+    TestTokenFactory tokens,
+    Action<IServiceCollection>? configureServices = null
 ) : WebApplicationFactory<Program>
 {
     private const string TestEnvironment = "Test";
@@ -31,6 +32,7 @@ public sealed class CoreApiFactory(
 
     private readonly IReadOnlyDictionary<string, string?> _settings = settings;
     private readonly TestTokenFactory _tokens = tokens;
+    private readonly Action<IServiceCollection>? _configureServices = configureServices;
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -52,6 +54,7 @@ public sealed class CoreApiFactory(
             services.AddSingleton<IBackgroundQueue<RealtimePush>>(new RecordingRealtimeQueue());
             var sender = services.Single(descriptor => descriptor.ImplementationType?.Name == SenderTypeName);
             services.Remove(sender);
+            _configureServices?.Invoke(services);
         });
     }
 }

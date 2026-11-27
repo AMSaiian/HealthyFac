@@ -36,6 +36,21 @@ public sealed class AutomaticTieTests(DocumentDatabaseFixture fixture)
         messages.Should().ContainSingle().Which.MachineId.Should().Be(machineId);
     }
 
+    [Fact]
+    public async Task AutomaticTie_WithADraftThatHasNoFile_TiesNothingAndStoresNoMessage()
+    {
+        var machineId = await _fixture.RegisterMachineAsync(CompanyId);
+        var fileId = await SeedCompanyFileAsync();
+
+        await _fixture.DeliverDraftAppliedWithoutFileAsync(CompanyId, machineId);
+
+        var file = await _fixture.LoadFileRowAsync(fileId);
+        var messages = await _fixture.ReadOutboxMessagesAsync<FileMachineChanged>();
+
+        file.MachineId.Should().BeNull();
+        messages.Should().BeEmpty();
+    }
+
     [Theory]
     [MemberData(nameof(AutomaticTieTestData.Sources), MemberType = typeof(AutomaticTieTestData))]
     public async Task AutomaticTie_WithTiedFile_ChangesNothing(AutomaticTieSource source)

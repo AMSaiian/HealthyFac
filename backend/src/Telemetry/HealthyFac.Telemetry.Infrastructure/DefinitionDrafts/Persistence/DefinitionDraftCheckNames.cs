@@ -18,6 +18,7 @@ public static class DefinitionDraftCheckNames
     public const string PhaseConditionSource = "ck_operating_phase_draft_conditions_exactly_one_source";
     public const string PhaseLimitMetric = "ck_operating_phase_draft_limits_exactly_one_metric";
     public const string EntryMachine = "ck_proposal_entries_machine_only_on_machine";
+    public const string ProposalSourceFields = "ck_draft_proposals_source_fields";
 
     /// <summary>
     /// A draft that waits for its target or was dismissed holds at most 1 target. A pending or applied draft holds
@@ -40,4 +41,10 @@ public static class DefinitionDraftCheckNames
     public const string PhaseLimitMetricSql = "num_nonnulls(metric_definition_id, metric_draft_id) = 1";
 
     public const string EntryMachineSql = "(machine_id IS NOT NULL) = (state = 'onMachine')";
+
+    public const string ProposalSourceFieldsSql =
+        "(source = 'ingest' AND attempt_id IS NOT NULL AND file_id IS NOT NULL "
+        + "AND chat_id IS NULL AND chat_message_id IS NULL) "
+        + "OR (source = 'chat' AND chat_id IS NOT NULL AND chat_message_id IS NOT NULL "
+        + "AND attempt_id IS NULL AND file_id IS NULL)";
 }

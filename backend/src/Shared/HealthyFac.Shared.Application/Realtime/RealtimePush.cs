@@ -16,6 +16,10 @@ public sealed record RealtimePush
 
     public RealtimeHint? Hint { get; init; }
 
+    public ChatTurnUpdate? ChatTurnUpdate { get; init; }
+
+    public ChatTurnEnd? ChatTurnEnd { get; init; }
+
     public bool IsSessionEnd { get; init; }
 
     /// <summary>The value of the <c>realtime.target</c> metric tag: never an ID.</summary>

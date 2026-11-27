@@ -33,7 +33,7 @@ public sealed class MachinesPart : ISeedPart
     private readonly ServiceHosts.ServiceHosts _hosts;
     private readonly Dictionary<string, Func<SeedContext, CancellationToken, Task>> _actions = [];
 
-    private IReadOnlyDictionary<Guid, ProposedMachine> _drafts = null!;
+    private IReadOnlyDictionary<Guid, IngestMachineSeed> _drafts = null!;
 
     public MachinesPart(ServiceHosts.ServiceHosts hosts)
     {
@@ -191,7 +191,7 @@ public sealed class MachinesPart : ISeedPart
         return machine.AppliedAt with { Time = time.Add(MachinesConstants.DefinitionsDelay) };
     }
 
-    private ProposedMachine FindDraft(MachineSeed machine, string item) =>
+    private IngestMachineSeed FindDraft(MachineSeed machine, string item) =>
         _drafts.TryGetValue(machine.DraftId, out var draft)
             ? draft
             : throw new SeedFileException(MachinesErrors.DraftUnknown(item, machine.DraftId));
@@ -324,7 +324,7 @@ public sealed class MachinesPart : ISeedPart
             : throw new InvalidOperationException(MachinesErrors.DefinitionMissing(name));
 
     private static ApplyMetricDefinitionChangesRequest MetricsRequest(
-        ProposedMachine draft,
+        IngestMachineSeed draft,
         string item,
         Guid companyId,
         Guid machineId,
@@ -360,7 +360,7 @@ public sealed class MachinesPart : ISeedPart
         };
 
     private static ApplyStatusDefinitionChangesRequest StatusesRequest(
-        ProposedMachine draft,
+        IngestMachineSeed draft,
         string item,
         Guid companyId,
         Guid machineId
@@ -383,7 +383,7 @@ public sealed class MachinesPart : ISeedPart
         };
 
     private static ApplyOperatingPhaseDraftRequest PhaseRequest(
-        ProposedMachine draft,
+        IngestMachineSeed draft,
         ProposedPhase phase,
         string item,
         Guid companyId,

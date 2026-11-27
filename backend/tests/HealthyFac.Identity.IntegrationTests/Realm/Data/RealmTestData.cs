@@ -28,6 +28,9 @@ public static class RealmTestData
     public const string TelemetryScopeName = "insights-telemetry";
     public const string SignalsReadPermission = "signals:read";
     public const string WorkOrdersReadPermission = "work-orders:read";
+    public const string WorkOrdersReadCompanyPermission = "work-orders:read-company";
+    public const string WorkOrdersWriteCompanyPermission = "work-orders:write-company";
+    public const string ShiftsWriteCompanyPermission = "shifts:write-company";
     public const string PermissionsClaim = KeycloakClaimTypes.Permissions;
     public const string SupervisorRoleName = "supervisor";
     public const string ClientIdClaim = "client_id";
@@ -36,6 +39,7 @@ public static class RealmTestData
     public const string AdminRole = "admin";
     public const string IdListClaimSuffix = "_ids";
     public const string WorkerRoleName = "worker";
+    public const string WorkerEmail = "worker@healthyfac.local";
 
     public static readonly Guid CompanyId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000001");
     public static readonly Guid SupervisorIdentityId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000002");
@@ -91,9 +95,11 @@ public static class RealmTestData
         "drafts:write",
         "work-orders:read",
         "work-orders:write",
-        "work-orders:manage",
+        "work-orders:read-company",
+        "work-orders:write-company",
         "shifts:read",
-        "shifts:manage",
+        "shifts:read-company",
+        "shifts:write-company",
     ];
 
     public static IReadOnlyList<string> TelemetryPermissions { get; } =
@@ -125,6 +131,24 @@ public static class RealmTestData
         "ingest:write",
         "cases:read",
         "cases:write",
+        "chats:read",
+        "chats:write",
+    ];
+
+    /// <summary>The read permissions of the worker that the chat tools use at Core.</summary>
+    public static IReadOnlyList<string> WorkerChatCorePermissions { get; } =
+    [
+        "machines:read",
+        "work-orders:read",
+        "shifts:read",
+    ];
+
+    /// <summary>The read permissions of the worker that the chat tools use at Telemetry.</summary>
+    public static IReadOnlyList<string> WorkerChatTelemetryPermissions { get; } =
+    [
+        "signals:read",
+        "metric-definitions:read",
+        "status-definitions:read",
     ];
 
     /// <summary>The permissions of a token that the web app gets: the permissions of every API.</summary>

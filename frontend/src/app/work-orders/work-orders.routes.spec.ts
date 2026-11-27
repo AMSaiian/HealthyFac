@@ -65,7 +65,9 @@ function setup(canManage = true): HttpTestingController {
       provideTranslateService(),
       provideFakeAuthStore({
         isAuthenticated: () => true,
-        hasPermission: (permission: Permission) => canManage || permission !== Permission.WorkOrdersManage,
+        hasPermission: (permission: Permission) =>
+          canManage ||
+          (permission !== Permission.WorkOrdersWriteCompany && permission !== Permission.WorkOrdersReadCompany),
       }),
       {
         provide: CLOCK,

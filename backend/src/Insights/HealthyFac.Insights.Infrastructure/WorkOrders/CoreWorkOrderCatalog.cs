@@ -1,26 +1,35 @@
-using System.Net.Http.Json;
+using Grpc.Core;
+using Grpc.Net.ClientFactory;
+using HealthyFac.Core.Contracts.WorkOrders;
 using HealthyFac.Insights.Application.Ingest.Processing.Failures;
 using HealthyFac.Insights.Application.WorkOrders;
-using HealthyFac.Shared.Application.IdEncryption;
-using HealthyFac.Shared.Infrastructure.HttpFailures;
+using HealthyFac.Shared.Application.DownstreamScopes;
+using HealthyFac.Shared.Infrastructure.Rpc;
 
 namespace HealthyFac.Insights.Infrastructure.WorkOrders;
 
 /// <summary>
-/// Reads the open work orders of a machine from Core (<c>GET /v1/machines/{machineId}/open-work-orders</c>). The call
-/// runs inside the downstream scope that the caller entered (<c>work-orders</c>). The route and the answer use
-/// encrypted IDs, so the reader encrypts the machine ID and decrypts each work order ID.
+/// Reads the open work orders of a machine from Core through its gRPC port (<c>SearchWorkOrders</c>). The call uses the
+/// service token with the actor headers, and enters the downstream scope of the call for the call only. The reader
+/// holds no assignee. A call that the caller cancelled ends in an <see cref="OperationCanceledException"/>, not in a
+/// failure for the model. An outage (the status <c>Unavailable</c> or <c>DeadlineExceeded</c>) ends in a
+/// <see cref="ProviderUnavailableException"/>, so a planner run fails as unavailable instead of going on without the
+/// data. Any other failure stays an <see cref="RpcException"/> for the model.
 /// </summary>
-/// <param name="httpClientFactory">Creates the Core client.</param>
-/// <param name="idEncryptor">Encrypts and decrypts the IDs of the API.</param>
-public sealed class CoreWorkOrderCatalog(IHttpClientFactory httpClientFactory, IIdEncryptor idEncryptor)
+/// <param name="clientFactory">Creates the named client.</param>
+/// <param name="downstreamScopes">Holds the downstream scope of the call.</param>
+public sealed class CoreWorkOrderCatalog(GrpcClientFactory clientFactory, IDownstreamScopeHolder downstreamScopes)
     : IWorkOrderCatalog
 {
-    private const string UnavailableMessage = "Core did not answer the open work orders request.";
-    private const string OpenWorkOrdersFormat = "v1/machines/{0}/open-work-orders?limit={1}";
+    internal const string CreatedAtColumn = "createdAt";
+    internal const string DescendingDirection = "desc";
 
-    private readonly IHttpClientFactory _httpClientFactory = httpClientFactory;
-    private readonly IIdEncryptor _idEncryptor = idEncryptor;
+    internal static readonly string[] OpenStatuses = ["backlog", "staged", "inProgress", "blocked"];
+
+    private const string UnavailableMessage = "Core did not answer the open work orders request.";
+
+    private readonly GrpcClientFactory _clientFactory = clientFactory;
+    private readonly IDownstreamScopeHolder _downstreamScopes = downstreamScopes;
 
     public async Task<IReadOnlyList<OpenWorkOrderInfo>> ListOpenAsync(
         Guid machineId,
@@ -28,74 +37,44 @@ public sealed class CoreWorkOrderCatalog(IHttpClientFactory httpClientFactory, I
         CancellationToken cancellationToken
     )
     {
-        var payload = await ReadPayloadAsync(machineId, limit, cancellationToken);
+        var client = _clientFactory.CreateClient<CoreWorkOrders.CoreWorkOrdersClient>(CoreClientNames.Worker);
 
-        return
-        [
-            .. payload
-                .Select(item => new OpenWorkOrderInfo
-                {
-                    Id = _idEncryptor.Decrypt(item.Id),
-                    Title = item.Title,
-                    Status = item.Status,
-                    Priority = item.Priority,
-                    Category = item.Category,
-                    PlannedStartUtc = item.PlannedStartUtc,
-                    PlannedEndUtc = item.PlannedEndUtc,
-                }),
-        ];
-    }
+        using var lease = _downstreamScopes.Enter(CoreClientNames.DownstreamScope);
 
-    /// <summary>
-    /// Reads the answer of Core. An outage (no connection, a timeout, or a 5xx) ends in a
-    /// <see cref="ProviderUnavailableException"/>, so a planner run fails as unavailable instead of going on without
-    /// the data. Any other failure (a 4xx) stays an <see cref="HttpRequestException"/> for the model.
-    /// </summary>
-    private async Task<List<OpenWorkOrderPayload>> ReadPayloadAsync(
-        Guid machineId,
-        int limit,
-        CancellationToken cancellationToken
-    )
-    {
         try
         {
-            using var client = _httpClientFactory.CreateClient(CoreClientNames.Client);
+            var reply = await client.SearchWorkOrdersAsync(
+                new SearchWorkOrdersRequest
+                {
+                    Statuses = { OpenStatuses },
+                    MachineId = machineId.ToString(),
+                    Limit = limit,
+                    SortColumn = CreatedAtColumn,
+                    SortDirection = DescendingDirection,
+                },
+                cancellationToken: cancellationToken);
 
-            using var response = await client.GetAsync(
-                string.Format(OpenWorkOrdersFormat, _idEncryptor.Encrypt(machineId), limit),
-                cancellationToken);
-
-            await response.EnsureSuccessAsync(cancellationToken);
-
-            return await response.Content.ReadFromJsonAsync<List<OpenWorkOrderPayload>>(cancellationToken) ?? [];
+            return [.. reply.WorkOrders.Select(ToInfo)];
         }
-        catch (HttpRequestException exception) when (IsOutage(exception))
+        catch (RpcException exception) when (RpcFailures.IsCancelledByCaller(exception, cancellationToken))
         {
-            throw new ProviderUnavailableException(UnavailableMessage, exception);
+            throw new OperationCanceledException(exception.Message, exception, cancellationToken);
         }
-        catch (TaskCanceledException exception) when (!cancellationToken.IsCancellationRequested)
+        catch (RpcException exception) when (RpcFailures.IsOutage(exception))
         {
             throw new ProviderUnavailableException(UnavailableMessage, exception);
         }
     }
 
-    private static bool IsOutage(HttpRequestException exception) =>
-        exception.StatusCode is null or >= System.Net.HttpStatusCode.InternalServerError;
-
-    private sealed record OpenWorkOrderPayload
-    {
-        public required string Id { get; init; }
-
-        public required string Title { get; init; }
-
-        public required string Status { get; init; }
-
-        public required string Priority { get; init; }
-
-        public required string Category { get; init; }
-
-        public DateTime? PlannedStartUtc { get; init; }
-
-        public DateTime? PlannedEndUtc { get; init; }
-    }
+    private static OpenWorkOrderInfo ToInfo(WorkOrderRow row) =>
+        new()
+        {
+            Id = Guid.Parse(row.Id),
+            Title = row.Title,
+            Status = row.Status,
+            Priority = row.Priority,
+            Category = row.Category,
+            PlannedStartUtc = row.PlannedStart?.ToDateTime(),
+            PlannedEndUtc = row.PlannedEnd?.ToDateTime(),
+        };
 }

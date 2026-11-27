@@ -102,6 +102,20 @@ public sealed class RealtimePushHandler(
             return;
         }
 
+        if (item.ChatTurnUpdate is not null)
+        {
+            await client.ChatTurnUpdated(item.ChatTurnUpdate).WaitAsync(cancellationToken);
+
+            return;
+        }
+
+        if (item.ChatTurnEnd is not null)
+        {
+            await client.ChatTurnEnded(item.ChatTurnEnd).WaitAsync(cancellationToken);
+
+            return;
+        }
+
         if (item.Notification is not null)
         {
             await client.Notification(item.Notification).WaitAsync(cancellationToken);

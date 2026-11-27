@@ -7,12 +7,10 @@ namespace HealthyFac.Core.IntegrationTests.Drafts.Data;
 /// </summary>
 public static class ProposalBuilder
 {
-    public const string MetricKey = "motor.temperature";
-    public const string StatusCode = "E104";
-
     public static DraftsProposed Message(Guid companyId, bool isMachineFile, params ProposedMachine[] machines) =>
         new()
         {
+            Source = ProposalSource.Ingest,
             AttemptId = DraftTestData.AttemptId,
             FileId = DraftTestData.FileId,
             CompanyId = companyId,
@@ -21,12 +19,21 @@ public static class ProposalBuilder
             Machines = machines,
         };
 
+    public static DraftsProposed ChatMessage(Guid companyId, params ProposedMachine[] machines) =>
+        new()
+        {
+            Source = ProposalSource.Chat,
+            RequestedByName = "Ann Owner",
+            ChatId = DraftTestData.ChatId,
+            ChatMessageId = DraftTestData.ChatMessageId,
+            CompanyId = companyId,
+            Machines = machines,
+        };
+
     public static ProposedMachine Machine(
         Guid? targetMachineId = null,
         string? name = null,
-        string? serialNumber = null,
-        int metrics = 1,
-        int statuses = 1
+        string? serialNumber = null
     ) =>
         new()
         {
@@ -34,25 +41,14 @@ public static class ProposalBuilder
             TargetMachineId = targetMachineId,
             Name = name,
             SerialNumber = serialNumber,
-            Metrics =
-            [
-                .. Enumerable.Range(start: 0, metrics)
-                    .Select(index => new ProposedMetric
-                    {
-                        DraftId = Guid.CreateVersion7(),
-                        SourceLocation = $"p.{index}",
-                        Key = $"{MetricKey}_{index}",
-                    }),
-            ],
-            Statuses =
-            [
-                .. Enumerable.Range(start: 0, statuses)
-                    .Select(index => new ProposedStatus
-                    {
-                        DraftId = Guid.CreateVersion7(),
-                        SourceLocation = $"p.{index}",
-                        Code = $"{StatusCode}{index}",
-                    }),
-            ],
+        };
+
+    public static ProposedMetric Metric(Guid? machineId = null, Guid? machineDraftId = null) =>
+        new()
+        {
+            DraftId = Guid.CreateVersion7(),
+            MachineId = machineId,
+            MachineDraftId = machineDraftId,
+            Key = "motor.temperature",
         };
 }

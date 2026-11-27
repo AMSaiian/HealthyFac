@@ -12,7 +12,6 @@ public static class OperatingPhaseDraftTestData
             ProposalEntryTestData.DraftId,
             ProposalEntryTestData.CompanyId,
             ProposalEntryTestData.AttemptId,
-            ProposalEntryTestData.FileId,
             Guid.Parse("2d4f6a81-9c03-4e5b-8a17-6b0c3e9d1f33"),
             tentativeMachineId: null,
             new PhaseDraftValues { Code = "cutting" },

@@ -19,6 +19,11 @@ public sealed class RateLimitOptions
     /// <summary>The limit of the anonymous file download route. A page with many images needs room.</summary>
     public FixedWindowLimit BlobDownload { get; init; } = new() { PermitLimit = 120, WindowSeconds = 60 };
 
+    /// <summary>
+    /// The limit of the chat sends of one user. A send runs a model turn, so it costs more than a read.
+    /// </summary>
+    public FixedWindowLimit ChatSend { get; init; } = new() { PermitLimit = 10, WindowSeconds = 60 };
+
     /// <summary>The limit of the web app and sign-in theme file routes. A reload requests many files at once.</summary>
     public FixedWindowLimit StaticAssets { get; init; } = new() { PermitLimit = 1000, WindowSeconds = 60 };
 }
@@ -50,6 +55,14 @@ public sealed class RateLimitOptionsValidator : AbstractValidator<RateLimitOptio
         RuleFor(options => options.BlobDownload.WindowSeconds)
             .GreaterThanOrEqualTo(valueToCompare: 1)
             .WithMessage(RateLimitValidationMessages.BlobDownload.WindowTooSmall);
+
+        RuleFor(options => options.ChatSend.PermitLimit)
+            .GreaterThanOrEqualTo(valueToCompare: 1)
+            .WithMessage(RateLimitValidationMessages.ChatSend.PermitLimitTooSmall);
+
+        RuleFor(options => options.ChatSend.WindowSeconds)
+            .GreaterThanOrEqualTo(valueToCompare: 1)
+            .WithMessage(RateLimitValidationMessages.ChatSend.WindowTooSmall);
 
         RuleFor(options => options.StaticAssets.PermitLimit)
             .GreaterThanOrEqualTo(valueToCompare: 1)

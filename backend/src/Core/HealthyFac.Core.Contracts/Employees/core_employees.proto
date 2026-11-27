@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package healthyfac.core.v1;
+
+option csharp_namespace = "HealthyFac.Core.Contracts.Employees";
+
+// Serves the employees of the company of the actor to the services that read them (Insights). The caller sends plain
+// GUIDs as text.
+service CoreEmployees {
+  rpc LookupEmployees(LookupEmployeesRequest) returns (LookupEmployeesReply);
+}
+
+message LookupEmployeesRequest {
+  // Part of the first or last name. Without it the lookup answers the first employees by name.
+  string search = 1;
+  // The ID of one employee as a plain GUID in text. Empty adds no condition. The answer holds the employee only when
+  // the employee is active and in the company of the actor.
+  string employee_id = 2;
+}
+
+message LookupEmployeesReply {
+  repeated EmployeeOption employees = 1;
+}
+
+message EmployeeOption {
+  string id = 1;
+  string display_name = 2;
+}

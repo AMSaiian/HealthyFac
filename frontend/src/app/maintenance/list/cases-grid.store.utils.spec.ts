@@ -98,7 +98,7 @@ describe('cases grid store utils', { tags: ['Cases'] }, () => {
 
     const body = toSearchBody({ offset: 0, limit: 25, sort: null, filter });
 
-    expect(body.filter?.machineIds).toEqual({ values: ['m1', 'm2'] });
+    expect(body.filter?.machineIds).toEqual({ ids: ['m1', 'm2'] });
   });
 
   it('filterReadersAndWriters_ForTheMachineColumn_MapThePickedIdsBothWays', () => {

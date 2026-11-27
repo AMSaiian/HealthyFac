@@ -1,3 +1,4 @@
+import { DraftSource } from '@shared/drafts/draft-proposal';
 import { type HttpRequest, HttpStatusCode, provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ApplicationRef } from '@angular/core';
@@ -35,8 +36,7 @@ const MACHINE_DRAFT = {
   id: 'md',
   state: DraftState.Pending,
   isCreate: true,
-  attemptId: 'a1',
-  fileId: 'f1',
+  proposal: { source: DraftSource.Ingest, attemptId: 'a1', chatId: null },
   name: 'Lathe',
   serialNumber: 'S-1',
   description: null,
@@ -830,7 +830,7 @@ describe('withDraftQuickApply', { tags: ['Drafts'] }, () => {
   describe('applyMachine', () => {
     const SEARCH_URL = '/api/core/v1/machines/m1/drafts/search';
     const NEXT_POSITION = { sortValue: 'd-a1', id: 'a1' };
-    const item = (attemptId: string): object => ({ id: `d-${attemptId}`, attemptId });
+    const item = (attemptId: string): object => ({ id: `d-${attemptId}`, proposal: { attemptId } });
     const group = (metricId: string): object => ({
       ...EXISTING_GROUP,
       metrics: [{ ...METRIC_DRAFT, id: metricId }],

@@ -1,4 +1,5 @@
 using HealthyFac.Core.Domain.Drafts;
+using HealthyFac.Core.Domain.Drafts.Proposals;
 using HealthyFac.Core.Messaging.Drafts;
 using HealthyFac.Insights.Messaging.Drafts;
 using HealthyFac.Shared.Application.CurrentUser;
@@ -39,6 +40,11 @@ public sealed class StoreProposedDraftsRequestHandler(
     {
         var isInScope = await IsInScopeAsync(request, cancellationToken);
 
+        if (!isInScope && request.Machines.Count == 0)
+        {
+            return;
+        }
+
         if (!isInScope)
         {
             _outbox.Add(
@@ -54,6 +60,7 @@ public sealed class StoreProposedDraftsRequestHandler(
 
         var existingIds = await LoadExistingIdsAsync(request, cancellationToken);
         var isRepeat = existingIds.Count > 0;
+        await AddProposalAsync(request, cancellationToken);
         var resolvedEntries = new List<ResolvedEntry>();
 
         foreach (var entry in request.Machines)
@@ -69,7 +76,8 @@ public sealed class StoreProposedDraftsRequestHandler(
                     IsOnMachineDraft = target is null,
                 });
 
-            var isSingleSerialMatch = !request.IsMachineFile
+            var isSingleSerialMatch = IsIngest(request)
+                && request.IsMachineFile is false
                 && request.Machines.Count == 1
                 && entry.TargetMachineId is null
                 && target is not null;
@@ -79,21 +87,26 @@ public sealed class StoreProposedDraftsRequestHandler(
                 _outbox.Add(
                     new FileMachineMatched
                     {
-                        FileId = request.FileId,
+                        FileId = request.FileId!.Value,
                         MachineId = target!.Id,
                         CompanyId = request.CompanyId,
-                        QueuedAt = request.QueuedAt,
+                        QueuedAt = request.QueuedAt!.Value,
                     });
             }
         }
 
-        if (!isRepeat)
+        if (!isRepeat && request.Machines.Count > 0)
         {
             _outbox.Add(ToResolution(request, DraftResolution.Accepted, resolvedEntries));
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
+
+    private static bool IsIngest(DraftsProposed request) => request.Source == ProposalSource.Ingest;
+
+    private static Guid ProposalIdOf(DraftsProposed request) =>
+        (IsIngest(request) ? request.AttemptId : request.ChatMessageId)!.Value;
 
     private static DraftsResolved ToResolution(
         DraftsProposed request,
@@ -102,6 +115,7 @@ public sealed class StoreProposedDraftsRequestHandler(
     ) =>
         new()
         {
+            Source = IsIngest(request) ? ResolutionSource.Ingest : ResolutionSource.Chat,
             AttemptId = request.AttemptId,
             CompanyId = request.CompanyId,
             Resolution = resolution,
@@ -126,6 +140,25 @@ public sealed class StoreProposedDraftsRequestHandler(
             .CountAsync(cancellationToken);
 
         return foundCount == targetIds.Count;
+    }
+
+    private async Task AddProposalAsync(DraftsProposed request, CancellationToken cancellationToken)
+    {
+        var isProposalStored = await _dbContext.DraftProposals
+            .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
+            .AnyAsync(proposal => proposal.Id == ProposalIdOf(request), cancellationToken);
+
+        if (isProposalStored)
+        {
+            return;
+        }
+
+        _dbContext.DraftProposals.Add(
+            IsIngest(request)
+                ? DraftProposal.ForIngest(
+                    ProposalIdOf(request), request.CompanyId, request.FileId!.Value, request.QueuedAt!.Value)
+                : DraftProposal.ForChat(
+                    ProposalIdOf(request), request.CompanyId, request.ChatId!.Value, request.RequestedByName));
     }
 
     private async Task<HashSet<Guid>> LoadExistingIdsAsync(DraftsProposed request, CancellationToken cancellationToken)
@@ -156,7 +189,7 @@ public sealed class StoreProposedDraftsRequestHandler(
                 .SingleOrDefaultAsync(cancellationToken);
         }
 
-        if (request.IsMachineFile || entry.SerialNumber is null)
+        if (!IsIngest(request) || request.IsMachineFile is true || entry.SerialNumber is null)
         {
             return null;
         }
@@ -194,9 +227,7 @@ public sealed class StoreProposedDraftsRequestHandler(
                 new MachineDraft(
                     entry.DraftId,
                     request.CompanyId,
-                    request.AttemptId,
-                    request.FileId,
-                    request.QueuedAt,
+                    ProposalIdOf(request),
                     target?.Id,
                     entry.Name,
                     proposedSerialNumber,

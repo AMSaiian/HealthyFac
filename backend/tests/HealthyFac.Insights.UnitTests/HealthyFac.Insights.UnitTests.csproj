@@ -30,4 +30,8 @@
     <ProjectReference Include="..\HealthyFac.Testing\HealthyFac.Testing.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="../../../testdata/chat-draft-kinds.json" Link="Chats\Data\chat-draft-kinds.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
