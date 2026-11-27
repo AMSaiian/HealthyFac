@@ -9,6 +9,7 @@ import type { Reloadable } from '@shared/actions/with-action-result-reload';
 
 import { withStoreDevtools } from '@shared/devtools/with-store-devtools';
 import { withGridState } from '@shared/grid/with-grid-state';
+import { withGridRefresh } from '@shared/grid/with-grid-refresh';
 import { createLookup } from '@shared/lookups/create-lookup';
 import { labelsById } from '@shared/lookups/lookup-options';
 import { LookupsApi } from '@shared/lookups/lookups-api';
@@ -63,6 +64,9 @@ export const CasesGridStore = signalStore(
     },
   })),
   withRealtimeReload<{ cases: Reloadable }>([RealtimeTopic.Cases], (store) => {
+    store.cases.reload();
+  }),
+  withGridRefresh<{ cases: Reloadable }>((store) => {
     store.cases.reload();
   }),
   withStoreDevtools('cases-grid'),

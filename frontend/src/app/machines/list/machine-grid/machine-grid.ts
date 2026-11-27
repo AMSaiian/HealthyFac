@@ -18,6 +18,7 @@ import { ChipSummary } from '@shared/chips/chip-summary/chip-summary';
 import { labelChipsOf } from '@shared/chips/chip-summary/chip-summary.utils';
 import { CellText } from '@shared/grid/table/cell-text/cell-text';
 import { createGridTable } from '@shared/grid/table/grid-table';
+import { GridRefreshButton } from '@shared/grid/table/grid-refresh-button/grid-refresh-button';
 import { createRowMenu } from '@shared/grid/table/row-menu';
 import { RowMenuPopup } from '@shared/grid/table/row-menu-popup/row-menu-popup';
 import { EmptyState } from '@shared/loading/empty-state/empty-state';
@@ -66,6 +67,7 @@ import {
 
 @Component({
   imports: [
+    GridRefreshButton,
     CellText,
     ChipSummary,
     Badge,
@@ -109,6 +111,8 @@ export class MachineGrid {
   readonly canReadSignals = input(false);
   readonly canReadDrafts = input(false);
 
+  readonly refreshSecondsLeft = input(0);
+  readonly refreshRequested = output<void>();
   readonly filterChange = output<Partial<MachineFilter>>();
   readonly sortChange = output<GridSort<MachineSortColumn> | null>();
   readonly pageChange = output<{ offset: number; limit: number }>();

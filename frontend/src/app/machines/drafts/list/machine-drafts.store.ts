@@ -14,6 +14,7 @@ import { DEFAULT_PAGE_SIZE } from '@shared/grid/requests/grid-limits';
 import { setFilter } from '@shared/grid/requests/grid-filters';
 import { SortDirection } from '@shared/grid/requests/grid-request';
 import { withGridState } from '@shared/grid/with-grid-state';
+import { withGridRefresh } from '@shared/grid/with-grid-refresh';
 import { httpErrorKey, skipErrorToast } from '@shared/http/http-error-key';
 import { AuthStore } from '@shared/security/auth-store/auth.store';
 import { Permission } from '@shared/security/permissions';
@@ -445,5 +446,8 @@ export const MachineDraftsStore = signalStore(
     },
     (store) => store.scope()?.id ?? null,
   ),
+  withGridRefresh<{ reloadDrafts: () => void }>((store) => {
+    store.reloadDrafts();
+  }),
   withStoreDevtools('machine-drafts'),
 );

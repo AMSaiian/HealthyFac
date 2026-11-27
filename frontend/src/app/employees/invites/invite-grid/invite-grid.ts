@@ -14,6 +14,7 @@ import { PAGE_SIZES } from '@shared/grid/requests/grid-limits';
 import type { GridSort } from '@shared/grid/requests/grid-request';
 import { CellText } from '@shared/grid/table/cell-text/cell-text';
 import { createGridTable } from '@shared/grid/table/grid-table';
+import { GridRefreshButton } from '@shared/grid/table/grid-refresh-button/grid-refresh-button';
 import { createRowMenu } from '@shared/grid/table/row-menu';
 import { RowMenuPopup } from '@shared/grid/table/row-menu-popup/row-menu-popup';
 import { asText } from '@shared/grid/table/table-filters';
@@ -57,6 +58,7 @@ const FILTER_WRITERS: Readonly<Record<InviteColumn, (filter: InviteFilter) => un
 
 @Component({
   imports: [
+    GridRefreshButton,
     CellText,
     ButtonDirective,
     ColumnFilter,
@@ -85,6 +87,8 @@ export class InviteGrid {
   readonly sort = input.required<InviteSort | null>();
   readonly filter = input.required<InviteFilter>();
 
+  readonly refreshSecondsLeft = input(0);
+  readonly refreshRequested = output<void>();
   readonly filterChange = output<Partial<InviteFilter>>();
   readonly sortChange = output<GridSort<InviteSortColumn> | null>();
   readonly pageChange = output<{ offset: number; limit: number }>();

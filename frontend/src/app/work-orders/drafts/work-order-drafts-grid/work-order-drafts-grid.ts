@@ -14,6 +14,7 @@ import type { GridSort } from '@shared/grid/requests/grid-request';
 import { ColumnChooser } from '@shared/grid/table/column-chooser/column-chooser';
 import { CellText } from '@shared/grid/table/cell-text/cell-text';
 import { createGridTable } from '@shared/grid/table/grid-table';
+import { GridRefreshButton } from '@shared/grid/table/grid-refresh-button/grid-refresh-button';
 import { createRowMenu } from '@shared/grid/table/row-menu';
 import { RowMenuPopup } from '@shared/grid/table/row-menu-popup/row-menu-popup';
 import { EmptyState } from '@shared/loading/empty-state/empty-state';
@@ -45,6 +46,7 @@ import { CATEGORY_LABEL_KEYS, PRIORITY_LABEL_KEYS } from '@work-orders/list/work
 
 @Component({
   imports: [
+    GridRefreshButton,
     CellText,
     ButtonDirective,
     ColumnChooser,
@@ -75,6 +77,8 @@ export class WorkOrderDraftsGrid {
   readonly canApply = input(false);
   readonly canDismiss = input(false);
 
+  readonly refreshSecondsLeft = input(0);
+  readonly refreshRequested = output<void>();
   readonly filterChange = output<Partial<WorkOrderDraftFilter>>();
   readonly sortChange = output<GridSort<WorkOrderDraftSortColumn> | null>();
   readonly pageChange = output<{ offset: number; limit: number }>();

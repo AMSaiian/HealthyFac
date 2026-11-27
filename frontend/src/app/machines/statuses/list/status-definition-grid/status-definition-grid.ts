@@ -17,6 +17,7 @@ import { ChipSummary } from '@shared/chips/chip-summary/chip-summary';
 import { labelChipsOf } from '@shared/chips/chip-summary/chip-summary.utils';
 import { CellText } from '@shared/grid/table/cell-text/cell-text';
 import { createGridTable } from '@shared/grid/table/grid-table';
+import { GridRefreshButton } from '@shared/grid/table/grid-refresh-button/grid-refresh-button';
 import { createRowMenu } from '@shared/grid/table/row-menu';
 import { RowMenuPopup } from '@shared/grid/table/row-menu-popup/row-menu-popup';
 import { EmptyState } from '@shared/loading/empty-state/empty-state';
@@ -48,6 +49,7 @@ import {
 
 @Component({
   imports: [
+    GridRefreshButton,
     CellText,
     ChipSummary,
     ButtonDirective,
@@ -83,6 +85,8 @@ export class StatusDefinitionGrid {
   readonly canWrite = input(false);
   readonly canDelete = input(false);
 
+  readonly refreshSecondsLeft = input(0);
+  readonly refreshRequested = output<void>();
   readonly filterChange = output<Partial<StatusDefinitionFilter>>();
   readonly sortChange = output<GridSort<StatusDefinitionSortColumn> | null>();
   readonly pageChange = output<{ offset: number; limit: number }>();

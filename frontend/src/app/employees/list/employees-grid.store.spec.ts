@@ -136,13 +136,14 @@ describe('EmployeesGridStore', { tags: ['Companies'] }, () => {
     expect(searchEmployees.mock.calls.length - before).toBe(1);
   });
 
-  it('refresh_AfterTheFirstLoad_SendsANewSearch', async () => {
+  it('reloadRows_AfterTheFirstLoad_SendsANewSearch', async () => {
     const store = await setup();
     const before = searchEmployees.mock.calls.length;
 
-    store.refresh();
+    store.reloadRows();
     await settle();
 
     expect(searchEmployees.mock.calls.length - before).toBe(1);
+    expect(store.refreshSecondsLeft()).toBe(0);
   });
 });

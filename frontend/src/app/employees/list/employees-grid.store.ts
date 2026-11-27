@@ -6,6 +6,7 @@ import { signalStore, withComputed, withMethods, withProps } from '@ngrx/signals
 import { ActionStore } from '@shared/actions/action.store';
 import { type Reloadable, withActionResultReload } from '@shared/actions/with-action-result-reload';
 import { withGridState } from '@shared/grid/with-grid-state';
+import { withGridRefresh } from '@shared/grid/with-grid-refresh';
 import { AuthStore } from '@shared/security/auth-store/auth.store';
 import { Permission } from '@shared/security/permissions';
 
@@ -43,7 +44,7 @@ export const EmployeesGridStore = signalStore(
   })),
   withMethods((store) => ({
     /** Reloads the rows, so a return to the tab shows the current employees. */
-    refresh(): void {
+    reloadRows(): void {
       store.employees.reload();
     },
     requestInvite(): void {
@@ -60,6 +61,9 @@ export const EmployeesGridStore = signalStore(
     },
   })),
   withActionResultReload<{ employees: Reloadable }>([EmployeeActionType.Saved], (store) => {
+    store.employees.reload();
+  }),
+  withGridRefresh<{ employees: Reloadable }>((store) => {
     store.employees.reload();
   }),
   withStoreDevtools('employees-grid'),

@@ -20,6 +20,7 @@ import { ChipSummary } from '@shared/chips/chip-summary/chip-summary';
 import { type Chip, labelChipsOf, toChips } from '@shared/chips/chip-summary/chip-summary.utils';
 import { CellText } from '@shared/grid/table/cell-text/cell-text';
 import { createGridTable } from '@shared/grid/table/grid-table';
+import { GridRefreshButton } from '@shared/grid/table/grid-refresh-button/grid-refresh-button';
 import { createRowMenu } from '@shared/grid/table/row-menu';
 import { RowMenuPopup } from '@shared/grid/table/row-menu-popup/row-menu-popup';
 import { EmptyState } from '@shared/loading/empty-state/empty-state';
@@ -41,7 +42,6 @@ import {
   FILTER_READERS,
   FILTER_WRITERS,
   FILTERABLE_COLUMNS,
-  INGEST_COLUMNS,
   INGEST_NEVER_LABEL_KEY,
   INGEST_STATE_LABEL_KEYS,
   ingestLabelKey,
@@ -67,6 +67,7 @@ const ALL_COLUMNS: readonly FileColumn[] = Object.values(FileColumn);
 
 @Component({
   imports: [
+    GridRefreshButton,
     CellText,
     ChipSummary,
     ButtonDirective,
@@ -106,11 +107,13 @@ export class FileGrid {
   readonly sort = input.required<FileSort | null>();
   readonly filter = input.required<FileFilter>();
   readonly canDelete = input(false);
-  /** The company page shows the machine and ingest columns and their row actions; the machine page hides them. */
-  readonly showIngestColumns = input(true);
+  /** The machine page hides the Machine column: all its files belong to one machine. */
+  readonly showMachineColumn = input(true);
   readonly machineOptions = input<readonly MachineOption[]>([]);
   readonly access = input<FileRowAccess>(NO_ROW_ACCESS);
 
+  readonly refreshSecondsLeft = input(0);
+  readonly refreshRequested = output<void>();
   readonly filterChange = output<Partial<FileFilter>>();
   readonly sortChange = output<GridSort<FileSortColumn> | null>();
   readonly pageChange = output<{ offset: number; limit: number }>();
@@ -152,7 +155,7 @@ export class FileGrid {
   );
 
   protected readonly allColumns = computed(() =>
-    ALL_COLUMNS.filter((column) => this.showIngestColumns() || !INGEST_COLUMNS.includes(column)),
+    ALL_COLUMNS.filter((column) => this.showMachineColumn() || column !== FileColumn.Machine),
   );
 
   private readonly _table = viewChild(Table);

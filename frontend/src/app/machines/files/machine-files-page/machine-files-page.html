@@ -33,10 +33,13 @@
   </div>
 </header>
 <hf-file-grid
-  [showIngestColumns]="false"
+  [showMachineColumn]="false"
+  [access]="store.rowAccess()"
   [rows]="page().items"
   [totalCount]="page().totalCount"
   [isLoading]="store.files.isLoading()"
+  [refreshSecondsLeft]="store.refreshSecondsLeft()"
+  (refreshRequested)="store.refresh()"
   [hasLoaded]="store.files.hasValue()"
   [columns]="store.visibleColumns()"
   [offset]="store.offset()"
@@ -52,4 +55,5 @@
   (downloadRequested)="store.download($event)"
   (editRequested)="store.requestEdit($event)"
   (deleteRequested)="store.requestDelete($event)"
+  (rowActionRequested)="store.requestRowAction($event)"
 />

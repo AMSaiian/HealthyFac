@@ -72,7 +72,7 @@ export class EmployeesPage implements OnInit {
       this.invitesStore.activate();
     }
     if (tab === EMPLOYEES_TAB) {
-      this.store.refresh();
+      this.store.reloadRows();
     }
   }
 }

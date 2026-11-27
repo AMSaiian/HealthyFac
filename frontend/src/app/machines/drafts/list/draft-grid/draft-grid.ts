@@ -16,6 +16,7 @@ import { ChipSummary } from '@shared/chips/chip-summary/chip-summary';
 import { labelChipsOf } from '@shared/chips/chip-summary/chip-summary.utils';
 import { CellText } from '@shared/grid/table/cell-text/cell-text';
 import { createGridTable } from '@shared/grid/table/grid-table';
+import { GridRefreshButton } from '@shared/grid/table/grid-refresh-button/grid-refresh-button';
 import { RowMenuPopup } from '@shared/grid/table/row-menu-popup/row-menu-popup';
 import { asList } from '@shared/grid/table/table-filters';
 import { delayedLoading } from '@shared/loading/delayed-loading';
@@ -86,6 +87,7 @@ const WRITERS: Readonly<Record<DraftColumn, (filter: MachineDraftFilter) => unkn
 
 @Component({
   imports: [
+    GridRefreshButton,
     CellText,
     ChipSummary,
     ButtonDirective,
@@ -130,6 +132,8 @@ export class DraftGrid {
   readonly selectedIds = input<readonly string[]>([]);
 
   readonly applyRequested = output<MachineDraftGridItem>();
+  readonly refreshSecondsLeft = input(0);
+  readonly refreshRequested = output<void>();
   readonly filterChange = output<Partial<MachineDraftFilter>>();
   readonly sortChange = output<MachineDraftSort | null>();
   readonly nextPageRequested = output();

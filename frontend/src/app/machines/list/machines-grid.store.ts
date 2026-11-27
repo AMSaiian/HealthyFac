@@ -10,6 +10,7 @@ import { ActionStore } from '@shared/actions/action.store';
 import { type Reloadable, withActionResultReload } from '@shared/actions/with-action-result-reload';
 import { withConfirm } from '@shared/confirm/with-confirm';
 import { withGridState } from '@shared/grid/with-grid-state';
+import { withGridRefresh } from '@shared/grid/with-grid-refresh';
 import { AuthStore } from '@shared/security/auth-store/auth.store';
 import { Permission } from '@shared/security/permissions';
 import { CLOCK } from '@shared/time/clock';
@@ -126,6 +127,9 @@ export const MachinesGridStore = signalStore(
     store.machines.reload();
   }),
   withRealtimeReload<{ machines: Reloadable }>([RealtimeTopic.Machines], (store) => {
+    store.machines.reload();
+  }),
+  withGridRefresh<{ machines: Reloadable }>((store) => {
     store.machines.reload();
   }),
   withStoreDevtools('machines-grid'),

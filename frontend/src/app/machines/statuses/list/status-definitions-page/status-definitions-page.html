@@ -36,6 +36,8 @@
   [rows]="page().items"
   [totalCount]="page().totalCount"
   [isLoading]="store.statuses.isLoading()"
+  [refreshSecondsLeft]="store.refreshSecondsLeft()"
+  (refreshRequested)="store.refresh()"
   [hasLoaded]="store.statuses.hasValue()"
   [columns]="store.visibleColumns()"
   [offset]="store.offset()"

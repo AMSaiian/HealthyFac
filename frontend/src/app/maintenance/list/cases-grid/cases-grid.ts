@@ -17,6 +17,7 @@ import type { GridSort } from '@shared/grid/requests/grid-request';
 import { ColumnChooser } from '@shared/grid/table/column-chooser/column-chooser';
 import { CellText } from '@shared/grid/table/cell-text/cell-text';
 import { createGridTable } from '@shared/grid/table/grid-table';
+import { GridRefreshButton } from '@shared/grid/table/grid-refresh-button/grid-refresh-button';
 import { delayedLoading } from '@shared/loading/delayed-loading';
 import { EmptyState } from '@shared/loading/empty-state/empty-state';
 import {
@@ -55,6 +56,7 @@ import {
 
 @Component({
   imports: [
+    GridRefreshButton,
     CellText,
     ButtonDirective,
     ChipSummary,
@@ -89,6 +91,8 @@ export class CasesGrid {
   readonly machines = input<LookupOption[]>([]);
   readonly isMachinesLoading = input(false);
 
+  readonly refreshSecondsLeft = input(0);
+  readonly refreshRequested = output<void>();
   readonly filterChange = output<Partial<CaseFilter>>();
   readonly sortChange = output<GridSort<CaseSortColumn> | null>();
   readonly pageChange = output<{ offset: number; limit: number }>();

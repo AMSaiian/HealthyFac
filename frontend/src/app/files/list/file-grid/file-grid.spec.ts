@@ -32,6 +32,7 @@ const FILE: FileGridItem = {
 interface GridAccess {
   menuItems(): { label?: string; icon?: string; command?: (event: never) => void }[];
   openMenu(event: Event, file: FileGridItem, menu: Menu): void;
+  allColumns(): FileColumn[];
 }
 
 class FakeResizeObserver {
@@ -40,7 +41,7 @@ class FakeResizeObserver {
   readonly disconnect = vi.fn();
 }
 
-function setup(options: { canDelete?: boolean } = {}): {
+function setup(options: { canDelete?: boolean; showMachineColumn?: boolean } = {}): {
   grid: GridAccess;
   edits: FileGridItem[];
 } {
@@ -55,6 +56,7 @@ function setup(options: { canDelete?: boolean } = {}): {
   fixture.componentRef.setInput('sort', null);
   fixture.componentRef.setInput('filter', EMPTY_FILTER);
   fixture.componentRef.setInput('canDelete', options.canDelete ?? false);
+  fixture.componentRef.setInput('showMachineColumn', options.showMachineColumn ?? true);
   fixture.detectChanges();
   const edits: FileGridItem[] = [];
   fixture.componentInstance.editRequested.subscribe((file) => edits.push(file));
@@ -94,5 +96,18 @@ describe('FileGrid', { tags: ['Files'] }, () => {
     openMenu(grid);
 
     expect(grid.menuItems().map((item) => item.icon)).toEqual(['pi pi-download', 'pi pi-eye', 'pi pi-trash']);
+  });
+
+  it('allColumns_WithoutTheMachineColumn_KeepsTheIngestColumn', () => {
+    const { grid } = setup({ showMachineColumn: false });
+
+    expect(grid.allColumns()).toContain(FileColumn.Ingest);
+    expect(grid.allColumns()).not.toContain(FileColumn.Machine);
+  });
+
+  it('allColumns_ByDefault_HoldsMachineAndIngest', () => {
+    const { grid } = setup();
+
+    expect(grid.allColumns()).toEqual(expect.arrayContaining([FileColumn.Machine, FileColumn.Ingest]));
   });
 });
