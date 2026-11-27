@@ -235,6 +235,7 @@ public sealed class SeederFixture : IAsyncLifetime, IResetBeforeEachTest
                 Set(key: "Gemini:ProjectId", value: "test-project");
                 Set(key: "Gemini:Location", value: "test-location");
                 Set(key: "Gemini:ChatModel", value: "test-chat-model");
+                Set(key: "Gemini:AssistantModel", value: "test-assistant-model");
                 Set(key: "Gemini:TriageModel", value: "test-triage-model");
 
                 break;

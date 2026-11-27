@@ -172,7 +172,7 @@ public static class ConfigureServices
             services.AddScoped<IAgentRunner, TriageRunner>();
 
             services.AddSingleton<IChatModel>(provider => new GeminiChatModel(
-                provider.GetRequiredService<IChatClient>(),
+                provider.GetRequiredKeyedService<IChatClient>(AiClientKeys.Assistant),
                 provider.GetRequiredService<IOptions<GeminiOptions>>(),
                 provider.GetRequiredService<ILogger<GeminiChatModel>>()));
 

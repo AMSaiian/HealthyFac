@@ -30,6 +30,7 @@ public static class InsightsApiTestData
             ["Gemini:ProjectId"] = "test-project",
             ["Gemini:Location"] = "test-location",
             ["Gemini:ChatModel"] = "test-chat-model",
+            ["Gemini:AssistantModel"] = "test-assistant-model",
             ["Gemini:TriageModel"] = "test-triage-model",
             ["Ingest:IsWorkerEnabled"] = bool.FalseString,
             ["IdEncryption:Keys:0:Prefix"] = "v1_",

@@ -103,6 +103,7 @@ public sealed class GeminiStructuredOutputTests
                 ProjectId = "project",
                 Location = "location",
                 ChatModel = Model,
+                AssistantModel = Model,
                 TriageModel = Model,
             });
 

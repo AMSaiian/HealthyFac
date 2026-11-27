@@ -4,7 +4,9 @@ public static class GeminiMessages
 {
     public const string ProjectIdRequired = "Gemini:ProjectId is required.";
     public const string LocationRequired = "Gemini:Location is required.";
+    public const string ApiVersionRequired = "Gemini:ApiVersion is required.";
     public const string ChatModelRequired = "Gemini:ChatModel is required.";
+    public const string AssistantModelRequired = "Gemini:AssistantModel is required.";
     public const string TriageModelRequired = "Gemini:TriageModel is required.";
     public const string EmbeddingModelRequired = "Gemini:EmbeddingModel is required.";
     public const string EmbeddingDimensionsInvalid = "Gemini:EmbeddingDimensions must be above 0.";

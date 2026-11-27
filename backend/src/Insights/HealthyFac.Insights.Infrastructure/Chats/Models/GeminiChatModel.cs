@@ -12,12 +12,12 @@ using Microsoft.Extensions.Options;
 namespace HealthyFac.Insights.Infrastructure.Chats.Models;
 
 /// <summary>
-/// Streams the answer of the main chat model (the default chat client). A provider error before or during the stream
-/// ends the stream with a <see cref="ProviderUnavailableException"/>. The stream is not repeated, because the user
-/// already saw a part of the text. A request that stalls before its first update is sent once more
+/// Streams the answer of the assistant model (the keyed assistant chat client). A provider error before or during the
+/// stream ends the stream with a <see cref="ProviderUnavailableException"/>. The stream is not repeated, because the
+/// user already saw a part of the text. A request that stalls before its first update is sent once more
 /// (<see cref="StallGuardChatClient"/>). The message of the exception holds the status only.
 /// </summary>
-/// <param name="chatClient">The default chat client.</param>
+/// <param name="chatClient">The keyed assistant chat client.</param>
 /// <param name="options">Holds the name of the model and the answer token limit.</param>
 /// <param name="logger">Logs the finish reason, the kinds of the contents, and the tokens of each model call.</param>
 public sealed class GeminiChatModel(
@@ -32,7 +32,7 @@ public sealed class GeminiChatModel(
     private readonly GeminiOptions _options = options.Value;
     private readonly ILogger<GeminiChatModel> _logger = logger;
 
-    public string ModelName => _options.ChatModel;
+    public string ModelName => _options.AssistantModel;
 
     public async IAsyncEnumerable<ChatModelChunk> StreamAsync(
         string systemPrompt,

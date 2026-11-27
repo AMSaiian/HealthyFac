@@ -32,6 +32,7 @@ public sealed class ChatTriageModelTests
                     ProjectId = "project",
                     Location = "location",
                     ChatModel = "chat-model",
+                    AssistantModel = "assistant-model",
                     TriageModel = "triage-model",
                 }),
             new EmbeddedAgentPrompts(),
