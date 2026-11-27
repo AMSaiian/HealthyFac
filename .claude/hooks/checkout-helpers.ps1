@@ -1,10 +1,11 @@
 # checkout-helpers.ps1 - dot-sourced by verify-changed.ps1, record-turn-start.ps1, tree-id.ps1, check-handoff.ps1,
-# check-plan.ps1, commit-cycle.ps1, run-area.ps1, run-tests.ps1, format-changed.ps1, and start-feature.ps1: the one
+# check-plan.ps1, commit-cycle.ps1, run-area.ps1, run-tests.ps1, format-changed.ps1, start-feature.ps1,
+# reviewer-write-scope.ps1, and reviewer-shell-scope.ps1: the one
 # definition of the tree ID and the area paths, the main branch ref, the default base, the feature base, the state paths,
 # the checkout mutex, the run results of run-area.ps1 and run-tests.ps1 (Write-RunResult, Get-RunResults), the Stop hook
 # state after a run (Get-StepChanges, Save-StepState, Write-HookState), and the tool suites (Get-ToolSuites,
 # Invoke-ToolSuites), and the run parts of both run scripts (the test module constants, Get-AreaChangedPaths,
-# Invoke-RunCommand, Invoke-ToolingRun). Git only.
+# Invoke-RunCommand, Invoke-ToolingRun), and the scratch folder of the reviewer (ReviewerScratchFolder). Git only.
 # cleanup-changed.ps1 keeps its own copy of the mutex name (Artur, 2026-11-21: the cleanup stays unchanged); both must
 # build the same name, so the mutex is re-entrant for the hook and the cleanup in one thread.
 
@@ -198,6 +199,10 @@ function Get-SarifDiagnostics(
 # The file patterns of the hook steps (the backend step and the web projects).
 $script:BackendPatterns = @('*.cs', '*.csproj', '*.props', '*.targets')
 $script:WebPatterns = @('*.ts', '*.html', '*.css', '*.json', '*.webmanifest')
+
+# The folder of the checkout (repo-relative, forward slashes) where the reviewer may write scratch files: both reviewer
+# hooks (reviewer-write-scope.ps1, reviewer-shell-scope.ps1) read it. .gitignore ignores artifacts/.
+$script:ReviewerScratchFolder = 'artifacts/claude-review'
 
 # The paths of one step (folder $step/, or backend/) that changed since the last clean run of the step, deleted paths
 # included. See the header for the state tree and the fallback.

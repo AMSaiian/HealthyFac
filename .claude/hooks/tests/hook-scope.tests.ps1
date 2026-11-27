@@ -352,7 +352,11 @@ try {
     @{ Path = (Join-Path $repo 'backend/App/A.cs'); Exit = 2; Name = 'denies a repo file' },
     @{ Path = (Join-Path $repo 'review.md'); Exit = 2; Name = 'denies a review.md inside the repo' },
     @{ Path = (Join-Path $scopeTree 'docs/review.md'); Exit = 2; Name = 'denies a review.md in a new folder of a worktree of the repo' },
-    @{ Path = (Join-Path $featureFolder 'plan.md'); Exit = 2; Name = 'denies plan.md in the feature folder' })
+    @{ Path = (Join-Path $featureFolder 'plan.md'); Exit = 2; Name = 'denies plan.md in the feature folder' },
+    @{ Path = (Join-Path $repo 'artifacts/claude-review/check.ps1'); Exit = 0; Name = 'allows a scratch file in artifacts/claude-review/ of the checkout' },
+    @{ Path = (Join-Path $repo 'artifacts/other.txt'); Exit = 2; Name = 'denies a file in artifacts/ outside claude-review/' },
+    @{ Path = ((Join-Path $repo 'artifacts/claude-review') + '/../x.txt'); Exit = 2; Name = 'denies a path that leaves artifacts/claude-review/ with ..' },
+    @{ Path = ((Join-Path $repo 'artifacts/claude-review/check.ps1') -replace '/', '\').ToUpperInvariant(); Exit = 0; Name = 'allows the scratch folder with backslashes and another letter case' })
   foreach ($case in $writeCases) {
     $result = Invoke-Hook $repo 's1' $HooksDir 'reviewer-write-scope.ps1' -fields @{
       hook_event_name = 'PreToolUse'; tool_name = 'Write'; tool_input = @{ file_path = $case.Path; content = 'x' } }
@@ -363,6 +367,9 @@ try {
   Assert-That ($result.ExitCode -eq 2) 'The reviewer write hook denies a notebook in the repo'
   $result = Invoke-Hook $repo 's1' $HooksDir 'reviewer-write-scope.ps1' -fields @{ hook_event_name = 'PreToolUse'; tool_name = 'Write' }
   Assert-That ($result.ExitCode -eq 2) 'The reviewer write hook denies a call without a file'
+  $realRoot = Split-Path (Split-Path $HooksDir -Parent) -Parent
+  git -C $realRoot check-ignore -q artifacts/claude-review/x.ps1
+  Assert-That ($LASTEXITCODE -eq 0) 'The repository ignores artifacts/claude-review/'
 
   }
 
@@ -374,6 +381,24 @@ try {
     @('a >> redirect', 'echo x >> notes.txt'),
     @('a >& redirect to a file', 'echo x >&out.txt'),
     @('a > redirect to a file', 'echo x > out.txt'),
+    @('a redirect to artifacts/ outside claude-review/', 'echo x > artifacts/x.txt'),
+    @('a > redirect into the scratch folder', 'git diff > artifacts/claude-review/diff.txt'),
+    @('a >> redirect into the scratch folder with ./', 'git log >> ./artifacts/claude-review/log.txt'),
+    @('a quoted > redirect into the scratch folder', 'git diff > "artifacts/claude-review/d d.txt"'),
+    @('a write command word after a backtick (touch)', 'echo `touch b.txt`'),
+    @('a write command word after a backtick (rm)', 'echo `rm -rf backend`'),
+    @('Set-Content in the scratch folder', 'Set-Content artifacts/claude-review/a.txt x'),
+    @('rm in the scratch folder', 'rm artifacts/claude-review/a.txt'),
+    @('a command after the scratch path with ;', 'echo x > artifacts/claude-review/a;rm -rf backend'),
+    @('a command after the scratch path with &&', 'echo x > artifacts/claude-review/a&&touch b.txt'),
+    @('a pipe after the scratch path', 'echo x > artifacts/claude-review/a|tee b.txt'),
+    @('cp after the scratch path', 'echo x > artifacts/claude-review/a;cp a b'),
+    @('a $(rm) substitution in a quoted scratch path', 'echo x > "artifacts/claude-review/$(rm -rf backend)"'),
+    @('a $(Remove-Item) substitution in a quoted scratch path', 'echo x > "artifacts/claude-review/$(Remove-Item backend -Recurse)"'),
+    @('a backtick substitution in a quoted scratch path', 'echo x > "artifacts/claude-review/`touch b.txt`"'),
+    @('a backtick substitution in an unquoted scratch path', 'echo x > artifacts/claude-review/`touch b.txt`'),
+    @('a wildcard in a scratch path', 'echo x > artifacts/claude-review/a*'),
+    @('a second redirect after the scratch path', 'echo x >artifacts/claude-review/a>b.txt'),
     @('a redirect in a pwsh -Command program', "pwsh -NoProfile -Command `"'x' > a.txt`""),
     @('a redirect in a bash -c program', 'bash -c "echo x > a"'),
     @('a .write( call', "python -c `"open('a','w').write('b')`""),
@@ -400,6 +425,7 @@ try {
     @('a search of the text rm', 'grep -rn "rm" .claude'),
     @('a > inside an awk program', "awk '{ if (length > 120) print }' a.txt"),
     @('a > inside a git format', "git log -1 --format='%an <%ae>'"),
+    @('a script run from the scratch folder', 'pwsh -NoProfile -File artifacts/claude-review/check.ps1'),
     @('a git format in a pwsh -Command program', "pwsh -NoProfile -Command `"git log -1 --format='%an <%ae>'`""),
     @('a stream merge in a pwsh -Command program', 'pwsh -NoProfile -Command "Get-Content a.txt 2>&1"'))
   foreach ($case in $shellAllowed) {
