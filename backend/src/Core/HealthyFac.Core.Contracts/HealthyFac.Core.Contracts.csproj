@@ -11,6 +11,7 @@
         <Protobuf Include="WorkOrders/core_work_orders.proto" GrpcServices="Both" />
         <Protobuf Include="Employees/core_employees.proto" GrpcServices="Both" />
         <Protobuf Include="Schedules/core_schedules.proto" GrpcServices="Both" />
+        <Protobuf Include="Companies/core_companies.proto" GrpcServices="Both" />
     </ItemGroup>
 
     <PropertyGroup>

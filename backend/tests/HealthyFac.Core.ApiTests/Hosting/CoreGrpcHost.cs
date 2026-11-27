@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Sockets;
 using Grpc.Core;
 using Grpc.Net.Client;
+using HealthyFac.Core.Contracts.Companies;
 using HealthyFac.Core.Contracts.Employees;
 using HealthyFac.Core.Contracts.Machines;
 using HealthyFac.Core.Contracts.Schedules;
@@ -26,7 +27,7 @@ public sealed class CoreGrpcHost : IAsyncDisposable
     {
         var apiPort = FreePort();
         var grpcPort = FreePort();
-        var hostSettings = new Dictionary<string, string?>(settings) { [key: "Grpc:Port"] = grpcPort.ToString() };
+        var hostSettings = new Dictionary<string, string?>(settings) { ["Grpc:Port"] = grpcPort.ToString() };
 
         _factory = new CoreApiFactory(
             hostSettings,
@@ -36,6 +37,7 @@ public sealed class CoreGrpcHost : IAsyncDisposable
                 options.Listen(IPAddress.Loopback, apiPort);
                 options.Listen(IPAddress.Loopback, grpcPort);
             }));
+
         _factory.UseKestrel();
         _factory.StartServer();
 
@@ -44,6 +46,7 @@ public sealed class CoreGrpcHost : IAsyncDisposable
         WorkOrders = new CoreWorkOrders.CoreWorkOrdersClient(_channel);
         Employees = new CoreEmployees.CoreEmployeesClient(_channel);
         Schedules = new CoreSchedules.CoreSchedulesClient(_channel);
+        Companies = new CoreCompanies.CoreCompaniesClient(_channel);
     }
 
     public CoreMachines.CoreMachinesClient Machines { get; }
@@ -53,6 +56,8 @@ public sealed class CoreGrpcHost : IAsyncDisposable
     public CoreEmployees.CoreEmployeesClient Employees { get; }
 
     public CoreSchedules.CoreSchedulesClient Schedules { get; }
+
+    public CoreCompanies.CoreCompaniesClient Companies { get; }
 
     public async ValueTask DisposeAsync()
     {

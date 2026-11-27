@@ -12,6 +12,7 @@ namespace HealthyFac.Insights.IntegrationTests.MetricUnits;
 
 [Collection(InsightsCollection.Name)]
 [Feature(TestFeatures.SignalModel)]
+[Feature(TestFeatures.Platform)]
 public sealed class MetricUnitCacheTests(InsightsFixture fixture)
 {
     private const string CatalogKey = "insights:metric-units";

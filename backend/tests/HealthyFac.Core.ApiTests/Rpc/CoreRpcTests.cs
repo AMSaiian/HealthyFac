@@ -5,15 +5,23 @@ using HealthyFac.Core.ApiTests.Machines.Data;
 using HealthyFac.Core.ApiTests.Rpc.Data;
 using HealthyFac.Core.ApiTests.Shifts.Data;
 using HealthyFac.Core.ApiTests.WorkOrders.Data;
+using HealthyFac.Core.Contracts.Companies;
 using HealthyFac.Core.Contracts.Employees;
 using HealthyFac.Core.Contracts.Machines;
 using HealthyFac.Core.Contracts.Schedules;
 using HealthyFac.Core.Contracts.WorkOrders;
 using HealthyFac.Testing.Authentication;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.ApiTests.Rpc;
 
 [Collection(CoreApiCollection.Name)]
+[Feature(TestFeatures.Chat)]
+[Feature(TestFeatures.Platform)]
+[Feature(TestFeatures.Companies)]
+[Feature(TestFeatures.Machines)]
+[Feature(TestFeatures.Shifts)]
+[Feature(TestFeatures.WorkOrders)]
 public sealed class CoreRpcTests(CoreApiFixture fixture) : IAsyncLifetime
 {
     private readonly CoreApiFixture _fixture = fixture;
@@ -27,6 +35,31 @@ public sealed class CoreRpcTests(CoreApiFixture fixture) : IAsyncLifetime
     }
 
     public ValueTask DisposeAsync() => _host.DisposeAsync();
+
+    [Fact]
+    public async Task GetCurrentCompany_WithAUserToken_ReturnsTheNameAndTheTimeZone()
+    {
+        var reply = await _host.Companies.GetCurrentCompanyAsync(
+            new GetCurrentCompanyRequest(),
+            SupervisorHeaders(),
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        reply.Name.Should().Be(CoreApiTestData.CompanyName);
+        reply.TimeZoneId.Should().Be(CoreApiTestData.CompanyTimeZoneId);
+    }
+
+    [Fact]
+    public async Task GetCurrentCompany_WithTheServiceTokenAndActorHeaders_ReturnsTheTimeZone()
+    {
+        var token = _fixture.Tokens.CreateServiceToken(new TestServiceTokenClaims { Permissions = [] });
+
+        var reply = await _host.Companies.GetCurrentCompanyAsync(
+            new GetCurrentCompanyRequest(),
+            CoreGrpcHost.BearerHeaders(token, Guid.CreateVersion7(), _fixture.CompanyId),
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        reply.TimeZoneId.Should().Be(CoreApiTestData.CompanyTimeZoneId);
+    }
 
     [Fact]
     public async Task SearchMachines_WithANamePrefixAndAState_ReturnsTheMatchingMachinesOfTheCompany()
@@ -113,6 +146,7 @@ public sealed class CoreRpcTests(CoreApiFixture fixture) : IAsyncLifetime
         (reply.BeforeCreationSeconds + reply.States.Sum(state => state.Seconds))
             .Should()
             .BeApproximately(CoreRpcTestData.StateRangeSeconds, precision: 1);
+
         reply.States.Should().Contain(state => state.State == CoreRpcTestData.OperationalState);
     }
 
@@ -164,6 +198,7 @@ public sealed class CoreRpcTests(CoreApiFixture fixture) : IAsyncLifetime
             new SearchWorkOrdersRequest { Limit = CoreRpcTestData.PageLimit },
             SupervisorHeaders(),
             cancellationToken: TestContext.Current.CancellationToken);
+
         var workerReply = await _host.WorkOrders.SearchWorkOrdersAsync(
             new SearchWorkOrdersRequest { Limit = CoreRpcTestData.PageLimit },
             WorkerHeaders(arrangement.Worker.IdentityUserId),
@@ -172,6 +207,7 @@ public sealed class CoreRpcTests(CoreApiFixture fixture) : IAsyncLifetime
         supervisorReply.WorkOrders.Select(order => order.Title)
             .Should()
             .BeEquivalentTo(CoreRpcTestData.OwnOrderTitle, CoreRpcTestData.BacklogOrderTitle);
+
         workerReply.WorkOrders.Select(order => order.Title).Should().Equal(CoreRpcTestData.OwnOrderTitle);
         workerReply.WorkOrders.Single().AssigneeId.Should().Be(arrangement.Worker.EmployeeId.ToString());
         workerReply.WorkOrders.Single().PlannedEnd.Should().NotBeNull();
@@ -216,6 +252,7 @@ public sealed class CoreRpcTests(CoreApiFixture fixture) : IAsyncLifetime
         SearchWorkOrders_WithAServiceTokenAndTheCompanyReadPermission_ReturnsEveryWorkOrderOfTheActorCompany()
     {
         await ArrangeOrdersAsync();
+
         var token = _fixture.Tokens.CreateServiceToken(
             new TestServiceTokenClaims
             {
@@ -413,7 +450,7 @@ public sealed class CoreRpcTests(CoreApiFixture fixture) : IAsyncLifetime
             cancellationToken: TestContext.Current.CancellationToken);
 
         reply.Blocks.Should().HaveCount(CoreRpcTestData.BlockCount);
-        reply.Blocks.First().StartLocal.Should().Be(expected: "08:00");
+        reply.Blocks[0].StartLocal.Should().Be(expected: "08:00");
     }
 
     [Fact]
@@ -509,7 +546,7 @@ public sealed class CoreRpcTests(CoreApiFixture fixture) : IAsyncLifetime
             cancellationToken: TestContext.Current.CancellationToken);
 
         reply.Spans.Should().HaveCount(CoreRpcTestData.BlockCount);
-        reply.Spans.First().StartLocal.Should().EndWith(expected: "08:00");
+        reply.Spans[0].StartLocal.Should().EndWith(expected: "08:00");
     }
 
     private async Task<OrderArrangement> ArrangeOrdersAsync()
@@ -517,12 +554,14 @@ public sealed class CoreRpcTests(CoreApiFixture fixture) : IAsyncLifetime
         var worker = await _fixture.ArrangeActiveEmployeeAsync(ShiftApiTestData.WorkerEmail);
         await _fixture.SeedWorkWeekAsync(worker.EmployeeId);
         var supervisor = _fixture.CreateSupervisorOrderClaims(Guid.CreateVersion7());
+
         var ownId = await _fixture.CreateOrderAsync(
             supervisor,
             _fixture.CreateOrderBody(
                 CoreRpcTestData.OwnOrderTitle,
                 encryptedAssigneeId: worker.EncryptedId,
                 plannedStartLocal: _fixture.FutureStart(WorkOrderApiTestData.StartTime)));
+
         var backlogId = await _fixture.CreateOrderAsync(
             supervisor,
             _fixture.CreateOrderBody(CoreRpcTestData.BacklogOrderTitle));

@@ -13,7 +13,10 @@ public static class ToolTestData
 {
     public static TheoryData<string, AgentRole, string[]> ToolsOfRole => new()
     {
-        { "planner", AgentRole.Planner, [PlannerToolName, RejectedToolName, FailedToolName, EpisodeToolName] },
+        {
+            "planner", AgentRole.Planner,
+            [PlannerToolName, RejectedToolName, FailedToolName, EpisodeToolName, TimeToolName]
+        },
         { "extractor", AgentRole.Extractor, [ExtractorToolName] },
     };
 
@@ -22,6 +25,7 @@ public static class ToolTestData
     public const string RejectedToolName = "always_rejected";
     public const string FailedToolName = "always_failed";
     public const string EpisodeToolName = "echo_episode";
+    public const string TimeToolName = "echo_time";
     public const string ChatEmployeesToolName = "search_employees";
     public const string ChatMachinesToolName = "search_machines";
     public const string ChatNoAnswerToolName = "report_no_answer";
@@ -33,7 +37,7 @@ public static class ToolTestData
     [
         typeof(EchoRequest), typeof(ExtractRequest), typeof(RejectedRequest), typeof(FailedRequest),
         typeof(EpisodeRequest), typeof(ChatEmployeesRequest), typeof(ChatMachinesRequest),
-        typeof(ChatNoAnswerRequest), typeof(OutageRequest),
+        typeof(ChatNoAnswerRequest), typeof(OutageRequest), typeof(TimeRequest),
     ];
 
     public static readonly string[] AllChatToolNames =
@@ -123,6 +127,28 @@ public sealed record EpisodeRequest : IAgentToolRequest<EpisodeRequest, EpisodeA
         new() { EpisodeId = arguments.EpisodeId, OtherEpisodeIds = arguments.OtherEpisodeIds };
 }
 
+public sealed record TimeArguments(DateTime From, DateTime? To);
+
+public sealed record TimeResponse(DateTime From);
+
+[AgentTool(role: "planner", ToolTestData.TimeToolName, Description = "Echoes the time.")]
+[LocalTool]
+public sealed record TimeRequest : IAgentToolRequest<TimeRequest, TimeArguments, TimeResponse>
+{
+    public required DateTime From { get; init; }
+
+    public static TimeRequest Create(TimeArguments arguments, ToolContext context) => new() { From = arguments.From };
+}
+
+public sealed class TimeHandler : IRequestHandler<TimeRequest, TimeResponse>
+{
+    public Task<TimeResponse> HandleAsync(
+        TimeRequest request,
+        CancellationToken cancellationToken = default(CancellationToken)
+    ) =>
+        Task.FromResult(new TimeResponse(request.From));
+}
+
 public sealed class EpisodeHandler : IRequestHandler<EpisodeRequest, EpisodeResponse>
 {
     public static readonly List<Guid> Received = [];
@@ -146,6 +172,7 @@ public sealed class TestAdvisorScopes : IAdvisorScopes
         .AddSingleton<IRequestHandler<RejectedRequest, EchoResponse>, RejectedHandler>()
         .AddSingleton<IRequestHandler<FailedRequest, EchoResponse>, FailedHandler>()
         .AddSingleton<IRequestHandler<EpisodeRequest, EpisodeResponse>, EpisodeHandler>()
+        .AddSingleton<IRequestHandler<TimeRequest, TimeResponse>, TimeHandler>()
         .AddSingleton<IRequestHandler<OutageRequest, EchoResponse>, OutageHandler>()
         .BuildServiceProvider();
 
@@ -171,6 +198,7 @@ public sealed class ChatEmployeesHandler : IRequestHandler<ChatEmployeesRequest,
     )
     {
         Calls++;
+
         if (Failure is not null)
         {
             throw Failure;

@@ -1,14 +1,15 @@
 using FluentValidation;
 
-namespace HealthyFac.Insights.Infrastructure.MetricUnits;
+namespace HealthyFac.Insights.Infrastructure.Caching;
 
-public sealed class MetricUnitCacheOptions
+/// <summary>
+/// The limits of one Redis fetch cache. It is a child section of <see cref="InsightsCacheOptions"/>.
+/// </summary>
+public sealed class RedisFetchCacheOptions
 {
-    public const string SectionName = "MetricUnitCache";
-
     private const int MillisecondsPerSecond = 1000;
 
-    /// <summary>The time to live of the cached catalog in seconds, before the jitter.</summary>
+    /// <summary>The time to live of an entry in seconds, before the jitter.</summary>
     public int TimeToLiveSeconds { get; init; } = 86400;
 
     /// <summary>The longest random time in seconds that is added to the time to live of each entry.</summary>
@@ -27,28 +28,28 @@ public sealed class MetricUnitCacheOptions
     internal bool IsPollBelowLock => PollMilliseconds < LockSeconds * MillisecondsPerSecond;
 }
 
-public sealed class MetricUnitCacheOptionsValidator : AbstractValidator<MetricUnitCacheOptions>
+public sealed class RedisFetchCacheOptionsValidator : AbstractValidator<RedisFetchCacheOptions>
 {
-    public MetricUnitCacheOptionsValidator()
+    public RedisFetchCacheOptionsValidator()
     {
         RuleFor(options => options.TimeToLiveSeconds)
             .GreaterThan(valueToCompare: 0)
-            .WithMessage(MetricUnitCacheMessages.TimeToLiveInvalid);
+            .WithMessage(CacheMessages.TimeToLiveInvalid);
 
         RuleFor(options => options.JitterSeconds)
             .GreaterThanOrEqualTo(valueToCompare: 0)
-            .WithMessage(MetricUnitCacheMessages.JitterInvalid);
+            .WithMessage(CacheMessages.JitterInvalid);
 
         RuleFor(options => options.LockSeconds)
             .GreaterThan(valueToCompare: 0)
-            .WithMessage(MetricUnitCacheMessages.LockInvalid);
+            .WithMessage(CacheMessages.LockInvalid);
 
         RuleFor(options => options.PollMilliseconds)
             .GreaterThan(valueToCompare: 0)
-            .WithMessage(MetricUnitCacheMessages.PollInvalid);
+            .WithMessage(CacheMessages.PollInvalid);
 
         RuleFor(options => options)
             .Must(options => options.IsPollBelowLock)
-            .WithMessage(MetricUnitCacheMessages.PollAboveLock);
+            .WithMessage(CacheMessages.PollAboveLock);
     }
 }

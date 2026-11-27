@@ -21,6 +21,7 @@ const ACTIVITY_KEYS: Readonly<Record<ChatActivity, string>> = {
   [ChatActivity.Manuals]: 'CHAT.ACTIVITY.MANUALS',
   [ChatActivity.Files]: 'CHAT.ACTIVITY.FILES',
   [ChatActivity.Drafts]: 'CHAT.ACTIVITY.DRAFTS',
+  [ChatActivity.General]: 'CHAT.ACTIVITY.GENERAL',
 };
 
 const KIND_KEYS: Readonly<Record<ChatMessageKind, string | null>> = {

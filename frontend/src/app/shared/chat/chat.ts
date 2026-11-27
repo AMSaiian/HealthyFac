@@ -51,6 +51,7 @@ export enum ChatActivity {
   Manuals = 'manuals',
   Files = 'files',
   Drafts = 'drafts',
+  General = 'general',
 }
 
 export enum ChatErrorCode {

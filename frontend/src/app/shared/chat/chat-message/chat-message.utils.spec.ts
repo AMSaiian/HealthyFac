@@ -8,7 +8,7 @@ import {
 } from '@shared/chat/chat';
 import { activityKey, chatDraftJumpOf, isClamped, messageNoteKey } from '@shared/chat/chat-message/chat-message.utils';
 
-describe('chat-message.utils', () => {
+describe('chat-message.utils', { tags: ['Chat'] }, () => {
   it('isClamped_WithMoreContentThanBox_ReturnsTrue', () => {
     expect(isClamped(73, 72)).toBe(true);
   });
@@ -19,6 +19,10 @@ describe('chat-message.utils', () => {
 
   it('activityKey_WithNoActivity_ReturnsNull', () => {
     expect(activityKey(null)).toBeNull();
+  });
+
+  it('activityKey_WithGeneral_ReturnsItsKey', () => {
+    expect(activityKey(ChatActivity.General)).toBe('CHAT.ACTIVITY.GENERAL');
   });
 
   it('activityKey_WithWorkOrders_ReturnsItsKey', () => {

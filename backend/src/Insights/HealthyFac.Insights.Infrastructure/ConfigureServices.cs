@@ -22,6 +22,7 @@ using HealthyFac.Insights.Infrastructure.Agents.Prompts;
 using HealthyFac.Insights.Infrastructure.Agents.Runs;
 using HealthyFac.Insights.Infrastructure.Agents.Tools;
 using HealthyFac.Insights.Infrastructure.Ai;
+using HealthyFac.Insights.Infrastructure.Caching;
 using HealthyFac.Insights.Infrastructure.Chats.Models;
 using HealthyFac.Insights.Infrastructure.Chats.Reads;
 using HealthyFac.Insights.Infrastructure.Conversion;
@@ -138,8 +139,10 @@ public static class ConfigureServices
 
             services.AddValidatedOptions<AgentOptions, AgentOptionsValidator>(
                 AgentOptions.SectionName, configuration);
+
             services.AddValidatedOptions<ChatTurnOptions, ChatTurnOptionsValidator>(
                 ChatTurnOptions.SectionName, configuration);
+
             services.AddValidatedOptions<ScreeningOptions, ScreeningOptionsValidator>(
                 ScreeningOptions.SectionName, configuration);
 
@@ -157,6 +160,9 @@ public static class ConfigureServices
             services.AddScoped<IAgentRunLease, AgentRunLease>();
             services.AddSingleton<IAdvisorScopes, AdvisorScopes>();
             services.AddScoped<IChatReads, GrpcChatReads>();
+            services.AddInsightsCaches(configuration);
+            services.AddScoped<GrpcCompanyTimeZoneReader>();
+            services.AddScoped<ICompanyTimeZoneReader, RedisCompanyTimeZoneReader>();
             services.AddSingleton<IAgentPrompts, EmbeddedAgentPrompts>();
 
             services.AddSingleton<ITriageModel>(provider => new GeminiTriageModel(
@@ -164,20 +170,24 @@ public static class ConfigureServices
                 provider.GetRequiredService<IOptions<GeminiOptions>>()));
 
             services.AddScoped<IAgentRunner, TriageRunner>();
+
             services.AddSingleton<IChatModel>(provider => new GeminiChatModel(
                 provider.GetRequiredService<IChatClient>(),
                 provider.GetRequiredService<IOptions<GeminiOptions>>(),
                 provider.GetRequiredService<ILogger<GeminiChatModel>>()));
+
             services.AddSingleton<IChatTriageModel>(provider => new GeminiChatTriageModel(
                 provider.GetRequiredKeyedService<IChatClient>(AiClientKeys.Triage),
                 provider.GetRequiredService<IOptions<GeminiOptions>>(),
                 provider.GetRequiredService<IAgentPrompts>(),
                 provider.GetRequiredService<IAgentProviderCalls>()));
+
             services.AddSingleton<IChatSummaryModel>(provider => new GeminiChatSummaryModel(
                 provider.GetRequiredKeyedService<IChatClient>(AiClientKeys.Triage),
                 provider.GetRequiredService<IOptions<GeminiOptions>>(),
                 provider.GetRequiredService<IAgentPrompts>(),
                 provider.GetRequiredService<IAgentProviderCalls>()));
+
             services.AddSingleton<IAgentJson, AgentJson>();
             services.AddSingleton<IToolCallIds, FunctionToolCallIds>();
             services.AddSingleton<IPlannerModel, AgentPlannerModel>();

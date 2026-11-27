@@ -15,7 +15,7 @@ public sealed class EmbeddedAgentPrompts : IAgentPrompts
 {
     public const string TriageVersion = "triage-v1";
     public const string TriageResourceName = "HealthyFac.Insights.Infrastructure.Agents.Prompts.TriageSystemPrompt.md";
-    public const string ChatTriageVersion = "chat-triage-v1";
+    public const string ChatTriageVersion = "chat-triage-v2";
 
     public const string ChatTriageResourceName =
         "HealthyFac.Insights.Infrastructure.Agents.Prompts.ChatTriageSystemPrompt.md";
@@ -25,7 +25,7 @@ public sealed class EmbeddedAgentPrompts : IAgentPrompts
     public const string ChatSummaryResourceName =
         "HealthyFac.Insights.Infrastructure.Agents.Prompts.ChatSummarySystemPrompt.md";
 
-    public const string ChatVersion = "chat-v5";
+    public const string ChatVersion = "chat-v7";
     public const string ChatResourceName = "HealthyFac.Insights.Infrastructure.Agents.Prompts.ChatSystemPrompt.md";
     public const string PlannerVersion = "planner-v4";
     public const string ScreenerVersion = "screener-v1";

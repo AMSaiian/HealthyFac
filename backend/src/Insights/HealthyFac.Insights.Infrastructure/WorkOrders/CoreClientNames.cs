@@ -20,6 +20,7 @@ public static class CoreClientNames
         public const string WorkOrders = "core-user-work-orders";
         public const string Employees = "core-user-employees";
         public const string Schedules = "core-user-schedules";
+        public const string Companies = "core-user-companies";
     }
 
     /// <summary>The identity of the exchanged user token.</summary>

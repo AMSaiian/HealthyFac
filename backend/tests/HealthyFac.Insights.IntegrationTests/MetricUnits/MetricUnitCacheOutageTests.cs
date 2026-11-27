@@ -1,5 +1,5 @@
 using HealthyFac.Insights.Application.MetricUnits;
-using HealthyFac.Insights.Infrastructure.MetricUnits;
+using HealthyFac.Insights.Infrastructure.Caching;
 using HealthyFac.Insights.IntegrationTests.Database.Data;
 using HealthyFac.Insights.IntegrationTests.MetricUnits.Data;
 using HealthyFac.Testing.Features;
@@ -9,6 +9,7 @@ namespace HealthyFac.Insights.IntegrationTests.MetricUnits;
 
 [Collection(MetricUnitOutageCollection.Name)]
 [Feature(TestFeatures.SignalModel)]
+[Feature(TestFeatures.Platform)]
 public sealed class MetricUnitCacheOutageTests(InsightsFixture fixture)
 {
     private readonly InsightsFixture _fixture = fixture;
@@ -22,7 +23,7 @@ public sealed class MetricUnitCacheOutageTests(InsightsFixture fixture)
 
         var warnings = _fixture.Logs.Entries
             .Where(entry => entry.Level == LogLevel.Warning
-                && entry.Category == typeof(RedisMetricUnitCatalog).FullName)
+                && entry.Category == typeof(RedisFetchCache).FullName)
             .ToList();
 
         units.Should().BeEquivalentTo(FakeMetricUnitSource.Units);

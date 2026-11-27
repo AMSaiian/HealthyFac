@@ -1,4 +1,5 @@
 using Grpc.Net.ClientFactory;
+using HealthyFac.Core.Contracts.Companies;
 using HealthyFac.Core.Contracts.Employees;
 using HealthyFac.Core.Contracts.Machines;
 using HealthyFac.Core.Contracts.Schedules;
@@ -22,8 +23,8 @@ public static class CoreClientExtensions
     {
         /// <summary>
         /// Registers the validated Core client options, the gRPC work order client with retries, the service token and
-        /// the actor headers, the user clients (machines, work orders, employees, and schedules, with the exchanged
-        /// token of the user and no actor headers), and the work order reader. The service must call
+        /// the actor headers, the user clients (machines, work orders, employees, schedules, and companies, with the
+        /// exchanged token of the user and no actor headers), and the work order reader. The service must call
         /// <c>AddServiceTokens</c>, and the host must register the incoming token accessor.
         /// </summary>
         /// <param name="configuration">The application <see cref="IConfiguration"/> instance.</param>
@@ -44,6 +45,7 @@ public static class CoreClientExtensions
             AddUserClient<CoreWorkOrders.CoreWorkOrdersClient>(services, CoreClientNames.User.WorkOrders);
             AddUserClient<CoreEmployees.CoreEmployeesClient>(services, CoreClientNames.User.Employees);
             AddUserClient<CoreSchedules.CoreSchedulesClient>(services, CoreClientNames.User.Schedules);
+            AddUserClient<CoreCompanies.CoreCompaniesClient>(services, CoreClientNames.User.Companies);
 
             services.AddScoped<IWorkOrderCatalog, CoreWorkOrderCatalog>();
 

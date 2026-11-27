@@ -1549,7 +1549,8 @@
       "SCHEDULE": "Reading the schedule…",
       "MANUALS": "Reading manuals…",
       "FILES": "Reading files…",
-      "DRAFTS": "Preparing drafts…"
+      "DRAFTS": "Preparing drafts…",
+      "GENERAL": "Working…"
     },
     "COMPOSER": {
       "PLACEHOLDER": "Ask about your machines",

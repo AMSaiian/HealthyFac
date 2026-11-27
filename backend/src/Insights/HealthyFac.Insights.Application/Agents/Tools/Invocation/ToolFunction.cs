@@ -58,15 +58,17 @@ internal sealed class ToolFunction<TRequest, TArguments, TResponse> : AIFunction
         _scopes = scopes;
         _context = context;
         _logger = logger;
+
         AdditionalProperties = new Dictionary<string, object?>
         {
             [AgentToolAttribute.ActivityProperty] = tool.Activity,
         };
+
         _schema = AIJsonUtilities.CreateJsonSchema(
             typeof(TArguments),
             _tool.Description,
             serializerOptions: _json,
-            inferenceOptions: new AIJsonSchemaCreateOptions { TransformSchemaNode = HideGuidFormat });
+            inferenceOptions: new AIJsonSchemaCreateOptions { TransformSchemaNode = SetConverterValueSchemas });
     }
 
     public override string Name => _tool.Name;
@@ -161,14 +163,44 @@ internal sealed class ToolFunction<TRequest, TArguments, TResponse> : AIFunction
         return ToolDataBlocks.Wrap(result);
     }
 
-    private static JsonNode HideGuidFormat(AIJsonSchemaCreateContext context, JsonNode node)
+    /// <summary>
+    /// Gives the arguments of the types that a custom converter writes (<see cref="DateTime"/> and
+    /// <see cref="Guid"/>, also nullable) their own schema: a <c>string</c>, with the <c>date-time</c> format for a
+    /// time. The schema exporter returns a <c>true</c> schema (no type) for a type with a custom converter, and the
+    /// model needs the type. An ID needs no <c>uuid</c> format, because the ID is encrypted text.
+    /// </summary>
+    /// <param name="context">The context of the schema node.</param>
+    /// <param name="node">The schema that the exporter built.</param>
+    /// <returns>The schema of the value, or <paramref name="node"/> for any other type.</returns>
+    private static JsonNode SetConverterValueSchemas(AIJsonSchemaCreateContext context, JsonNode node)
     {
-        if (node is JsonObject schema && schema["format"]?.GetValue<string>() == "uuid")
+        var type = context.TypeInfo.Type;
+        var isTime = type == typeof(DateTime) || type == typeof(DateTime?);
+        var isId = type == typeof(Guid) || type == typeof(Guid?);
+
+        if (!isTime && !isId)
         {
-            schema.Remove(propertyName: "format");
+            return node;
         }
 
-        return node;
+        var valueSchema = new JsonObject
+        {
+            ["type"] = Nullable.GetUnderlyingType(type) is not null
+                ? new JsonArray("string", "null")
+                : JsonValue.Create(value: "string"),
+        };
+
+        if (isTime)
+        {
+            valueSchema["format"] = "date-time";
+        }
+
+        if (node is JsonObject { } original && original["description"] is { } description)
+        {
+            valueSchema["description"] = description.DeepClone();
+        }
+
+        return valueSchema;
     }
 
     private void LogFailure(Exception exception) =>

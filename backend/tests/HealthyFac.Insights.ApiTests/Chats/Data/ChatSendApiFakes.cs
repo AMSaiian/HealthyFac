@@ -24,10 +24,18 @@ public sealed class ChatSendApiFakes
     {
         services.RemoveAll<IChatTriageModel>();
         services.RemoveAll<IChatModel>();
+        services.RemoveAll<ICompanyTimeZoneReader>();
         services.RemoveAll<IBackgroundQueue<RealtimePush>>();
         services.AddSingleton<IChatTriageModel>(new InScopeTriage());
         services.AddSingleton<IChatModel>(Model);
+        services.AddSingleton<ICompanyTimeZoneReader>(new KyivTimeZoneReader());
         services.AddSingleton<IBackgroundQueue<RealtimePush>>(Queue);
+    }
+
+    private sealed class KyivTimeZoneReader : ICompanyTimeZoneReader
+    {
+        public Task<string> ReadTimeZoneIdAsync(CancellationToken cancellationToken) =>
+            Task.FromResult(result: "Europe/Kyiv");
     }
 
     private sealed class InScopeTriage : IChatTriageModel
@@ -72,6 +80,7 @@ public sealed class BlockingChatModel : IChatModel
     )
     {
         yield return new ChatModelChunk { Text = IsBlocking ? ChatSendApiFakes.PartialText : ChatApiTestData.Answer };
+
         if (IsBlocking)
         {
             _started.TrySetResult();

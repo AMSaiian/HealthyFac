@@ -30,6 +30,7 @@ public sealed class ChatTurnFakes
         services.AddSingleton<IChatTriageModel>(Triage);
         services.AddSingleton<IChatModel>(Model);
         services.AddSingleton<IChatReads>(Reads);
+        services.AddSingleton<ICompanyTimeZoneReader>(new FakeCompanyTimeZoneReader());
         services.AddSingleton<IIncomingAccessTokenAccessor>(Owner);
         services.AddSingleton(Permissions);
         services.AddSingleton<IMetricUnitCatalog>(new FakeMetricUnitCatalog());
@@ -71,7 +72,7 @@ public sealed class ScriptedChatModel : IChatModel
 {
     private const int StartTimeoutSeconds = 10;
 
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
 
     private TaskCompletionSource _allStarted = NewSource();
     private int _startedCount;
@@ -128,6 +129,7 @@ public sealed class ScriptedChatModel : IChatModel
         {
             CallCount++;
             _startedCount++;
+
             if (_startedCount >= ConcurrentStreamCount)
             {
                 _allStarted.TrySetResult();
@@ -140,12 +142,13 @@ public sealed class ScriptedChatModel : IChatModel
         {
             var function = tools.Functions.Single(candidate => candidate.Name == ToolName);
 
-            await function.InvokeAsync(new Microsoft.Extensions.AI.AIFunctionArguments(), cancellationToken);
+            await function.InvokeAsync([], cancellationToken);
         }
 
         foreach (var (name, argumentsJson) in ToolCalls)
         {
             var scripted = tools.Functions.Single(candidate => candidate.Name == name);
+
             var arguments = new Microsoft.Extensions.AI.AIFunctionArguments(
                 System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object?>>(argumentsJson));
 
@@ -167,6 +170,12 @@ public sealed class ScriptedChatModel : IChatModel
     }
 
     private static TaskCompletionSource NewSource() => new(TaskCreationOptions.RunContinuationsAsynchronously);
+}
+
+public sealed class FakeCompanyTimeZoneReader : ICompanyTimeZoneReader
+{
+    public Task<string> ReadTimeZoneIdAsync(CancellationToken cancellationToken) =>
+        Task.FromResult(result: "Europe/Kyiv");
 }
 
 /// <summary>

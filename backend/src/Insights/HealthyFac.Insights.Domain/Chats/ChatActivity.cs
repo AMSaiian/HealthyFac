@@ -17,6 +17,7 @@ public sealed class ChatActivity : Enumeration<ChatActivity>
     public static readonly ChatActivity Manuals = new(value: "manuals");
     public static readonly ChatActivity Files = new(value: "files");
     public static readonly ChatActivity Drafts = new(value: "drafts");
+    public static readonly ChatActivity General = new(value: "general");
 
     private ChatActivity(string value)
         : base(value)

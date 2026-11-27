@@ -173,6 +173,7 @@ public static class ConfigureServices
             app.MapGrpcService<CoreWorkOrdersService>();
             app.MapGrpcService<CoreEmployeesService>();
             app.MapGrpcService<CoreSchedulesService>();
+            app.MapGrpcService<CoreCompaniesService>();
 
             return app;
         }
