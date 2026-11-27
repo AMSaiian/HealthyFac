@@ -73,11 +73,11 @@ foreach ($step in $steps) {
 # A Red: or Proof: line goes under its step in the cycle section, so each step is checked on its own text.
 foreach ($step in $steps) {
   $text = $step.Lines -join "`n"
-  $hasProofLine = $text -cmatch '(?m)\b(Red|Proof)(\s*\([^)]*\))?:'
+  $hasProofLine = $text -cmatch "(?m)$(Get-RedProofLinePattern -Anywhere)"
   if (($text -cmatch '\b(TDD|Red)\b' -or $text -cmatch '\bProof required\b') -and -not $hasProofLine) {
     $problems.Add("Step $($step.Number) names TDD, Red, or Proof required, but its block has no Red: or Proof: line.")
-  } elseif ($step.Lines[0] -cmatch '\bTDD\b' -and $text -cmatch '(?m)^\s*(?:[*-]\s+)?Proof(\s*\([^)]*\))?:' -and
-    $text -cnotmatch '(?m)^\s*(?:[*-]\s+)?Red(\s*\([^)]*\))?:') {
+  } elseif ($step.Lines[0] -cmatch '\bTDD\b' -and $text -cmatch "(?m)$(Get-RedProofLinePattern 'Proof')" -and
+    $text -cnotmatch "(?m)$(Get-RedProofLinePattern 'Red')") {
     $problems.Add("Step $($step.Number) is TDD, but its block has only Proof: lines: a TDD step needs the Red: line of its red run.")
   }
 }
@@ -108,7 +108,7 @@ foreach ($step in $steps) {
 
 foreach ($line in $deviationLines) {
   $start = $line.Trim().Substring(0, [Math]::Min(70, $line.Trim().Length))
-  if ($line -cmatch '\b(Red|Proof)(\s*\([^)]*\))?:') {
+  if ($line -cmatch (Get-RedProofLinePattern -Anywhere)) {
     $problems.Add("A Deviations entry of cycle $Cycle holds a Red: or Proof: line ('$start'). Move the line under its step.")
   } elseif ($line -match '^(\*|-)\s+Steps?\s+[\d,\s–-]+:\s*done\b') {
     $problems.Add("A Deviations entry of cycle $Cycle only logs a run ('$start'). Remove it: the tick shows that the step is done.")

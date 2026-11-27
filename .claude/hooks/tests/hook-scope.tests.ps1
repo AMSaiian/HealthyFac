@@ -37,6 +37,7 @@
 # - verify-changed: the turn skip, the reviewer and executor skips, the checkout, the git worktree, the step state,
 #   the frontend step, the lint filter, and the Stop hook that reads SARIF and the build text.
 # - reviewer-write-scope, handoff-write-guard, executor-run-foreground: the PreToolUse hooks.
+# - reviewer-shell: reviewer-shell-scope.ps1 denies the known shell write forms of the reviewer and allows the reads.
 # - cleanup-changed: the private copy, the lost update, the deleted file, the guard, and the lock.
 # - record-turn-start: the turn tree of non-ASCII paths and the stale turn trees.
 # - command-line-batches: the long file lists.
@@ -50,7 +51,7 @@
 # It exits 1 when a check fails.
 param([string]$Only = '')
 
-$SectionNames = @('verify-changed', 'reviewer-write-scope', 'handoff-write-guard', 'executor-run-foreground',
+$SectionNames = @('verify-changed', 'reviewer-write-scope', 'reviewer-shell', 'handoff-write-guard', 'executor-run-foreground',
   'cleanup-changed', 'record-turn-start', 'command-line-batches', 'sarif-reader', 'line-length', 'named-index')
 $onlyNames = @($Only -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ })
 foreach ($name in $onlyNames) {
@@ -362,6 +363,51 @@ try {
   Assert-That ($result.ExitCode -eq 2) 'The reviewer write hook denies a notebook in the repo'
   $result = Invoke-Hook $repo 's1' $HooksDir 'reviewer-write-scope.ps1' -fields @{ hook_event_name = 'PreToolUse'; tool_name = 'Write' }
   Assert-That ($result.ExitCode -eq 2) 'The reviewer write hook denies a call without a file'
+
+  }
+
+  if (Test-Section 'reviewer-shell') {
+  Write-Host 'Reviewer shell scope'
+  $repo = New-TestRepo 'reviewer-shell'
+  $shellDenied = @(
+    @('a heredoc redirect', "cat > /tmp/a.ps1 <<EOF`nx`nEOF"),
+    @('a >> redirect', 'echo x >> notes.txt'),
+    @('a >& redirect to a file', 'echo x >&out.txt'),
+    @('a > redirect to a file', 'echo x > out.txt'),
+    @('a redirect in a pwsh -Command program', "pwsh -NoProfile -Command `"'x' > a.txt`""),
+    @('a redirect in a bash -c program', 'bash -c "echo x > a"'),
+    @('a .write( call', "python -c `"open('a','w').write('b')`""),
+    @('Set-Content', '"x" | Set-Content a.txt'),
+    @('Out-File', "'x' | Out-File a.txt"),
+    @('New-Item', 'New-Item -ItemType File a.txt'),
+    @('sed -i', "sed -i 's/a/b/' f"),
+    @('tee', 'echo x | tee log.txt'),
+    @('rm', 'rm -f a'),
+    @('mkdir', 'mkdir scratch'),
+    @('writeFileSync', "node -e `"require('fs').writeFileSync('a','b')`""))
+  foreach ($case in $shellDenied) {
+    $result = Invoke-ShellHook 'reviewer-shell-scope.ps1' $case[1]
+    Assert-That ($result.ExitCode -eq 2 -and $result.Output -match 'writes only review.md') "The reviewer shell hook denies $($case[0])"
+  }
+  $shellAllowed = @(
+    @('git status', 'git status'),
+    @('a stream merge', 'git diff --stat 2>&1'),
+    @('a redirect to /dev/null', 'git log > /dev/null'),
+    @('a redirect to $null', 'Get-Content a.txt > $null'),
+    @('Out-Null', 'dotnet --info | Out-Null'),
+    @('a comparison operator', 'if ($a -gt 1) { ''x'' }'),
+    @('a flow script', 'pwsh -NoProfile -File .claude/check-handoff.ps1 E:/x'),
+    @('a search of the text rm', 'grep -rn "rm" .claude'),
+    @('a > inside an awk program', "awk '{ if (length > 120) print }' a.txt"),
+    @('a > inside a git format', "git log -1 --format='%an <%ae>'"),
+    @('a git format in a pwsh -Command program', "pwsh -NoProfile -Command `"git log -1 --format='%an <%ae>'`""),
+    @('a stream merge in a pwsh -Command program', 'pwsh -NoProfile -Command "Get-Content a.txt 2>&1"'))
+  foreach ($case in $shellAllowed) {
+    $result = Invoke-ShellHook 'reviewer-shell-scope.ps1' $case[1]
+    Assert-That ($result.ExitCode -eq 0) "The reviewer shell hook allows $($case[0])"
+  }
+  $result = Invoke-ShellHook 'reviewer-shell-scope.ps1' ''
+  Assert-That ($result.ExitCode -eq 0) 'The reviewer shell hook allows an empty command'
 
   }
 

@@ -7,6 +7,8 @@
 # writeFileSync, appendFileSync, write_text, .write(, WriteAllText, WriteAllLines, or mv, cp, rm, Move-Item, Copy-Item,
 # or Remove-Item with one of the files. Reads (cat, grep, head, Get-Content, Select-String), a read redirected to
 # another file, and the flow scripts stay allowed. The repo file .claude/commands/spec.md is not a handoff file.
+# The forms that name no file (sed -i through WriteAllLines) come from shell-write-forms.ps1, which the reviewer shell
+# hook uses too.
 # Limit: a pattern check. It can deny a valid command that also names a handoff file (then use the Edit tool or split
 # the command), and it misses a write form that is not in the list.
 
@@ -20,15 +22,12 @@ $Path = "(?:[^\s'`"|;&<>]*[\\/])?$File"
 $text = $command -replace '(?i)\.claude[\\/]+commands[\\/]+spec\.md', ''
 if ($text -notmatch "(?i)(^|[\\/\s'`"=(])$File") { exit 0 }
 
+. (Join-Path $PSScriptRoot 'shell-write-forms.ps1')
 $WriteForms = @(
   "(?i)>{1,2}\s*['`"]?$Path",
   "(?i)\btee\b[^|;&]*$File",
-  '(?i)\b(sed|perl)\b[^|;&]*\s-i',
-  '(?i)\b(Set-Content|Add-Content|Out-File)\b',
-  '(?i)\b(writeFileSync|appendFileSync|write_text|WriteAllText|WriteAllLines)\b',
-  '(?i)\.write\(',
   "(?i)(^|[\s;&|(])(mv|cp|rm|Move-Item|Copy-Item|Remove-Item)\b[^|;&]*$File"
-)
+) + $script:SharedWriteForms
 $form = $WriteForms | Where-Object { $text -match $_ } | Select-Object -First 1
 if (-not $form) { exit 0 }
 

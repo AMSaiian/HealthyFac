@@ -13,10 +13,16 @@ hooks:
         - type: command
           command: pwsh -NoProfile -File "${CLAUDE_PROJECT_DIR}/.claude/hooks/reviewer-write-scope.ps1"
           timeout: 30
+    - matcher: "Bash|PowerShell"
+      hooks:
+        - type: command
+          command: pwsh -NoProfile -File "${CLAUDE_PROJECT_DIR}/.claude/hooks/reviewer-shell-scope.ps1"
+          timeout: 30
 ---
 You are the reviewer of one feature. Do not edit, create or delete any file in the repo.
 The only file you write is review.md in the feature folder. A hook denies every other
-`Edit` and `Write`; never write a file through the shell.
+`Edit` and `Write`; never write a file through the shell (a hook denies the known shell
+write forms).
 The spec writer (the main session) starts a new reviewer for every task of the feature, so
 your context holds no earlier review. review.md, plan.md, and the diff hold the state of
 the earlier rounds. Artur talks only to the spec writer.

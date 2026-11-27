@@ -1,6 +1,7 @@
 using System.Text.RegularExpressions;
 using HealthyFac.Shared.UnitTests.Conventions.Data;
 using HealthyFac.Testing.Features;
+using HealthyFac.Testing.Repository;
 
 namespace HealthyFac.Shared.UnitTests.Conventions;
 
@@ -29,28 +30,11 @@ public sealed class OptionsValidatorPlacementTests
     }
 
     private static DirectoryInfo FindSourceFolder()
-    {
-        for (var folder = new DirectoryInfo(AppContext.BaseDirectory); folder is not null; folder = folder.Parent)
-        {
-            var backendFolder = new[]
-                {
-                    folder.FullName,
-                    Path.Combine(folder.FullName, OptionsValidatorPlacementConstants.BackendFolderName),
-                }
-                .FirstOrDefault(candidate =>
-                    File.Exists(Path.Combine(candidate, OptionsValidatorPlacementConstants.SolutionFileName)));
-
-            if (backendFolder is not null)
-            {
-                return new DirectoryInfo(
-                    Path.Combine(backendFolder, OptionsValidatorPlacementConstants.SourceFolderName));
-            }
-        }
-
-        throw new DirectoryNotFoundException(
-            $"No parent folder holds {OptionsValidatorPlacementConstants.SolutionFileName}, directly or in "
-            + $"{OptionsValidatorPlacementConstants.BackendFolderName}/.");
-    }
+        => new(
+            Path.Combine(
+                RepositoryRoot.Find().FullName,
+                OptionsValidatorPlacementConstants.BackendFolderName,
+                OptionsValidatorPlacementConstants.SourceFolderName));
 
     private static bool IsSkipped(FileInfo file)
         => file.FullName

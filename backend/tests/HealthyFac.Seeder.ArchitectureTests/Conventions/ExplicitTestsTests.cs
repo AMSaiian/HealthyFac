@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using HealthyFac.Testing.Repository;
 
 namespace HealthyFac.Seeder.ArchitectureTests.Conventions;
 
@@ -15,7 +16,7 @@ public sealed partial class ExplicitTestsTests
     [Fact]
     public void SeederTests_AreExplicit()
     {
-        var repositoryRoot = FindRepositoryRoot();
+        var repositoryRoot = RepositoryRoot.Find().FullName;
 
         var attributes = SeederTestFolders
             .SelectMany(folder => Directory.EnumerateFiles(
@@ -33,21 +34,6 @@ public sealed partial class ExplicitTestsTests
             .Select(attribute => $"{attribute.File}:{attribute.Line}");
 
         string.Join(Environment.NewLine, violations).Should().BeEmpty();
-    }
-
-    private static string FindRepositoryRoot()
-    {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-
-        while (directory is not null
-            && !File.Exists(Path.Combine(directory.FullName, path2: "backend", path3: "HealthyFac.slnx")))
-        {
-            directory = directory.Parent;
-        }
-
-        return directory?.FullName
-            ?? throw new InvalidOperationException(
-                message: "The repository root with backend/HealthyFac.slnx was not found.");
     }
 
     private static bool IsBuildOutput(string file)
