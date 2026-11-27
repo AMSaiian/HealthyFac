@@ -187,7 +187,7 @@ describe('FilesGridStore', { tags: ['Files'] }, () => {
     expect(store.canDelete()).toBe(true);
   });
 
-  it('rowAccess_ForCompanyAndMachineScope_GrantsIngestAndTieOnTheCompanyPageOnly', async () => {
+  it('rowAccess_ForCompanyAndMachineScope_GrantsIngestOnBothAndTieOnTheCompanyPageOnly', async () => {
     const { store } = await setup({
       permissions: [Permission.IngestWrite, Permission.IngestRead, Permission.CompanyFilesWrite],
     });
@@ -195,6 +195,13 @@ describe('FilesGridStore', { tags: ['Files'] }, () => {
 
     expect(store.rowAccess()).toEqual({ canIngestWrite: true, canIngestRead: true, canTie: true });
 
+    store.setScope({ kind: 'machine', machineId: MACHINE_ID });
+
+    expect(store.rowAccess()).toEqual({ canIngestWrite: true, canIngestRead: true, canTie: false });
+  });
+
+  it('rowAccess_ForMachineScopeWithoutIngestPermissions_GrantsNothing', async () => {
+    const { store } = await setup();
     store.setScope({ kind: 'machine', machineId: MACHINE_ID });
 
     expect(store.rowAccess()).toEqual({ canIngestWrite: false, canIngestRead: false, canTie: false });

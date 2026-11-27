@@ -14,9 +14,6 @@ export const COLUMN_LABEL_KEYS: Readonly<Record<FileColumn, string>> = {
   [FileColumn.Ingest]: 'FILES.COLUMNS.INGEST',
 };
 
-/** The two columns that only the company page shows. */
-export const INGEST_COLUMNS: readonly FileColumn[] = [FileColumn.Machine, FileColumn.Ingest];
-
 export const MENU_DOWNLOAD_KEY = 'FILES.ACTIONS_MENU.DOWNLOAD';
 export const MENU_SHOW_DETAILS_KEY = 'ACTIONS.SHOW_DETAILS';
 export const MENU_DELETE_KEY = 'ACTIONS.DELETE';

@@ -42,7 +42,6 @@ import {
   FILTER_READERS,
   FILTER_WRITERS,
   FILTERABLE_COLUMNS,
-  INGEST_COLUMNS,
   INGEST_NEVER_LABEL_KEY,
   INGEST_STATE_LABEL_KEYS,
   ingestLabelKey,
@@ -108,8 +107,8 @@ export class FileGrid {
   readonly sort = input.required<FileSort | null>();
   readonly filter = input.required<FileFilter>();
   readonly canDelete = input(false);
-  /** The company page shows the machine and ingest columns and their row actions; the machine page hides them. */
-  readonly showIngestColumns = input(true);
+  /** The machine page hides the Machine column: all its files belong to one machine. */
+  readonly showMachineColumn = input(true);
   readonly machineOptions = input<readonly MachineOption[]>([]);
   readonly access = input<FileRowAccess>(NO_ROW_ACCESS);
 
@@ -156,7 +155,7 @@ export class FileGrid {
   );
 
   protected readonly allColumns = computed(() =>
-    ALL_COLUMNS.filter((column) => this.showIngestColumns() || !INGEST_COLUMNS.includes(column)),
+    ALL_COLUMNS.filter((column) => this.showMachineColumn() || column !== FileColumn.Machine),
   );
 
   private readonly _table = viewChild(Table);

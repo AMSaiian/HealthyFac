@@ -63,10 +63,10 @@ export const FilesGridStore = signalStore(
         () =>
           hasScope() && store._auth.hasPermission(isCompany() ? Permission.CompanyFilesDelete : Permission.FilesDelete),
       ),
-      /** The ingest and tie actions exist on the company page only. */
+      /** The ingest actions exist on both pages; the tie actions on the company page only. */
       rowAccess: computed((): FileRowAccess => ({
-        canIngestWrite: isCompany() && store._auth.hasPermission(Permission.IngestWrite),
-        canIngestRead: isCompany() && store._auth.hasPermission(Permission.IngestRead),
+        canIngestWrite: store._auth.hasPermission(Permission.IngestWrite),
+        canIngestRead: store._auth.hasPermission(Permission.IngestRead),
         canTie: isCompany() && store._auth.hasPermission(Permission.CompanyFilesWrite),
       })),
       isCompany,
