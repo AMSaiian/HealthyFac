@@ -254,6 +254,7 @@ function New-PlanFolder([string] $name, [hashtable] $change = @{}) {
   if ($change.Step2Fixup) { $planLines += "    *   Fixup: $($change.Step2Fixup)" }
   if ($change.Step2Look) { $planLines += "    *   Look: $($change.Step2Look)" }
   if ($change.Step2Verify) { $planLines += "    *   Verify: $($change.Step2Verify)" }
+  if ($change.Step2Extra) { $planLines += $change.Step2Extra }
   if ($change.Step3Files) { $planLines += '', '- [ ] Step 3: Do the third thing.', "    *   Files: $($change.Step3Files)" }
   if ($change.Step3Fixup) { $planLines += "    *   Fixup: $($change.Step3Fixup)" }
   $planLines += ''
@@ -291,6 +292,15 @@ Assert-That ($noAcRow.Exit -eq 1 -and $noAcRow.Output.Count -eq 1 -and $noAcRow.
 $specRef = Invoke-Script 'check-plan.ps1' @((New-PlanFolder 'plan-specref' @{ Step2Text = 'Step 2: Do it as in spec.md.' }))
 Assert-That ($specRef.Exit -eq 1 -and $specRef.Output.Count -eq 1 -and $specRef.Output[0] -match 'Step 2 names the spec') `
   'a step that names spec.md fails with its line'
+
+$redSpec = Invoke-Script 'check-plan.ps1' @((New-PlanFolder 'plan-redspec' @{ Step2Extra = @('    *   Red: a step with the line the spec -> 1 failed; message') }))
+Assert-That ($redSpec.Exit -eq 0 -and $redSpec.Output.Count -eq 0) 'a Red: line that matches the pattern the spec passes'
+
+$proofSpec = Invoke-Script 'check-plan.ps1' @((New-PlanFolder 'plan-proofspec' @{ Step2Extra = @('    *   Proof: a plan line with spec.md -> failed; restored') }))
+Assert-That ($proofSpec.Exit -eq 0 -and $proofSpec.Output.Count -eq 0) 'a Proof: line that matches the pattern spec.md passes'
+
+$qualifiedSpec = Invoke-Script 'check-plan.ps1' @((New-PlanFolder 'plan-qualifiedspec' @{ Step2Extra = @('    *   Proof (round 1, F1): the plan names the spec -> failed; restored') }))
+Assert-That ($qualifiedSpec.Exit -eq 0 -and $qualifiedSpec.Output.Count -eq 0) 'a Proof (round 1, F1): line that matches the pattern the spec passes'
 
 $specCommand = Invoke-Script 'check-plan.ps1' @((New-PlanFolder 'plan-speccommand' @{ Step2Files = '`.claude/commands/spec.md`' }))
 Assert-That ($specCommand.Exit -eq 0 -and $specCommand.Output.Count -eq 0) `

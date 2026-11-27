@@ -3,7 +3,7 @@
 # review.md in the feature folder, never a repo file. The hook allows an Edit, a Write, or a NotebookEdit only on a
 # file named review.md outside every checkout of this repository (the main one and its worktrees share one git common
 # dir). It denies every other target with exit code 2, and the reason goes to the reviewer. A shell write is out of
-# its reach; reviewer.md forbids it.
+# its reach; reviewer-shell-scope.ps1 denies the known shell write forms.
 # The checkout test uses git from the nearest existing folder of the target, so a new file in an existing folder works.
 
 $ErrorActionPreference = 'Stop'

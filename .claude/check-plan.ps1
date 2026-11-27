@@ -11,7 +11,7 @@
 # - a section name of the Spec line (in **bold**) is no heading of spec.md;
 # - an AC of the Spec line has no "*   **AC<n>:**" line in spec.md, or no row in "## Acceptance Criteria Map";
 # - a step names "spec.md" or "the spec" outside the Spec line (the step is not self-contained); the repo path
-#   ".claude/commands/spec.md" is exempt;
+#   ".claude/commands/spec.md" is exempt, and so are the "Red:" and "Proof:" lines (they quote test and assertion text);
 # - a step whose Files: line names a test file, without "TDD", "Proof required", or "No proof: <reason>" in its block;
 # - a step whose Verify: bullet asks for a full run ("full", at most 2 words, then run, suite, area, or commands): the
 #   last cycle holds the full run (run-area.ps1) and each cycle before it ends with the affected run (run-tests.ps1);
@@ -98,13 +98,15 @@ $steps = @(Get-CycleSteps $section)
 
 $TestFilePattern = '(?i)(^|[/`\s])tests?/|\.spec\.ts\b|Tests?\.cs\b|\.tests\.ps1\b'
 $FullRunPattern = '(?i)\bfull(?:\W+\w+){0,2}\W+(?:runs?|suites?|areas?|commands)\b'
+$ProofLinePattern = Get-RedProofLinePattern
 $VerifyLinePattern = '^\s*(?:[*-]\s+)?\**Verify\**:'
 $LookFilePattern = '(?i)\.(html|css)\b|\btemplates?\b'
 $LookLinePattern = '^\s*(?:[*-]\s+)?\**Look\**:\s*\S'
 $NoBrowserCheckPattern = '(?i)\bBrowser check:\s*none\b'
 foreach ($step in $steps) {
   $text = $step.Lines -join "`n"
-  $textWithoutCommand = $text -replace '(?i)\.claude/commands/spec\.md', ''
+  $textWithoutProofLines = ($step.Lines | Where-Object { $_ -cnotmatch $ProofLinePattern }) -join "`n"
+  $textWithoutCommand = $textWithoutProofLines -replace '(?i)\.claude/commands/spec\.md', ''
   if ($textWithoutCommand -match '(?i)spec\.md|\bthe spec\b') {
     $problems.Add("Cycle ${Cycle}: Step $($step.Number) names the spec. Copy the facts into the step.")
   }

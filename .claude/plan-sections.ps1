@@ -2,6 +2,16 @@
 # plan.md, so the three scripts agree on what a cycle, a step block, the Deviations of a cycle, and a browser check
 # mark are.
 
+# The regex of a Red or Proof line of a step block (or of a Deviations entry): an optional list marker (* or -), optional
+# bold, the word, an optional qualifier in parentheses ("Proof (round 1, F12):"), then the colon. -Word limits it to
+# "Red" or "Proof". -Anywhere drops the line start and the list marker (the word may follow other text, as in a
+# Deviations entry "Step 1: Proof: ..."). Use it with -cmatch or -cnotmatch (and (?m) for a block of lines). The one
+# definition of the line for check-plan.ps1 and check-handoff.ps1.
+function Get-RedProofLinePattern([string] $Word = 'Red|Proof', [switch] $Anywhere) {
+    $start = if ($Anywhere) { '\b' } else { '^\s*(?:[*-]\s+)?\**' }
+    "$start(?:$Word)(?:\s*\([^)]*\))?\**:"
+}
+
 # The lines of "### Cycle <N>" up to the next heading of level 1 to 3. -Cycle 0 means the open cycle: the number of
 # the first "Cycle: <N>" line of plan.md, or the highest cycle when plan.md has no such line.
 # It writes an error and ends the calling script with exit code 1 when plan.md has no such section.
